@@ -21,6 +21,7 @@ INSTALLED_APPS = [
     "django.contrib.humanize",
     "django.contrib.staticfiles",
     "npl",
+    "users"
 ]
 
 MIDDLEWARE = [
@@ -85,6 +86,7 @@ AUTH_PASSWORD_VALIDATORS = [
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 # LOGIN STUFF
+AUTH_USER_MODEL = 'users.User'
 LOGIN_REDIRECT_URL = "/"
 LOGIN_URL = "/accounts/login/"
 LOGOUT_REDIRECT_URL = "/"
@@ -106,6 +108,7 @@ AWS_LOCATION = "static"
 MAILGUN_API_KEY = os.environ.get("MAILGUN_API_KEY", None)
 
 ROSTER_SHEET_ID = "1On6uRXLRQ3pzl2FHYRgWKCedsCdl6UNbNaSF6pwlGiw"
+LEAGUE_SHEET_ID = "1UQv_vnBBWUT8BiFRd7tAbvW4COWJ61BNkme7iyzf5po"
 
 TEAMS = [
     "Bears #9",

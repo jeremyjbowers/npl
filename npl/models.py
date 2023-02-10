@@ -1,7 +1,6 @@
 import datetime
 import os
 
-from django.contrib.auth.models import User
 from django.db import models
 from django.contrib.postgres.fields import JSONField, ArrayField
 from django.db.models.signals import post_save, m2m_changed
@@ -10,6 +9,7 @@ from django.conf import settings
 from nameparser import HumanName
 
 from npl import utils
+from users.models import User
 
 class BaseModel(models.Model):
     active = models.BooleanField(default=True)
@@ -25,12 +25,16 @@ class BaseModel(models.Model):
 
 class Owner(BaseModel):
     name = models.CharField(max_length=255, null=True, blank=True)
-    email = models.CharField(max_length=255, null=True, blank=True)
     twitter = models.CharField(max_length=255, null=True, blank=True)
-    user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
+    phone = models.CharField(max_length=255, null=True, blank=True)
+    hometown = models.CharField(max_length=255, null=True, blank=True)
+    bio = models.TextField(null=True, blank=True)
+    first_year = models.IntegerField(null=True, blank=True)
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, blank=True, null=True)
 
     def __unicode__(self):
-        return f"{self.name}, {self.email}"
+        return f"{self.name}"
 
 
 class Team(BaseModel):

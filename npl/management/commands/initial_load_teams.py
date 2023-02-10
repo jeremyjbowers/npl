@@ -16,7 +16,6 @@ class Command(BaseCommand):
                         return True
             return False
 
-        all_teams = []
         teams = utils.get_sheet(settings.ROSTER_SHEET_ID, f"Key!A:V", value_cutoff=None)
         teams = [t for t in teams[39:] if is_team(t)]
 
