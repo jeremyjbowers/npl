@@ -58,10 +58,126 @@ class Team(BaseModel):
     roster_30_man = models.IntegerField(blank=True, null=True)
 
     class Meta:
-        ordering = ["league", "division", "name"]
+        ordering = ["nickname"]
 
     def __unicode__(self):
         return self.name
 
-    # def players(self):
-    #     return Player.objects.filter(team=self)
+    def players(self):
+        return Player.objects.filter(team=self)
+
+
+class Player(BaseModel):
+    first_name = models.CharField(max_length=255, null=True)
+    last_name = models.CharField(max_length=255, null=True)
+    name = models.CharField(max_length=255)
+    raw_name = models.CharField(max_length=255, blank=True, null=True)
+    position = models.CharField(max_length=255, blank=True, null=True)
+    birthdate = models.DateField(blank=True, null=True)
+    birthdate_qa = models.BooleanField(default=False)
+    raw_age = models.IntegerField(default=None, blank=True, null=True)
+    mlb_org = models.CharField(max_length=255, blank=True, null=True)
+
+    # IDs
+    mlb_id = models.CharField(max_length=255, primary_key=True)
+    scoresheet_id = models.CharField(max_length=255, blank=True, null=True)
+    fg_id = models.CharField(max_length=255, blank=True, null=True)
+    bp_id = models.CharField(max_length=255, blank=True, null=True)
+    bref_id = models.CharField(max_length=255, blank=True, null=True)
+
+    # Contract status
+    mls_time = models.CharField(max_length=255, blank=True, null=True)
+    options = models.CharField(max_length=255, blank=True, null=True)
+    status = models.CharField(max_length=255, blank=True, null=True)
+    mls_year = models.CharField(max_length=255, blank=True, null=True)
+
+    # Roster status
+    team = models.ForeignKey(Team, on_delete=models.SET_NULL, blank=True, null=True)
+    is_owned = models.BooleanField(default=False)
+    is_roster_40_man = models.BooleanField(default=False)
+    is_roster_30_man = models.BooleanField(default=False)
+    is_roster_7_day_il = models.BooleanField(default=False)
+    is_roster_56_day_il = models.BooleanField(default=False)
+    is_roster_covid_il = models.BooleanField(default=False)
+    is_roster_eos_il = models.BooleanField(default=False)
+    is_roster_restricted = models.BooleanField(default=False)
+    is_roster_aaa_option = models.BooleanField(default=False)
+    is_roster_aaa_outright = models.BooleanField(default=False)
+    is_roster_aaa_foreign = models.BooleanField(default=False)
+    is_roster_aaa_retired = models.BooleanField(default=False)
+    is_roster_aaa_nri = models.BooleanField(default=False)
+    is_roster_aa = models.BooleanField(default=False)
+    is_roster_a = models.BooleanField(default=False)
+
+    # STATS
+    # Here's the schema for a stats dictionary
+    # required keys: year, level, type, timestamp
+    # YEAR — the season these stats accrued in, or "career"
+    # LEVEL - the levels these stats cover, e.g., A/AA or AA/AAA or MLB
+    # TYPE — the type of stats, e.g., majors, minors
+    # note: we combine all minor league stats in a single record
+    # but we do not combine major leage WITH minor league.
+    # this is because major league stats are used for the game
+    # but minor / other pro league stats are not.
+    # TIMESTAMP - a UNIX timestamp of when this record was created
+    #
+    # Any actual stats keys are fine following these.
+    # Pitching and hitting stats can be in the same dictionary.
+    #
+    stats = models.JSONField(null=True, blank=True)
+
+    class Meta():
+        ordering = ['team__name', '-is_roster_40_man', 'position', 'last_name']
+
+    def __unicode__(self):
+        if self.team:
+            return "%s (%s)" % (self.name, self.team.nickname)
+        return self.name
+
+    @property
+    def mlb_image_url(self):
+        return f"https://img.mlbstatic.com/mlb-photos/image/upload/w_60,q_100/v1/people/{self.mlb_id}/headshot/silo/current"
+
+    @property
+    def age(self):
+        if self.birthdate:
+            now = datetime.datetime.utcnow().date()
+            return relativedelta(now, self.birthdate).years
+        elif self.raw_age:
+            return self.raw_age
+        return None
+
+    @property
+    def fg_url(self):
+        if self.fg_id:
+            return f"https://www.fangraphs.com/statss.aspx?playerid={self.fg_id}"
+        return None
+
+    def set_owned(self):
+        if self.team == None:
+            self.is_owned = False
+        else:
+            self.is_owned = True
+
+    def set_name(self):
+        if self.first_name and self.last_name:
+            name_string = "%s" % self.first_name
+            name_string += " %s" % self.last_name
+            self.name = name_string
+
+        if self.name:
+            if not self.first_name and not self.last_name:
+                n = HumanName(self.name)
+                self.first_name = n.first
+                if n.middle:
+                    self.first_name = n.first + " " + n.middle
+                self.last_name = n.last
+                if n.suffix:
+                    self.last_name = n.last + " " + n.suffix
+
+
+    def save(self, *args, **kwargs):
+        self.set_name()
+        self.set_owned()
+
+        super().save(*args, **kwargs)

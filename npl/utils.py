@@ -18,21 +18,27 @@ def is_player(row):
 def format_player_row(row, team):
     player_dict = {}
 
-    player_dict['npl_team'] = team.split(' #')[0].strip()
+    player_dict['team'] = team
 
-    player_dict['is_40man_roster'] = False
+    player_dict['is_roster_40_man'] = False
     if row[0] == "1":
-        player_dict['is_40man_roster'] = True 
+        player_dict['is_roster_40_man'] = True 
 
-    parsed_name = HumanName(row[1].strip())
+    raw_name = row[1].strip()
+    if "Junior" in raw_name:
+        raw_name.replace("Junior", "JuniorNAME")
+    
+    player_dict['raw_name'] = raw_name
 
-    player_dict['first'] = parsed_name.first
+    parsed_name = HumanName(raw_name)
+
+    player_dict['first_name'] = parsed_name.first
     if parsed_name.middle:
-        player_dict['first'] += f" {parsed_name.middle}"
+        player_dict['first_name'] += f" {parsed_name.middle}"
 
-    player_dict['last'] = parsed_name.last
+    player_dict['last_name'] = parsed_name.last
     if parsed_name.suffix:
-        player_dict['last'] += f" {parsed_name.suffix}"
+        player_dict['last_name'] += f" {parsed_name.suffix}"
 
     player_dict['scoresheet_id'] = None
     try:
@@ -47,23 +53,22 @@ def format_player_row(row, team):
         pass
 
     player_dict['position'] = row[4].strip()
-    player_dict['mlb_team'] = row[5].strip()
+    player_dict['mlb_org'] = row[5].strip()
     
-    player_dict['mls'] = 0.0
-    player_dict['r5_expire'] = None
+    player_dict['mls_time'] = 0.0
+    player_dict['mls_year'] = None
     player_dict['options'] = None
-    player_dict['qo'] = False
+    player_dict['status'] = None
 
     if "." in row[6]:
-        player_dict['mls'] = float(row[6])
+        player_dict['mls_time'] = float(row[6])
         player_dict['options'] = int(row[7].replace('$', ''))
 
         if len(row) > 8:
-            if "qo" in row[8].lower():
-                player_dict['qo'] = True
+            player_dict['status'] = row[8].lower()
 
     else:
-        player_dict['r5_expire'] = int(row[6])
+        player_dict['mls_year'] = int(row[6])
 
     return player_dict
 
