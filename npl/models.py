@@ -1,6 +1,7 @@
 import datetime
 import os
 
+from dateutil.relativedelta import *
 from django.db import models
 from django.contrib.postgres.fields import JSONField, ArrayField
 from django.db.models.signals import post_save, m2m_changed
@@ -78,6 +79,9 @@ class Player(BaseModel):
     raw_age = models.IntegerField(default=None, blank=True, null=True)
     mlb_org = models.CharField(max_length=255, blank=True, null=True)
 
+    scoresheet_defense = models.JSONField(null=True, blank=True)
+    scoresheet_offense = models.JSONField(null=True, blank=True)
+
     # IDs
     mlb_id = models.CharField(max_length=255, primary_key=True)
     scoresheet_id = models.CharField(max_length=255, blank=True, null=True)
@@ -136,7 +140,7 @@ class Player(BaseModel):
 
     @property
     def mlb_image_url(self):
-        return f"https://img.mlbstatic.com/mlb-photos/image/upload/w_60,q_100/v1/people/{self.mlb_id}/headshot/silo/current"
+        return f"https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/{self.mlb_id}/headshot/67/current"
 
     @property
     def age(self):
@@ -145,6 +149,12 @@ class Player(BaseModel):
             return relativedelta(now, self.birthdate).years
         elif self.raw_age:
             return self.raw_age
+        return None
+
+    @property
+    def mlb_url(self):
+        if self.mlb_id:
+            return f"https://www.mlb.com/player/{self.mlb_id}/"
         return None
 
     @property

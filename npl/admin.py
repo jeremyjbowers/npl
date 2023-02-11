@@ -29,9 +29,26 @@ class ContractAdmin(admin.ModelAdmin):
 @admin.register(Player)
 class PlayerAdmin(admin.ModelAdmin):
     model = Player
-    list_display = ['last_name', 'first_name', 'position', 'team', 'mlb_org', 'is_roster_40_man']
+    list_display = ['last_name', 'first_name', 'position', 'team', 'mlb_org', 'is_roster_40_man', 'mlb_id', 'scoresheet_id']
     list_filter = ['team', 'mlb_org', 'is_roster_40_man', 'position']
-    search_fields = ['name', 'team', 'mlb_org']
+    list_editable = ['scoresheet_id']
+    search_fields = ['name', 'team__name', 'mlb_org', 'scoresheet_id']
+    fieldsets = (
+        (
+            None,
+            {
+                "fields": (
+                    "name",
+                    "birthdate",
+                    "raw_age",
+                    "position",
+                    "mlb_id",
+                    "scoresheet_id",
+                    "mlb_org"
+                ),
+            },
+        ),
+    )
 
 @admin.register(Owner)
 class OwnerAdmin(admin.ModelAdmin):

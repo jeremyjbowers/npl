@@ -1,0 +1,10 @@
+<html>
+    <div class="nav">
+        <strong><a href="/">NPL main</a></strong>{% for team in all_teams %}&nbsp;&bull;&nbsp;<a href="/teams/{{ team.nickname|lower }}/">{{ team.name }}</a>{% endfor %}
+    </div>
+
+    </div>
+    <div class="content">
+        {% block content %}{% endblock %}
+    </div>
+</html>
