@@ -9,8 +9,8 @@
             <img src="{{ p.mlb_image_url }}" alt="{{ p.name }}">
         </div>
         <div class="media-content">
-            <p class="title is-2">{{ p.name }}</p>
-            <p class="subtitle">Team: {% if p.team %}{{ p.team.nickname }}{% else %}Unowned{% endif %}</p>
+            <p class="title is-2">{{ p.position|default_if_none:"" }} {{ p.name }}</p>
+            <p class="subtitle"><strong>{% if p.team %}{{ p.team.name }}{% else %}Unowned{% endif %}</strong></p>
           <p>{{ p.scoresheet_offense }}</p>
           <p>{{ p.scoresheet_defense }}</p>
         </div>
