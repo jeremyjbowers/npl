@@ -1,10 +1,17 @@
 <html>
-    <div class="nav">
-        <strong><a href="/">NPL main</a></strong>{% for team in all_teams %}&nbsp;&bull;&nbsp;<a href="/teams/{{ team.nickname|lower }}/">{{ team.name }}</a>{% endfor %}
-    </div>
-
-    </div>
-    <div class="content">
-        {% block content %}{% endblock %}
-    </div>
+    <head>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    </head>
+    <body>
+        {% include "includes/nav.html" %}
+        <div class="container">
+            <div class="content">
+                <div class="columns">
+                    <div class="column">
+                        <main>{% block content %}{% endblock %}</main>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
 </html>

@@ -21,22 +21,15 @@ def index(request):
     context['players'] = unowned_players.order_by("last_name", "first_name")
     return render(request, "index.html", context)
 
+def player_detail(request, playerid):
+    context = utils.build_context(request)
+    context['p'] = get_object_or_404(models.Player, mlb_id=playerid)
+    return render(request, "player.html", context)
 
 def team_detail(request, nickname):
     context = utils.build_context(request)
     context["team"] = get_object_or_404(models.Team, nickname__icontains=nickname)
-    # if request.user.is_authenticated:
-    #     owner = models.Owner.objects.get(user=request.user)
-    #     if owner.team() == context["team"]:
-    #         context["own_team"] = True
-    #     else:
-    #         context["own_team"] = False
-    # else:
-    #     context["own_team"] = False
-
-    if request.user.is_superuser:
-        context["own_team"] = True
 
     team_players = models.Player.objects.filter(team=context["team"])
-    context['players'] = team_players.order_by("last_name", "first_name")
+    context['players'] = team_players.order_by('-is_roster_40_man', 'position', 'last_name')
     return render(request, "team.html", context)

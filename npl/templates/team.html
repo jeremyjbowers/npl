@@ -1,24 +1,25 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>{{ team.nickname }}</h1>
+<section class="hero">
+    <div class="hero-body">
+        <h1>{{ team.name }}</h1>
+    </div>
+</section>
 
-<table>
-    <tr>
-        <th></th>
-        <th>player</th>
-        <th>position</th>
-        <th>age</th>
-        <th>mlb_org</th>
-    </tr>
-{% for p in players %}
-<tr>
-    <td><img src="{{ p.mlb_image_url }}" height="30"/></td>
-    <td><a target="_blank" href="{{ p.mlb_url }}">{{ p.name }}</a></td>
-    <td>{{ p.position|default_if_none:"-" }}</td>
-    <td>{{ p.age|default_if_none:"-" }}</td>
-    <td>{{ p.mlb_org|default_if_none:"-" }}</td>
-</tr>
-{% endfor %}
-</table>
+
+<section>
+    <table class="table">
+        <thead>
+            <th>player</th>
+            <th></th>
+            <th>position</th>
+            <th>age</th>
+            <th>mlb team</th>
+        </thead>
+        <tbody>
+            {% for p in players %}{% include "includes/player_row.html" %}{% endfor %}
+        </tbody>
+    </table>
+</section>
 {% endblock %}

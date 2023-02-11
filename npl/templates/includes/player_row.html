@@ -1,0 +1,12 @@
+<tr>
+  <td>
+    <strong><a href="players/{{ p.mlb_id }}/">{{ p.name }}</a></strong>&nbsp;
+  </td>
+  <td>
+    <small><a target="_blank" href="/admin/npl/player/{{ p.mlb_id }}/change/">edit &uarr;</a></small>
+    <small><a target="_blank" href="{{ p.mlb_url }}">MLB &rarr;</a></small>
+  </td>
+  <td>{{ p.position|default_if_none:"" }}</td>
+  <td>{{ p.age|default_if_none:"" }}</td>
+  <td>{{ p.mlb_org|default_if_none:""}}</td>
+</tr>

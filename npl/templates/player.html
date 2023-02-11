@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+
+{% block content %}
+<div class="card">
+    <div class="card-content">
+      <div class="media">
+        <div class="media-left">
+            <img src="{{ p.mlb_image_url }}" alt="{{ p.name }}">
+        </div>
+        <div class="media-content">
+            <p class="title is-2">{{ p.name }}</p>
+            <p class="subtitle">Team: {% if p.team %}{{ p.team.nickname }}{% else %}Unowned{% endif %}</p>
+          <p>{{ p.scoresheet_offense }}</p>
+          <p>{{ p.scoresheet_defense }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

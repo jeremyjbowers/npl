@@ -1,0 +1,39 @@
+<nav class="navbar is-dark" role="navigation" aria-label="main navigation">
+<div class="navbar-brand">
+    <a class="navbar-item" href="/"><strong>National Pastime League</strong></a>
+
+    <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
+    <span aria-hidden="true"></span>
+    <span aria-hidden="true"></span>
+    <span aria-hidden="true"></span>
+    </a>
+</div>
+
+<div id="" class="navbar-menu">
+    <div class="navbar-start">
+    <div class="navbar-item has-dropdown is-hoverable">
+        <a class="navbar-link">
+        Teams
+        </a>
+        <div class="navbar-dropdown">
+        {% for team in all_teams %}
+        <a class="navbar-item" href="/teams/{{ team.nickname|lower }}/">{{ team.league }}&nbsp;&rarr;&nbsp;{{ team.division }}&nbsp;&rarr;&nbsp;<span style="font-weight:bold;">{{ team.name }}</span></a>
+        {% endfor %}
+        </div>
+    </div>
+    </div>
+
+    <div class="navbar-end">
+    <div class="navbar-item">
+        <div class="buttons">
+        <a class="button is-primary">
+            <strong>Sign up</strong>
+        </a>
+        <a class="button is-light">
+            Log in
+        </a>
+        </div>
+    </div>
+    </div>
+</div>
+</nav>

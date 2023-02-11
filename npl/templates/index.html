@@ -1,26 +1,24 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>National Pastime League</h1>
+<section class="hero">
+    <div class="hero-body">
+        <h1>Unowned players ({{ players|length }})</h1>
+    </div>
+</section>
 
-<h2>unowned players</h2>
-<table>
-    <tr>
-        <th></th>
-        <th>player</th>
-        <th>position</th>
-        <th>age</th>
-        <th>mlb org</th>
-    </tr>
-{% for p in players %}
-<tr>
-    <td><img src="{{ p.mlb_image_url }}" height="30"/></td>
-    <td><a target="_blank" href="{{ p.mlb_url }}">{{ p.name }}</a></td>
-    <td>{{ p.position|default_if_none:"-" }}</td>
-    <td>{{ p.age|default_if_none:"-" }}</td>
-    <td>{{ p.mlb_org|default_if_none:"-" }}</td>
-</tr>
-{% endfor %}
-</table>
-
+<section>
+    <table class="table">
+        <thead>
+            <th>player</th>
+            <th></th>
+            <th>position</th>
+            <th>age</th>
+            <th>mlb team</th>
+        </thead>
+        <tbody>
+            {% for p in players %}{% include "includes/player_row.html" %}{% endfor %}
+        </tbody>
+    </table>
+</section>
 {% endblock %}

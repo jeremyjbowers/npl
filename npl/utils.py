@@ -15,7 +15,7 @@ def build_context(request):
     context = {}
 
     # to build the nav
-    context["all_teams"] = models.Team.objects.all().values("nickname", "name")
+    context["all_teams"] = models.Team.objects.all().order_by('league', 'division', 'name')
 
     # for search
     queries_without_page = dict(request.GET)
