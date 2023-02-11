@@ -26,8 +26,14 @@ class Command(BaseCommand):
                     print(f"+ {player_obj}")
 
         for p in models.Player.objects.filter(last_name=""):
-            p.first_name = p.raw_name.split(', ')[1]
-            p.last_name = p.raw_name.split(', ')[0]
+            p.first_name = p.raw_name.split(', ')[1].strip()
+            p.last_name = p.raw_name.split(', ')[0].strip()
             p.save()
 
             print(p)
+
+        for p in models.Player.objects.all():
+            p.first_name = p.first_name.strip()
+            p.last_name = p.last_name.strip()
+            p.name = p.name.strip()
+            p.save()

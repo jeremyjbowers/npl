@@ -181,3 +181,28 @@ class Player(BaseModel):
         self.set_owned()
 
         super().save(*args, **kwargs)
+
+
+class Contract(BaseModel):
+    player = models.ForeignKey(Player, on_delete=models.CASCADE)
+    team = models.ForeignKey(Team, on_delete=models.CASCADE)
+    total_amount = models.IntegerField(blank=True, null=True)
+    notes = models.TextField(blank=True, null=True)
+    can_buyout = models.BooleanField(default=False)
+    buyout = models.TextField(blank=True, null=True)
+    total_years = models.IntegerField(blank=True, null=True)
+
+    class Meta:
+        ordering = ['-total_years', '-total_amount']
+
+    def __unicode__(self):
+        return f"Contract: {self.player.name} to {self.team.nickname} — {self.total_years}y, ${self.total_amount}"
+
+
+class ContractYear(BaseModel):
+    year = models.IntegerField()
+    contract = models.ForeignKey(Contract, null=True, blank=True, on_delete=models.SET_NULL)
+    amount = models.IntegerField()
+
+    def __unicode__(self):
+        return f"{self.year}: {self.contract.player.name}"

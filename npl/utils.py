@@ -9,6 +9,24 @@ from nameparser import HumanName
 
 import base64
 
+def dollars_to_ints(num_string):
+    payload = None
+    try:
+        if "$" in num_string:
+            num_string = num_string.replace('$', '')
+        if "," in num_string:
+            num_string = num_string.replace(',', '')
+        if "." in num_string:
+            num_string = num_string.split('.')[0]
+        
+        payload = int(num_string)
+
+    except:
+        pass
+
+    return payload
+
+
 def is_player(row):
     if len(row) > 0:
         if len(row[0].strip()) == 1:
