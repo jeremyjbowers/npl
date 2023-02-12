@@ -27,30 +27,33 @@ class Command(BaseCommand):
             for p in players:
                 print(p)
                 obj = None
-
+                clean_mlbid = p['MLBAM'].split('.')[0].strip()
+                clean_scoresheetid = p['SSBB'].split('.')[0].strip()
                 clean_first = p['firstName'].split('(')[0].strip()
                 clean_last = p['lastName'].split('(')[0].strip()
 
                 try:
-                    if p['MLBAM'].split('.')[0].strip() != "":
-                        obj = models.Player.objects.get(mlb_id=p['MLBAM'].split('.')[0])
-                    elif p['SSBB'].split('.')[0].strip() != "":
-                        obj = models.Player.objects.get(scoresheet_id=p['SSBB'].split('.')[0].strip())
+                    if clean_mlbid != "":
+                        obj = models.Player.objects.get(mlb_id=clean_mlbid)
+
+                    elif clean_scoresheetid != "":
+                        obj = models.Player.objects.get(scoresheet_id=clean_scoresheetid)
+
                     else:
                         obj = models.Player.objects.get(first_name=clean_first,last_name=clean_last)
 
                 except models.Player.DoesNotExist:
-                    if p['MLBAM'].split('.')[0].strip() != "" and p['SSBB'].split('.')[0].strip() != "":
+                    if clean_mlbid != "" and clean_scoresheetid != "":
                         obj = models.Player()
                         obj.first_name = clean_first
                         obj.last_name = clean_last
-                        obj.mlb_id = p['MLBAM'].split('.')[0].strip()
-                        obj.scoresheet_id = p['SSBB'].split('.')[0].strip()
+                        obj.mlb_id = clean_mlbid
+                        obj.scoresheet_id = clean_scoresheetid
 
                 print(obj)
 
-                if not obj.scoresheet_id and p['SSBB'].split('.')[0].strip() != "":
-                    obj.scoresheet_id = p['SSBB'].split('.')[0].strip()
+                if not obj.scoresheet_id and clean_scoresheetid != "":
+                    obj.scoresheet_id = clean_scoresheetid
 
                 obj.position = p['pos']
                 obj.raw_age = p['age'].split('.')[0].strip()

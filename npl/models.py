@@ -76,8 +76,14 @@ class Player(BaseModel):
     position = models.CharField(max_length=255, blank=True, null=True)
     birthdate = models.DateField(blank=True, null=True)
     birthdate_qa = models.BooleanField(default=False)
-    raw_age = models.IntegerField(default=None, blank=True, null=True)
     mlb_org = models.CharField(max_length=255, blank=True, null=True)
+
+    raw_age = models.IntegerField(default=None, blank=True, null=True)
+    bats = models.CharField(max_length=3, blank=True, null=True)
+    throws = models.CharField(max_length=3, blank=True, null=True)
+    height = models.CharField(max_length=15, blank=True, null=True)
+    weight = models.CharField(max_length=3, blank=True, null=True)
+    checked = models.BooleanField(default=False)
 
     scoresheet_defense = models.JSONField(null=True, blank=True)
     scoresheet_offense = models.JSONField(null=True, blank=True)
@@ -158,6 +164,12 @@ class Player(BaseModel):
         return None
 
     @property
+    def mlb_api_url(self):
+        if self.mlb_id:
+            return f"https://statsapi.mlb.com/api/v1/people/{self.mlb_id }"
+        return None
+
+    @property
     def fg_url(self):
         if self.fg_id:
             return f"https://www.fangraphs.com/statss.aspx?playerid={self.fg_id}"
@@ -192,6 +204,21 @@ class Player(BaseModel):
 
         super().save(*args, **kwargs)
 
+
+class Transaction(BaseModel):
+    player = models.ForeignKey(Player, on_delete=models.CASCADE)
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, blank=True, null=True)
+
+    raw_date = models.CharField(max_length=255, blank=True, null=True)
+    date = models.DateField(blank=True, null=True)
+
+    is_npl_transaction = models.BooleanField(default=False)
+    is_mlb_transaction = models.BooleanField(default=False)
+
+    notes = models.TextField(null=True, blank=True)
+
+    def __unicode__(self):
+        return f"{self.date}: {self.player}"
 
 class Contract(BaseModel):
     player = models.ForeignKey(Player, on_delete=models.CASCADE)
