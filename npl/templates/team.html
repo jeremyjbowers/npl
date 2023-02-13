@@ -31,7 +31,7 @@
 <section>
     {% regroup hitters by simple_position as position_players %}
     {% for position in position_players %}
-    <h1 class="title is-3">{{ position.grouper }} ({{ position.list|length }})</h1>
+    <h1 class="title is-3" id="position-{{ position.grouper }}">{{ position.grouper }} ({{ position.list|length }})</h1>
     <table class="table">
         <thead>
             <th style="text-align:center;">40</th>
@@ -58,7 +58,7 @@
     {% endfor %}
 </section>
 <section>
-    <h1 class="title is-3">Pitchers ({{ pitchers|length }})</h1>
+    <h1 class="title is-3" id="position-p">Pitchers ({{ pitchers|length }})</h1>
     <table class="table">
         <thead>
             <th style="text-align:center;">40</th>
