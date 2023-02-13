@@ -1,10 +1,30 @@
 {% extends "base.html" %}
 
 {% block content %}
-<section class="hero">
-    <div class="hero-body">
-        <h1>{{ team.name }}</h1>
-    </div>
+<section class="hero" style="padding-top: 25px;">
+    <h1>{{ team.name }}</h1>
+    <p><strong>Owners</strong>: {% for owner in team.owners.all %}{% if not forloop.first %}, {% endif %}{{ owner }}{% endfor %}</p>
+</section>
+<section>
+    <hr>
+    <nav class="level position-count">
+        {% regroup hitters by simple_position as position_players %}
+        {% for position in position_players %}
+        <div class="level-item has-text-centered">
+          <div>
+            <p class="heading">{{ position.grouper }}</p>
+            <p class="title"><a href="#position-{{ position.grouper }}">{{ position.list|length }}</a></p>
+          </div>
+        </div>
+        {% endfor %}
+        <div class="level-item has-text-centered">
+            <div>
+              <p class="heading">Pitcher</p>
+              <p class="title"><a href="#position-p">{{ pitchers|length }}</a></p>
+            </div>
+          </div>
+      </nav>
+      <hr>
 </section>
 
 

@@ -18,7 +18,8 @@ from npl import models, utils
 def index(request):
     context = utils.build_context(request)
     unowned_players = models.Player.objects.filter(team__isnull=True)
-    context['players'] = unowned_players.order_by("last_name", "first_name")
+    context['pitchers'] = unowned_players.filter(simple_position="P").order_by('-is_roster_40_man', '-mls_time', 'mls_year')
+    context['hitters'] = unowned_players.exclude(simple_position="P").order_by('simple_position', '-is_roster_40_man', '-mls_time', 'mls_year')
     return render(request, "index.html", context)
 
 def player_detail(request, playerid):

@@ -1,7 +1,8 @@
 {% load humanize %}
 <tr class="{% if p.options == '99'%}red{% endif %}">
   {% if team %}
-  <td style="text-align:center;">{% if p.is_roster_40_man %}<span class="icon"><i class="fa fa-check-circle" aria-hidden="true"></i></span>{% else %}<span class="icon"><i class="fa fa-times-circle-o" aria-hidden="true"></i></span>{% endif %}</td>{% endif %}
+  <td style="text-align:center;">{% if p.is_roster_40_man %}<span class="icon"><i class="fa fa-check-circle" aria-hidden="true"></i></span>{% else %}<span class="icon"><i class="fa fa-times-circle-o" aria-hidden="true"></i></span>{% endif %}</td>
+  {% endif %}
   <td>
     <strong><a href="/players/{{ p.mlb_id }}/">{{ p.name }}</a></strong></br>
     <small><a target="_blank" href="/admin/npl/player/{{ p.mlb_id }}/change/"><span class="icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></span></a></small>
@@ -10,10 +11,10 @@
   <td style="text-align:center;">{{ p.position|default_if_none:"" }}</td>
   <td style="text-align:center;">{{ p.age|default_if_none:"" }}</td>
   <td style="text-align:center;">{{ p.mlb_org|default_if_none:""}}</td>
-  {% if team %}
     <td style="text-align:center;">{% if p.is_roster_40_man %}{{ p.mls_time|floatformat:"1" }}{% else %}{{ p.mls_year|default_if_none:"" }}{% endif %}</td>
     <td style="text-align:center;">{{ p.options|default_if_none:"" }}</td>
     <td style="text-align:center;">{{ p.status|default_if_none:""|upper }}</td>
+    {% if team %}
     <!-- contract stuff -->
     {% if p.contract %}
       {% for year in p.contract.years %}

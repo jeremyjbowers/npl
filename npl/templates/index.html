@@ -1,22 +1,61 @@
 {% extends "base.html" %}
 
 {% block content %}
-<section class="hero">
-    <div class="hero-body">
-        <h1>Unowned players ({{ players|length }})</h1>
-    </div>
+<section class="hero" style="padding-top: 25px;">
+    <nav class="level position-count">
+        {% regroup hitters by simple_position as position_players %}
+        {% for position in position_players %}
+        <div class="level-item has-text-centered">
+          <div>
+            <p class="heading">{{ position.grouper }}</p>
+            <p class="title"><a href="#position-{{ position.grouper }}">{{ position.list|length }}</a></p>
+          </div>
+        </div>
+        {% endfor %}
+        <div class="level-item has-text-centered">
+            <div>
+              <p class="heading">Pitcher</p>
+              <p class="title"><a href="#position-p">{{ pitchers|length }}</a></p>
+            </div>
+          </div>
+      </nav>
+      <hr>
 </section>
 
 <section>
+    {% regroup hitters by simple_position as position_players %}
+    {% for position in position_players %}
+    <h1 class="title is-3" id="position-{{ position.grouper }}">{{ position.grouper }} ({{ position.list|length }}) <small><a href="#top">top &uarr;</a></small></h1>
     <table class="table">
         <thead>
             <th style="text-align:center;">player</th>
             <th style="text-align:center;">position</th>
             <th style="text-align:center;">age</th>
-            <th style="text-align:center;">mlb team</th>
+            <th style="text-align:center;">mlb</th>
+            <th style="text-align:center;">mls</th>
+            <th style="text-align:center;">opt</th>
+            <th style="text-align:center;">stat</th>
         </thead>
         <tbody>
-            {% for p in players %}{% include "includes/player_row.html" %}{% endfor %}
+        {% for p in position.list %}{% include "includes/player_row.html" %}{% endfor %}
+        </tbody>
+    </table>
+    {% endfor %}
+</section>
+<section>
+    <h1 class="title is-3" id="position-p">Pitchers ({{ pitchers|length }})  <small><a href="#top">top &uarr;</a></small></h1>
+    <table class="table">
+        <thead>
+            <th style="text-align:center;">player</th>
+            <th style="text-align:center;">position</th>
+            <th style="text-align:center;">age</th>
+            <th style="text-align:center;">mlb</th>
+            <th style="text-align:center;">mls</th>
+            <th style="text-align:center;">opt</th>
+            <th style="text-align:center;">stat</th>
+        </thead>
+        <tbody>
+        {% for p in pitchers %}{% include "includes/player_row.html" %}{% endfor %}
         </tbody>
     </table>
 </section>
