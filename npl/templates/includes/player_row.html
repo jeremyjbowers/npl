@@ -1,12 +1,11 @@
+{% load humanize %}
 <tr class="{% if p.options == '99'%}red{% endif %}">
-  <td style="text-align:center;">{% if p.is_roster_40_man %}<span class="icon"><i class="fa fa-check-circle" aria-hidden="true"></i></span>{% else %}<span class="icon"><i class="fa fa-times-circle-o" aria-hidden="true"></i></span>{% endif %}</td>
+  {% if team %}
+  <td style="text-align:center;">{% if p.is_roster_40_man %}<span class="icon"><i class="fa fa-check-circle" aria-hidden="true"></i></span>{% else %}<span class="icon"><i class="fa fa-times-circle-o" aria-hidden="true"></i></span>{% endif %}</td>{% endif %}
   <td>
-    <strong><a href="/players/{{ p.mlb_id }}/">{{ p.name }}</a></strong>&nbsp;
-  </td>
-  <td>
-    <small><a target="_blank" href="/admin/npl/player/{{ p.mlb_id }}/change/"> 
-      <span class="icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></span></a></small>
-    <small><a target="_blank" href="{{ p.mlb_url }}">MLB &rarr;</a></small>
+    <strong><a href="/players/{{ p.mlb_id }}/">{{ p.name }}</a></strong></br>
+    <small><a target="_blank" href="/admin/npl/player/{{ p.mlb_id }}/change/"><span class="icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></span></a></small>
+    <small><a target="_blank" href="{{ p.mlb_url }}">MLB&nbsp;&rarr;</a></small>
   </td>
   <td style="text-align:center;">{{ p.position|default_if_none:"" }}</td>
   <td style="text-align:center;">{{ p.age|default_if_none:"" }}</td>
@@ -15,5 +14,20 @@
     <td style="text-align:center;">{% if p.is_roster_40_man %}{{ p.mls_time|floatformat:"1" }}{% else %}{{ p.mls_year|default_if_none:"" }}{% endif %}</td>
     <td style="text-align:center;">{{ p.options|default_if_none:"" }}</td>
     <td style="text-align:center;">{{ p.status|default_if_none:""|upper }}</td>
+    <!-- contract stuff -->
+    {% if p.contract %}
+      {% for year in p.contract.years %}
+        <td style="text-align:center;">{% if year.amount != "-" %}${% endif %}{{ year.amount|intcomma }}</td>
+      {% endfor %}
+    {% else %}
+    <td style="text-align:center;">-</td>
+    <td style="text-align:center;">-</td>
+    <td style="text-align:center;">-</td>
+    <td style="text-align:center;">-</td>
+    <td style="text-align:center;">-</td>
+    <td style="text-align:center;">-</td>
+    <td style="text-align:center;">-</td>
+    <td style="text-align:center;">-</td>
+    {% endif %}
   {% endif %}
 </tr>

@@ -1,11 +1,40 @@
 <html>
     <head>
+        <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@100;200;300;400;500;600;700;800;900&family=Barlow:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
         <style type="text/css">
             /* tr.red td {
                 background-color: pink;
             } */
+            table.table tr td {
+                font-family: 'Barlow Condensed', sans-serif;
+                font-weight:300;
+            }
+            table.table tr td strong {
+                font-family: 'Barlow', sans-serif;
+                font-weight:700;
+            }
+            table.table tr th {
+                font-family: 'Barlow Condensed', sans-serif;
+                font-weight:700;
+            }
+            body {
+                font-family: 'Barlow', sans-serif;
+                font-weight:400;
+            }
+            .content h1, .title {
+                font-family: 'Barlow', sans-serif;
+                font-size:42px;
+                font-weight: 900;
+            }
+            .navbar-brand a strong {
+                font-family: 'Barlow', sans-serif;
+                font-size: 26px;
+                font-weight: 900;
+            }
         </style>
-        <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
     </head>
     <body>
         {% include "includes/nav.html" %}

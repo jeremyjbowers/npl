@@ -74,6 +74,7 @@ class Player(BaseModel):
     name = models.CharField(max_length=255)
     raw_name = models.CharField(max_length=255, blank=True, null=True)
     position = models.CharField(max_length=255, blank=True, null=True)
+    simple_position = models.CharField(max_length=255, blank=True, null=True)
     birthdate = models.DateField(blank=True, null=True)
     birthdate_qa = models.BooleanField(default=False)
     mlb_org = models.CharField(max_length=255, blank=True, null=True)
@@ -175,6 +176,33 @@ class Player(BaseModel):
             return f"https://www.fangraphs.com/statss.aspx?playerid={self.fg_id}"
         return None
 
+    @property
+    def contract(self):
+        try:
+            return Contract.objects.get(player=self)
+        except Contract.DoesNotExist:
+            pass
+        return None
+
+    def set_simple_position(self):
+        if self.position.upper() in ["P", "SP", "RP", "LHP", "RHP", "SR"]:
+            self.simple_position = "P"
+
+        if self.position.upper() in ["IF", "1B", "2B", "3B", "SS"]:
+            self.simple_position = "IF"
+
+        if self.position.upper() in ["OF", "CF", "LF", "RF"]:
+            self.simple_position = "OF"
+
+        if "/" in self.position:
+            self.simple_position = "UT"
+
+        if self.position.upper() in ["C", "CA"]:
+            self.simple_position = "C"
+
+        if self.position.upper() == "UT":
+            self.simple_position = "UT"
+
     def set_owned(self):
         if self.team == None:
             self.is_owned = False
@@ -201,6 +229,7 @@ class Player(BaseModel):
     def save(self, *args, **kwargs):
         self.set_name()
         self.set_owned()
+        self.set_simple_position()
 
         super().save(*args, **kwargs)
 
@@ -234,6 +263,14 @@ class Contract(BaseModel):
 
     def __unicode__(self):
         return f"Contract: {self.player.name} to {self.team.nickname} — {self.total_years}y, ${self.total_amount}"
+
+    def years(self):
+        base_years = 8
+        contract_years = [p for p in ContractYear.objects.filter(contract=self)]
+        extra_years = 8 - len(contract_years)
+        for year in range(1, extra_years+1):
+            contract_years.append({"amount": "-"})
+        return contract_years
 
 
 class ContractYear(BaseModel):
