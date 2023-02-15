@@ -13,6 +13,9 @@ from npl import models, utils
 class Command(BaseCommand):
     def handle(self, *args, **options):
         for p in models.Player.objects.filter(position__isnull=True):
+            """
+            http://statsapi.mlb.com/api/v1/teams/111/roster/fullRoster?season=2023
+            """
             print(f"{p.name}\t{p.mlb_api_url}")
             r = requests.get(p.mlb_api_url)
             player_json = r.json()['people'][0]

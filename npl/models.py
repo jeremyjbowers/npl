@@ -179,7 +179,7 @@ class Player(BaseModel):
     @property
     def contract(self):
         try:
-            return Contract.objects.get(player=self)
+            return Contract.objects.get(player=self, team=self.team)
         except Contract.DoesNotExist:
             pass
         return None
