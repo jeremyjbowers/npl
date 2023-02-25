@@ -23,17 +23,18 @@
     </div>
     </div>
 
-    <!-- <div class="navbar-end">
-    <div class="navbar-item">
-        <div class="buttons">
-        <a class="button is-primary">
-            <strong>Sign up</strong>
-        </a>
-        <a class="button is-light">
-            Log in
-        </a>
+    <div class="navbar-end">
+        <div class="navbar-item">
+        {% if user.is_authenticated %}
+            <div class="buttons">
+                <button class="button is-small" disabled>{{ user }}</button>
+                <!-- <a class="button is-success is-outlined is-small" href="/my/team/">My Team</a> -->
+                <a class="button is-danger is-small" href="/accounts/logout/">X</a>
+            </div>
+        {% else %}
+            <div class="buttons"><a class="button is-info is-small" href="/accounts/login/">Log in</a></div>
+        {% endif %}
         </div>
     </div>
-    </div> -->
 </div>
 </nav>

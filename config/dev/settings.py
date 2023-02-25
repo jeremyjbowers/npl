@@ -92,6 +92,13 @@ LOGIN_REDIRECT_URL = "/"
 LOGIN_URL = "/accounts/login/"
 LOGOUT_REDIRECT_URL = "/"
 
+EMAIL_BACKEND = 'django_mailgun_mime.backends.MailgunMIMEBackend'
+MAILGUN_API_KEY = os.environ.get("MAILGUN_API_KEY", None)
+MAILGUN_DOMAIN_NAME = 'mail.theulmg.com'
+DEFAULT_FROM_EMAIL = 'postmaster@mail.theulmg.com'
+SERVER_EMAIL = 'admin@mail.theulmg.com'
+
+
 # STATICFILES
 STATIC_URL = "/static/"
 STATIC_ROOT = "static/"
