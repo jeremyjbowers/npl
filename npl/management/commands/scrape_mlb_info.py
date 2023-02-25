@@ -12,22 +12,41 @@ from npl import models, utils
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        for p in models.Player.objects.filter(position__isnull=True):
+        for p in models.Player.objects.filter(mlb_org__isnull=True):
             """
             http://statsapi.mlb.com/api/v1/teams/111/roster/fullRoster?season=2023
             """
-            print(f"{p.name}\t{p.mlb_api_url}")
-            r = requests.get(p.mlb_api_url)
+            r = requests.get(p.mlb_api_url + "?hydrate=currentTeam,team")
             player_json = r.json()['people'][0]
-            p.position = player_json['primaryPosition']['abbreviation']
+
+            if player_json.get('currentTeam', None):
+                org_id = None
+
+                if player_json['currentTeam'].get('parentOrgId', None):
+                    org_id = player_json['currentTeam']['parentOrgId']
+                else:
+                    org_id = player_json['currentTeam']['id']
+
+                try:
+                    rorg = requests.get(f'https://statsapi.mlb.com/api/v1/teams/{org_id}')
+                    org_json = rorg.json()['teams'][0]
+                    p.mlb_org = org_json['abbreviation']
+                    p.save()
+                    print(p)
+                
+                except:
+                    pass
+
+                time.sleep(random.choice([1,2]))
+
             # p.birthdate = player_json['birthDate']
             # p.height = player_json['height']
             # p.weight = player_json['weight']
             # p.bats = player_json['batSide']['code']
             # p.throws = player_json['pitchHand']['code']
-            p.save()
+            # p.save()
             # time.sleep(random.choice([1,2,3]))
-            time.sleep(1)
+            # time.sleep(1)
 
             # transaction_rows = soup.select('section#transactions tr')
             # for row in transaction_rows:

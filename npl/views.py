@@ -18,8 +18,9 @@ from npl import models, utils
 def index(request):
     context = utils.build_context(request)
     unowned_players = models.Player.objects.filter(team__isnull=True)
-    context['pitchers'] = unowned_players.filter(simple_position="P").order_by('-is_roster_40_man', '-mls_time', 'mls_year')
-    context['hitters'] = unowned_players.exclude(simple_position="P").order_by('simple_position', '-is_roster_40_man', '-mls_time', 'mls_year')
+    context['total_count'] = unowned_players.count()
+    context['pitchers'] = unowned_players.filter(simple_position="P").order_by('last_name')
+    context['hitters'] = unowned_players.exclude(simple_position="P").order_by('simple_position', 'last_name')
     return render(request, "index.html", context)
 
 def player_detail(request, playerid):
@@ -32,6 +33,7 @@ def team_detail(request, nickname):
     context["team"] = get_object_or_404(models.Team, nickname__icontains=nickname)
 
     team_players = models.Player.objects.filter(team=context["team"])
+    context['total_count'] = team_players.count()
     context['hitters'] = team_players.exclude(simple_position="P").order_by('simple_position', '-is_roster_40_man', '-mls_time', 'mls_year')
     context['pitchers'] = team_players.filter(simple_position="P").order_by('-is_roster_40_man', '-mls_time', 'mls_year')
     return render(request, "team.html", context)
@@ -69,8 +71,7 @@ def search(request):
             query = query.filter(is_owned=to_bool(owned))
             context["owned"] = owned
 
-    query = query.order_by("position", "last_name")
-
-    context["hitters"] = query.exclude(simple_position="P")
-    context["pitchers"] = query.filter(simple_position="P")
+    context['total_count'] = query.count()
+    context["hitters"] = query.exclude(simple_position="P").order_by("simple_position", "last_name")
+    context["pitchers"] = query.filter(simple_position="P").order_by("last_name")
     return render(request, "search.html", context)

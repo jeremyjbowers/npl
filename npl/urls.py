@@ -5,6 +5,7 @@ from npl import views
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("players/search/", views.search),
     path("players/<str:playerid>/", views.player_detail),
     path("teams/<str:nickname>/", views.team_detail),
     path("", views.index),

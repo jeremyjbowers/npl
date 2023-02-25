@@ -1,10 +1,10 @@
 {% load humanize %}
-<tr class="{% if p.options == '99'%}red{% endif %}">
+<tr class="{% if p.options == '99'%} red{% endif %}{% if not team %}{% if p.team %} owned{% endif %}{% endif %}">
   {% if team %}
   <td style="text-align:center;">{% if p.is_roster_40_man %}<span class="icon"><i class="fa fa-check-circle" aria-hidden="true"></i></span>{% else %}<span class="icon"><i class="fa fa-times-circle-o" aria-hidden="true"></i></span>{% endif %}</td>
   {% endif %}
   <td>
-    <strong><a href="/players/{{ p.mlb_id }}/">{{ p.name }}</a></strong></br>
+    <strong><a href="/players/{{ p.mlb_id }}/">{{ p.name }}</a></strong>{% if not team %}{% if p.team %}<small> @ <strong><a href="/teams/{{ p.team.nickname|lower }}/">{{ p.team.nickname }}</a></strong></small>{% endif %}{% endif %}</br>
     <small><a target="_blank" href="/admin/npl/player/{{ p.mlb_id }}/change/"><span class="icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></span></a></small>
     <small><a target="_blank" href="{{ p.mlb_url }}">MLB&nbsp;&rarr;</a></small>
   </td>

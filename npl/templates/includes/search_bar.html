@@ -1,0 +1,50 @@
+<div class="section">
+    <form action="/players/search/">
+        <div class="field">
+            <div class="control">
+                <input style="width: 60%;" name="name" class="input is-large" type="text" placeholder="Search by name; blank returns all players" {% if name %}value="{{ name }}"{% endif %}>
+                <input type="submit" class="button is-large is-dark"></button>
+            </div>
+        </div>
+        <div class="field">
+            <div class="control">
+                <div style=""class="columns">
+                    <div class="column">
+                        <p class="has-text-weight-bold">Owned</p>
+                        <div class="select">
+                            <select name="owned">
+                                <option></option>
+                                <option value="yes"{% if owned == "yes" %} selected{% endif %}>yes</option>
+                                <option value="no"{% if owned == "no" %} selected{% endif %}>no</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="column">
+                        <p class="has-text-weight-bold">Position</p>
+                        <div class="select">
+                            <select name="position">
+                                <option></option>
+                                <option value="P"{% if position == "P" %} selected{% endif %}>P</option>
+                                <option value="H"{% if position == "H" %} selected{% endif %}>HITTERS</option>
+                                <option value="C"{% if position == "C" %} selected{% endif %}>C</option>
+                                <option value="IF"{% if position == "IF" %} selected{% endif %}>IF</option>
+                                <option value="UT"{% if position == "UT" %} selected{% endif %}>UT</option>
+                                <option value="OF"{% if position == "OF" %} selected{% endif %}>OF</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="column"></div>
+                    <div class="column"></div>
+                    <div class="column"></div>
+                    <div class="column"></div>
+                    <div class="column"></div>
+                    <div class="column"></div>
+                    <div class="column"></div>
+                    <div class="column"></div>
+                    <div class="column"></div>
+                </div>
+            </div>
+        </div>
+        {% if value %}<input name="value" type="text" value="true" hidden="true">{% endif %}
+    </form>
+</div>

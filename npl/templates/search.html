@@ -3,13 +3,16 @@
 {% block content %}
 <section class="hero" style="padding-top: 25px;">
     {% include "includes/search_bar.html" %}
+
+    {% if hitters or pitchers %}
     <nav class="level position-count">
         <div class="level-item has-text-centered">
             <div>
-              <p class="heading">Unowned</p>
+              <p class="heading">Total</p>
               <p class="title">{{ total_count }}</p>
             </div>
           </div>
+        {% if hitters %}
         {% regroup hitters by simple_position as position_players %}
         {% for position in position_players %}
         <div class="level-item has-text-centered">
@@ -19,16 +22,22 @@
           </div>
         </div>
         {% endfor %}
+        {% endif %}
+
+        {% if pitchers %}
         <div class="level-item has-text-centered">
             <div>
               <p class="heading">P</p>
               <p class="title"><a href="#position-p">{{ pitchers|length }}</a></p>
             </div>
           </div>
+          {% endif %}
       </nav>
       <hr>
+      {% endif %}
 </section>
 <section>
+    {% if hitters %}
     {% regroup hitters by simple_position as position_players %}
     {% for position in position_players %}
     <h1 class="title is-3" id="position-{{ position.grouper }}">{{ position.grouper }} ({{ position.list|length }}) <small><a href="#top">top &uarr;</a></small></h1>
@@ -47,6 +56,8 @@
         </tbody>
     </table>
     {% endfor %}
+    {% endif %}
+    {% if pitchers %}
     <h1 class="title is-3" id="position-p">Pitchers ({{ pitchers|length }})  <small><a href="#top">top &uarr;</a></small></h1>
     <table class="table">
         <thead>
@@ -62,5 +73,6 @@
         {% for p in pitchers %}{% include "includes/player_row.html" %}{% endfor %}
         </tbody>
     </table>
+    {% endif %}
 </section>
 {% endblock %}
