@@ -3,12 +3,24 @@
 {% block content %}
 <section class="hero" style="padding-top: 25px;">
     <h1>{{ team.name }}</h1>
-    <p><strong>Owners</strong>: {% for owner in team.owners.all %}{% if not forloop.first %}, {% endif %}{{ owner }}{% endfor %}</p>
+    <p><strong>Owner{% if team.owners.all|length > 1 %}s{% endif %}</strong>: {% for owner in team.owners.all %}{% if not forloop.first %}, {% endif %}{{ owner }}{% endfor %}</p>
 </section>
 <section>
     <hr>
     <nav class="level position-count">
-        {% regroup hitters by simple_position as position_players %}
+        <div class="level-item has-text-centered">
+            <div>
+              <p class="heading">Total</p>
+              <p class="title">{{ total_count }}</p>
+            </div>
+          </div>
+          <div class="level-item has-text-centered">
+            <div>
+              <p class="heading">40-man</p>
+              <p class="title">{{ roster_40_man_count }}</p>
+            </div>
+          </div>
+          {% regroup hitters by simple_position as position_players %}
         {% for position in position_players %}
         <div class="level-item has-text-centered">
           <div>

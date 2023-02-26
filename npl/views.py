@@ -34,6 +34,7 @@ def team_detail(request, nickname):
 
     team_players = models.Player.objects.filter(team=context["team"])
     context['total_count'] = team_players.count()
+    context['roster_40_man_count'] = team_players.filter(is_roster_40_man=True).count()
     context['hitters'] = team_players.exclude(simple_position="P").order_by('simple_position', '-is_roster_40_man', '-mls_time', 'mls_year')
     context['pitchers'] = team_players.filter(simple_position="P").order_by('-is_roster_40_man', '-mls_time', 'mls_year')
     return render(request, "team.html", context)

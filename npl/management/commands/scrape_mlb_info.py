@@ -12,13 +12,30 @@ from npl import models, utils
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        for p in models.Player.objects.filter(mlb_org__isnull=True):
+
+        for p in models.Player.objects.filter(birthdate__isnull=True):
             """
             http://statsapi.mlb.com/api/v1/teams/111/roster/fullRoster?season=2023
             """
             r = requests.get(p.mlb_api_url + "?hydrate=currentTeam,team")
             player_json = r.json()['people'][0]
 
+            p.birthdate = player_json['birthDate']
+            p.height = player_json['height']
+            p.weight = player_json['weight']
+            p.bats = player_json['batSide']['code']
+            p.throws = player_json['pitchHand']['code']
+            p.save()
+            print(p)
+
+            time.sleep(random.choice([1,2]))
+
+        for p in models.Player.objects.filter(mlb_org__isnull=True):
+            """
+            http://statsapi.mlb.com/api/v1/teams/111/roster/fullRoster?season=2023
+            """
+            r = requests.get(p.mlb_api_url + "?hydrate=currentTeam,team")
+            player_json = r.json()['people'][0]
             if player_json.get('currentTeam', None):
                 org_id = None
 
@@ -37,31 +54,6 @@ class Command(BaseCommand):
                 except:
                     pass
 
-                time.sleep(random.choice([1,2]))
+            time.sleep(random.choice([1,2]))
 
-            # p.birthdate = player_json['birthDate']
-            # p.height = player_json['height']
-            # p.weight = player_json['weight']
-            # p.bats = player_json['batSide']['code']
-            # p.throws = player_json['pitchHand']['code']
-            # p.save()
-            # time.sleep(random.choice([1,2,3]))
-            # time.sleep(1)
-
-            # transaction_rows = soup.select('section#transactions tr')
-            # for row in transaction_rows:
-            #     print(row.select('td'))
-            #     cells = row.select('td')
-            #     raw_date = cells[1].text
-            #     parsed_date = parse(raw_date).date
-            #     note = cells[2].text
-
-            #     try:
-            #         obj = models.Transaction.objects.get(player=p, date=parsed_date, is_mlb_transaction=True, note=note)
-            #     except models.Transaction.DoesNotExist:
-            #         obj = models.Transaction(player=p, date=parsed_date, is_mlb_transaction=True, notes=note)
-            #         obj.save()
-
-
-
-
+            
