@@ -17,9 +17,6 @@ class Command(BaseCommand):
         owners = [o for o in owners[8:] if is_owner(o)]
 
         for o in owners:
-            """
-            ['Defenestrations of Prague', 'Evan Brunell', '2009', 'evanbrunell@gmail.com', '@evanbrunell', '774-230-5851 (text only)', 'Worcester, MA', 'Communications Strategist, Worcester Polytechnic Institute']
-            """
 
             owner_dict = {}
             user_dict = {"email": None}

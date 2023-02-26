@@ -233,10 +233,19 @@ class Player(BaseModel):
 
         super().save(*args, **kwargs)
 
+class TransactionType(BaseModel):
+    transaction_type = models.CharField(max_length=255)
+
+    def __unicode__(self):
+        return self.transaction_type
+
 
 class Transaction(BaseModel):
     player = models.ForeignKey(Player, on_delete=models.CASCADE)
-    team = models.ForeignKey(Team, on_delete=models.CASCADE, blank=True, null=True)
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="team", null=True)
+    acquiring_team = models.ForeignKey(Team, on_delete=models.CASCADE, blank=True, null=True, related_name="acquiring_team")
+
+    transaction_type = models.ForeignKey(TransactionType, on_delete=models.CASCADE, null=True)
 
     raw_date = models.CharField(max_length=255, blank=True, null=True)
     date = models.DateField(blank=True, null=True)
@@ -247,7 +256,15 @@ class Transaction(BaseModel):
     notes = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return f"{self.date}: {self.player}"
+        if self.acquiring_team:
+            return f"{self.date}: {self.team} * {self.transaction_type} * {self.player} to {self.acquiring_team}"
+        return f"{self.date}: {self.team} * {self.transaction_type} * {self.player}"
+
+    def save(self, *args, **kwargs):
+        if self.raw_date and not self.date:
+            self.date = parser.parse(self.raw_date)
+
+        super().save(*args, **kwargs)
 
 class Contract(BaseModel):
     player = models.ForeignKey(Player, on_delete=models.CASCADE)
