@@ -7,12 +7,42 @@ from npl.models import (
     Owner,
     Player,
     Contract,
-    ContractYear
+    ContractYear,
+    Transaction,
+    TransactionType
 )
 
 admin.site.site_title = "The NPL"
 admin.site.site_header = "The NPL: Admin"
 admin.site.index_title = "Administer The NPL Website"
+
+@admin.register(TransactionType)
+class TransactionTypeAdmin(admin.ModelAdmin):
+    model = TransactionType
+    search_fields = ['transaction_type']
+
+@admin.register(Transaction)
+class TransactionAdmin(admin.ModelAdmin):
+    model = Transaction
+    list_display = ['date', 'transaction_type', 'calculated_player', 'calculated_team']
+    list_filter = ['date', 'team__nickname', 'transaction_type__transaction_type']
+    autocomplete_fields = ['team', 'acquiring_team', 'player', 'transaction_type']
+    fieldsets = (
+        (
+            None,
+            {
+                "fields": (
+                    ("date",),
+                    ("player"),
+                    ("team"),
+                    ("transaction_type"),
+                    ("acquiring_team"),
+                    ("notes")
+                ),
+            },
+        ),
+    )
+
 
 class ContractYearInline(admin.TabularInline):
     model = ContractYear
@@ -24,6 +54,7 @@ class ContractAdmin(admin.ModelAdmin):
     model = Contract
     list_display = ["player", "total_years", "total_amount", "team"]
     list_filter = ["team", "total_years"]
+    autocomplete_fields = ['team', 'player']
     inlines = [ContractYearInline]
 
 @admin.register(Player)

@@ -39,6 +39,12 @@ def team_detail(request, nickname):
     context['pitchers'] = team_players.filter(simple_position="P").order_by('-is_roster_40_man', '-mls_time', 'mls_year')
     return render(request, "team.html", context)
 
+def transactions(request):
+    context = utils.build_context(request)
+    context['transactions'] = models.Transaction.objects.all()
+
+    return render(request, 'transactions.html', context)
+
 def search(request):
     def to_bool(b):
         if b.lower() in ["y", "yes", "t", "true", "on"]:

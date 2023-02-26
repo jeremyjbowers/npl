@@ -142,8 +142,8 @@ class Player(BaseModel):
 
     def __unicode__(self):
         if self.team:
-            return "%s (%s)" % (self.name, self.team.nickname)
-        return self.name
+            return f"{self.position} {self.name} {self.mlb_org} ({self.team.nickname})"
+        return f"{self.position} {self.name} {self.mlb_org}"
 
     @property
     def mlb_image_url(self):
@@ -236,33 +236,98 @@ class Player(BaseModel):
 class TransactionType(BaseModel):
     transaction_type = models.CharField(max_length=255)
 
+
+    class Meta():
+        ordering = ['transaction_type']
+
     def __unicode__(self):
         return self.transaction_type
 
 
 class Transaction(BaseModel):
-    player = models.ForeignKey(Player, on_delete=models.CASCADE)
-    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="team", null=True)
-    acquiring_team = models.ForeignKey(Team, on_delete=models.CASCADE, blank=True, null=True, related_name="acquiring_team")
-
-    transaction_type = models.ForeignKey(TransactionType, on_delete=models.CASCADE, null=True)
-
     raw_date = models.CharField(max_length=255, blank=True, null=True)
     date = models.DateField(blank=True, null=True)
 
-    is_npl_transaction = models.BooleanField(default=False)
-    is_mlb_transaction = models.BooleanField(default=False)
+    raw_player = models.CharField(max_length=255, blank=True, null=True)
+    player = models.ForeignKey(Player, on_delete=models.CASCADE, blank=True, null=True)
+
+    cash_considerations = models.IntegerField(blank=True, null=True)
+
+    raw_draft_pick = models.CharField(max_length=255, blank=True, null=True)
+    # draft_pick = models.ForeignKey(DraftPick, on_delete=models.CASCADE)
+
+    raw_team = models.CharField(max_length=255, blank=True, null=True)
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="team", null=True)
+
+    raw_acquiring_team = models.CharField(max_length=255, blank=True, null=True)
+    acquiring_team = models.ForeignKey(Team, on_delete=models.CASCADE, blank=True, null=True, related_name="acquiring_team")
+
+    raw_transaction_type = models.CharField(max_length=255, blank=True, null=True)
+    transaction_type = models.ForeignKey(TransactionType, on_delete=models.CASCADE, null=True)
+
+    is_archive_transaction = models.BooleanField(default=False)
 
     notes = models.TextField(null=True, blank=True)
+
+    class Meta():
+        ordering = ['-date', 'transaction_type__transaction_type']
+
 
     def __unicode__(self):
         if self.acquiring_team:
             return f"{self.date}: {self.team} * {self.transaction_type} * {self.player} to {self.acquiring_team}"
         return f"{self.date}: {self.team} * {self.transaction_type} * {self.player}"
 
+    @property
+    def calculated_player(self):
+        if self.player:
+            return self.player
+        return self.raw_player
+
+    @property
+    def calculated_team(self):
+        if self.team:
+            return self.team
+        return self.raw_team
+
+    @property
+    def calculated_acquiring_team(self):
+        if self.acquiring_team:
+            return self.acquiring_team
+        return self.raw_acquiring_team
+
+    def set_player(self):
+        pass
+
+    def set_team(self):
+        if self.raw_team and not self.team:
+            team = self.raw_team
+            if self.raw_team == "Hyperjets":
+                team = "DockHounds"
+            try:
+                self.team = Team.objects.get(nickname__icontains=team)
+
+            except Team.DoesNotExist:
+                pass 
+
+    def set_acquiring_team(self):
+        if self.raw_acquiring_team and not self.acquiring_team:
+            team = self.raw_acquiring_team
+            if self.raw_team == "Hyperjets":
+                team = "DockHounds"
+            try:
+                self.acquiring_team = Team.objects.get(nickname__icontains=team)
+
+            except Team.DoesNotExist:
+                pass
+
     def save(self, *args, **kwargs):
         if self.raw_date and not self.date:
             self.date = parser.parse(self.raw_date)
+
+        self.set_team()
+        self.set_acquiring_team()
+        self.set_player()
 
         super().save(*args, **kwargs)
 

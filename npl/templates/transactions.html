@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section>
+    <table class="table">
+        <thead>
+            <th style="text-align:center;">date</th>
+            <th style="text-align:center;">team</th>
+            <th style="text-align:center;">player</th>
+            <th style="text-align:center;">transaction</th>
+            <th style="text-align:center;">acquiring team</th>
+            <th style="text-align:center;">notes</th>
+        </thead>
+        <tbody>
+            {% for t in transactions %}
+            <tr>
+                <td style="text-align:center;">{{ t.date }}</td>
+                <td style="text-align:center;">{{ t.calculated_team }}</td>
+                <td>{{ t.calculated_player }}</td>
+                <td style="text-align:center;">{{ t.transaction_type }}</td>
+                <td style="text-align:center;">{{ t.calculated_acquiring_team|default_if_none:"-" }}</td>
+                <td>{{ t.notes|default_if_none:"-" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+{% endblock %}
