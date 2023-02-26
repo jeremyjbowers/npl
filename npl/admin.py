@@ -61,7 +61,7 @@ class TeamAdmin(admin.ModelAdmin):
     model = Team
     list_display = ["name", "division", "league"]
     list_filter = ["division", "league"]
-    search_fields = ["name", "owner"]
+    search_fields = ["name"]
     fieldsets = (
         (
             None,
@@ -71,6 +71,7 @@ class TeamAdmin(admin.ModelAdmin):
                     "nickname",
                     "division",
                     "league",
+                    "tab_id",
                     "owners",
                 ),
             },

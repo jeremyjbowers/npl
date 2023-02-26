@@ -14,11 +14,16 @@ class Command(BaseCommand):
             team_players = [row for row in team_players if utils.is_player(row)]
 
             for p in team_players:
+                player_obj = None
                 if len(p) > 9:
                     contract_cells = p[9:]
                     contract_years = [{"year": v, "amount": utils.dollars_to_ints(k)} for k,v in list(zip(contract_cells, year_cols)) if k.strip() != ""]
-                    player_obj = models.Player.objects.get(mlb_id=p[3].strip())
+                    if p[3].strip():
+                        if p[3].strip() != "-":
+                            player_obj = models.Player.objects.get(mlb_id=p[3].strip())
 
+                    if not player_obj:
+                        player_obj = models.Player.objects.get(scoresheet_id=p[2].strip())
 
                     try:
                         c_obj = models.Contract.objects.get(team=t, player=player_obj)

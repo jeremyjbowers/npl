@@ -27,12 +27,12 @@
         <div class="navbar-item">
         {% if user.is_authenticated %}
             <div class="buttons">
-                <button class="button is-small" disabled>{{ user }}</button>
+                <button class="button is-small is-outlined is-static">{{ user }}</button>
                 <!-- <a class="button is-success is-outlined is-small" href="/my/team/">My Team</a> -->
-                <a class="button is-danger is-small" href="/accounts/logout/">X</a>
+                <a class="button is-danger is-small" href="/accounts/logout/">Log out</a>
             </div>
         {% else %}
-            <div class="buttons"><a class="button is-info is-small" href="/accounts/login/">Log in</a></div>
+            <div class="buttons"><a class="button is-success is-small" href="/accounts/login/">Log in</a></div>
         {% endif %}
         </div>
     </div>
