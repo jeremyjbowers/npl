@@ -111,14 +111,15 @@ QUILL_CONFIGS = {
             'syntax': True,
             'toolbar': [
                 [
-                    {'font': []},
-                    {'header': []},
-                    {'align': []},
-                    'bold', 'italic', 'underline', 'strike', 'blockquote',
-                    {'color': []},
-                    {'background': []},
+                    { 'header': [] },
+                    'bold', 'italic', 'underline', 'strike',
                 ],
-                ['code-block', 'link'],
+                [
+                    {'align': []},
+                    { 'list': 'ordered'}, { 'list': 'bullet' },
+                    { 'indent': '-1'}, { 'indent': '+1' },
+                ],
+                ['code-block', 'blockquote', 'link'],
                 ['clean'],
             ]
         }
