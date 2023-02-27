@@ -5,7 +5,7 @@
   {% endif %}
   <td>
     <strong><a href="/players/{{ p.mlb_id }}/">{{ p.name }}</a></strong>{% if not team %}{% if p.team %}<small> @ <strong><a href="/teams/{{ p.team.nickname|lower }}/">{{ p.team.nickname }}</a></strong></small>{% endif %}{% endif %}</br>
-    <small><a target="_blank" href="/admin/npl/player/{{ p.mlb_id }}/change/"><span class="icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></span></a></small>
+    {% if user.is_staff %}<small><a target="_blank" href="/admin/npl/player/{{ p.mlb_id }}/change/"><span class="icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></span></a></small>{% endif %}
     <small><a target="_blank" href="{{ p.mlb_url }}">MLB&nbsp;&rarr;</a></small>
   </td>
   <td style="text-align:center;">{{ p.position|default_if_none:"" }}</td>

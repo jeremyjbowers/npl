@@ -8,7 +8,9 @@
 
     {% for page in collection.list %}
     <div class="block">
-        <h1 class="title is-4">Post: <a href="/pages/{{ page.slug }}/">{{ page.title }}</a></h1>
+        <h1 class="title is-4">Post: <a href="/pages/{{ page.slug }}/">{{ page.title }}</a>
+            {% if user.is_staff %}<small><a target="_blank" href="/admin/npl/page/{{ page.id }}/change/"><span class="icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></span></a></small>{% endif %}
+        </h1>
         <div class="content">{{ page.summary.html|safe }}
             <time>{{ page.last_modified|date:"N j, Y" }}</time>
         </div>
