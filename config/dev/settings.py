@@ -12,6 +12,8 @@ DEBUG = os.environ.get("DEBUG", True)
 ALLOWED_HOSTS = ["*"]
 CSRF_TRUSTED_ORIGINS = ['https://*.ngrok.io', 'http://127.0.0.1']
 
+SITE_ID = 1
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -21,8 +23,11 @@ INSTALLED_APPS = [
     "django.contrib.postgres",
     "django.contrib.humanize",
     "django.contrib.staticfiles",
+    "django.contrib.sites",
+    "django_quill",
+    "reversion",
     "npl",
-    "users"
+    "users",
 ]
 
 MIDDLEWARE = [
@@ -97,6 +102,28 @@ MAILGUN_API_KEY = os.environ.get("MAILGUN_API_KEY", None)
 MAILGUN_DOMAIN_NAME = 'mail.theulmg.com'
 DEFAULT_FROM_EMAIL = 'postmaster@mail.theulmg.com'
 SERVER_EMAIL = 'admin@mail.theulmg.com'
+
+# PAGES
+QUILL_CONFIGS = {
+    'default':{
+        'theme': 'snow',
+        'modules': {
+            'syntax': True,
+            'toolbar': [
+                [
+                    {'font': []},
+                    {'header': []},
+                    {'align': []},
+                    'bold', 'italic', 'underline', 'strike', 'blockquote',
+                    {'color': []},
+                    {'background': []},
+                ],
+                ['code-block', 'link'],
+                ['clean'],
+            ]
+        }
+    }
+}
 
 
 # STATICFILES

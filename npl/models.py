@@ -5,9 +5,11 @@ from dateutil.relativedelta import *
 from django.db import models
 from django.contrib.postgres.fields import JSONField, ArrayField
 from django.db.models.signals import post_save, m2m_changed
+from django.utils.text import slugify
 from django.dispatch import receiver
 from django.conf import settings
 from nameparser import HumanName
+from django_quill.fields import QuillField
 
 from npl import utils
 from users.models import User
@@ -144,6 +146,24 @@ class Player(BaseModel):
         if self.team:
             return f"{self.position} {self.name} {self.mlb_org} ({self.team.nickname})"
         return f"{self.position} {self.name} {self.mlb_org}"
+
+    @property
+    def level(self):
+        if self.team:
+            if self.is_roster_40_man:
+                return "MLB"
+
+            if self.mls_year:
+                try:
+                    if datetime.datetime.now().year - 1 < int(self.mls_year) < datetime.datetime.now().year + 2:
+                        return "AA"
+                    if int(self.mls_year) >= datetime.datetime.now().year + 2:
+                        return "A"
+                except:
+                    pass
+            return "AAA"
+        return None
+
 
     @property
     def mlb_image_url(self):
@@ -362,3 +382,46 @@ class ContractYear(BaseModel):
 
     def __unicode__(self):
         return f"{self.year}: {self.contract.player.name}"
+
+class Collection(BaseModel):
+    name = models.CharField(max_length=255)
+    slug = models.CharField(max_length=255)
+
+    class Meta:
+        ordering = ["-name"]
+
+    def __unicode__(self):
+        return f"{self.name}"
+
+    def slugify(self):
+        self.slug = slugify(self.name)
+
+    def save(self, *args, **kwargs):
+        self.slugify()
+
+        super().save(*args, **kwargs)
+
+    @property
+    def pages(self):
+        return Page.objects.filter(collection=self)
+
+class Page(BaseModel):
+    title = models.CharField(max_length=255)
+    slug = models.CharField(max_length=255)
+    collection = models.ForeignKey(Collection, on_delete=models.SET_NULL, blank=True, null=True)
+    summary = QuillField(blank=True,null=True)
+    body = QuillField()
+
+    class Meta:
+        ordering = ["-title"]
+
+    def __unicode__(self):
+        return f"{self.title} — {self.last_modified}"
+
+    def slugify(self):
+        self.slug = slugify(self.title)
+
+    def save(self, *args, **kwargs):
+        self.slugify()
+
+        super().save(*args, **kwargs)

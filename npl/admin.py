@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django import forms
 from django.contrib.postgres.fields import JSONField
+from reversion.admin import VersionAdmin
 
 from npl.models import (
     Team,
@@ -9,12 +10,52 @@ from npl.models import (
     Contract,
     ContractYear,
     Transaction,
-    TransactionType
+    TransactionType,
+    Page,
+    Collection
 )
 
 admin.site.site_title = "The NPL"
 admin.site.site_header = "The NPL: Admin"
 admin.site.index_title = "Administer The NPL Website"
+
+@admin.register(Collection)
+class CollectionAdmin(admin.ModelAdmin):
+    model = Collection
+    search_fields = ["name"]
+    list_display = ["name"]
+    fieldsets = (
+        (
+            None,
+            {
+                "fields": (
+                    "name",
+                ),
+            },
+        ),
+    )
+
+@admin.register(Page)
+class PageAdmin(VersionAdmin):
+    model = Page
+    search_fields = ['title', 'body', 'collection']
+    list_display = ['title', 'created', 'last_modified', 'collection']
+    list_filter = ['collection']
+    autocomplete_fields = ['collection']
+    fieldsets = (
+        (
+            None,
+            {
+                "fields": (
+                    "title",
+                    "summary",
+                    "collection",
+                    "body",
+                    "active"
+                ),
+            },
+        ),
+    )
 
 @admin.register(TransactionType)
 class TransactionTypeAdmin(admin.ModelAdmin):

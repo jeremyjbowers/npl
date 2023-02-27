@@ -1,0 +1,26 @@
+{% extends "base.html" %} 
+
+{% block content %} 
+    {% regroup pages by collection as collection_pages %}
+    {% for collection in collection_pages %}
+    <section class="block">
+    <h1 class="title is-2">{{ collection.grouper }}</h1>
+
+    {% for page in collection.list %}
+    <div class="block">
+        <h1 class="title is-4">Post: <a href="/pages/{{ page.slug }}/">{{ page.title }}</a></h1>
+        <div class="content">{{ page.summary.html|safe }}
+            <time>{{ page.last_modified|date:"N j, Y" }}</time>
+        </div>
+        <!-- <div class="field is-grouped is-grouped-multiline">
+            <div class="control">
+                <div class="tags has-addons">
+                <span class="tag is-light">updated</span>
+                <span class="tag">{{ page.last_modified|date:"N j, Y @ g:i A" }}</span>
+                </div>
+            </div>
+        </div> -->
+    {% endfor %}
+    </section>
+    {% endfor %}
+{% endblock %}

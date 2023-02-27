@@ -15,6 +15,16 @@ from datetime import datetime
 
 from npl import models, utils
 
+def npl_page_list(request):
+    context = utils.build_context(request)
+    context['pages'] = models.Page.objects.all().order_by('-collection__name, title')
+    return render(request, "page_list.html", context)
+
+def npl_page_detail(request, slug):
+    context = utils.build_context(request)
+    context['page'] = get_object_or_404(models.Page, slug=slug)
+    return render(request, "page_detail.html", context)
+
 def index(request):
     context = utils.build_context(request)
     unowned_players = models.Player.objects.filter(team__isnull=True)
