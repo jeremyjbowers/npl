@@ -17,7 +17,7 @@ from npl import models, utils
 
 def npl_page_list(request):
     context = utils.build_context(request)
-    context['pages'] = models.Page.objects.all().order_by('-collection__name, title')
+    context['pages'] = models.Page.objects.filter(active=True).order_by('-collection__name, title')
     return render(request, "page_list.html", context)
 
 def npl_page_detail(request, slug):
