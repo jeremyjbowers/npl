@@ -425,3 +425,16 @@ class Page(BaseModel):
         self.slugify()
 
         super().save(*args, **kwargs)
+
+
+class Event(BaseModel):
+    date = models.DateField()
+    title = models.CharField(max_length=255)
+    collection = models.ForeignKey(Collection, on_delete=models.SET_NULL, blank=True, null=True)
+    body = QuillField(blank=True, null=True)
+
+    class Meta:
+        ordering = ['-date']
+
+    def __unicode__(self):
+        return f"{self.date}: {self.title}"

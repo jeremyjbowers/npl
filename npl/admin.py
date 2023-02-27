@@ -12,12 +12,36 @@ from npl.models import (
     Transaction,
     TransactionType,
     Page,
-    Collection
+    Collection,
+    Event
 )
 
 admin.site.site_title = "The NPL"
 admin.site.site_header = "The NPL: Admin"
 admin.site.index_title = "Administer The NPL Website"
+
+@admin.register(Event)
+class EventAdmin(VersionAdmin):
+    model = Event
+    search_fields = ['title', 'body']
+    list_display = ['date', 'title', 'collection', 'active']
+    list_editable = ['active']
+    list_filter = ['collection']
+    autocomplete_fields = ['collection']
+    fieldsets = (
+        (
+            None,
+            {
+                "fields": (
+                    "date",
+                    "title",
+                    "collection",
+                    "body",
+                    "active"
+                ),
+            },
+        ),
+    )
 
 @admin.register(Collection)
 class CollectionAdmin(admin.ModelAdmin):

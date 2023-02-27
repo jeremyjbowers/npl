@@ -31,6 +31,8 @@ def index(request):
     context['total_count'] = unowned_players.count()
     context['pitchers'] = unowned_players.filter(simple_position="P").order_by('last_name')
     context['hitters'] = unowned_players.exclude(simple_position="P").order_by('simple_position', 'last_name')
+    context['events'] = models.Event.objects.filter(active=True).order_by('date')[:8]
+    context['transactions'] = models.Transaction.objects.all().order_by('-date')[:6]
     return render(request, "index.html", context)
 
 def player_detail(request, playerid):

@@ -1,66 +1,49 @@
 {% extends "base.html" %}
+{% load humanize %}
 
 {% block content %}
-<section class="hero" style="padding-top: 25px;">
-    {% include "includes/search_bar.html" %}
-    <nav class="level position-count">
-        <div class="level-item has-text-centered">
-            <div>
-              <p class="heading">Unowned</p>
-              <p class="title">{{ total_count }}</p>
-            </div>
-          </div>
-        {% regroup hitters by simple_position as position_players %}
-        {% for position in position_players %}
-        <div class="level-item has-text-centered">
-          <div>
-            <p class="heading">{{ position.grouper }}</p>
-            <p class="title"><a href="#position-{{ position.grouper }}">{{ position.list|length }}</a></p>
-          </div>
+<section class="block" style="padding-top:25px;">
+<div class="tile is-ancestor">
+  <div class="tile is-vertical is-16">
+    <div class="tile is-parent">
+      <article class="tile is-child notification is-light is-primary">
+        <p class="title">Player search</p>
+        <p class="subtitle">Tracking {{ total_count|intcomma }} unowned players in our database</p>
+        <div class="content">
+          {% include "includes/search_bar.html" %}
         </div>
-        {% endfor %}
-        <div class="level-item has-text-centered">
-            <div>
-              <p class="heading">P</p>
-              <p class="title"><a href="#position-p">{{ pitchers|length }}</a></p>
-            </div>
-          </div>
-      </nav>
-      <hr>
-</section>
-<section>
-    {% regroup hitters by simple_position as position_players %}
-    {% for position in position_players %}
-    <h1 class="title is-3" id="position-{{ position.grouper }}">{{ position.grouper }} ({{ position.list|length }}) <small><a href="#top">top &uarr;</a></small></h1>
-    <table class="table">
-        <thead>
-            <th style="text-align:center;">player</th>
-            <th style="text-align:center;">position</th>
-            <th style="text-align:center;">age</th>
-            <th style="text-align:center;">mlb</th>
-            <th style="text-align:center;">mls</th>
-            <th style="text-align:center;">opt</th>
-            <th style="text-align:center;">stat</th>
-        </thead>
-        <tbody>
-        {% for p in position.list %}{% include "includes/player_row.html" %}{% endfor %}
-        </tbody>
-    </table>
-    {% endfor %}
-    <h1 class="title is-3" id="position-p">Pitchers ({{ pitchers|length }})  <small><a href="#top">top &uarr;</a></small></h1>
-    <table class="table">
-        <thead>
-            <th style="text-align:center;">player</th>
-            <th style="text-align:center;">position</th>
-            <th style="text-align:center;">age</th>
-            <th style="text-align:center;">mlb</th>
-            <th style="text-align:center;">mls</th>
-            <th style="text-align:center;">opt</th>
-            <th style="text-align:center;">stat</th>
-        </thead>
-        <tbody>
-        {% for p in pitchers %}{% include "includes/player_row.html" %}{% endfor %}
-        </tbody>
-    </table>
+      </article>
+    </div>
+    <div class="tile">
+      <div class="tile is-parent is-vertical">
+        <article class="tile is-child notification is-light is-warning">
+          <p class="title">Recent transactions</p>
+          {% regroup transactions by date as date_transactions %}
+
+          {% for date in date_transactions %}
+          <p>
+            <h1 class="title is-6">{{ date.grouper }}</h1>
+            <ul>
+            {% for t in date.list %}
+            <li><strong>{{ t.transaction_type }}</strong>: {{ t.calculated_team }} &rarr; {{ t.calculated_player }}{% if t.calculated_acquiring_team %} &rarr; {{ t.calculated_acquiring_team }}{% endif %}</li>
+            {% endfor %}
+            </ul>
+          </p>
+          {% endfor %}
+        </article>
+      </div>
+      <div class="tile is-parent">
+        <article class="tile is-child notification is-light is-info">
+          <p class="title">Events</p>
+          <p>
+            <ul>
+              {% for e in events %}<li><strong>{{ e.date }}</strong>: {{ e.title }}</li>{% endfor %}
+            </ul>
+          </p>
+        </article>
+      </div>
+    </div>
+  </div>
+</div>
 </section>
 {% endblock %}
