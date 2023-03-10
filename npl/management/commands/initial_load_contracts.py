@@ -7,6 +7,22 @@ from npl import models, utils
 class Command(BaseCommand):
     def handle(self, *args, **options):
 
+        CROSSWALK = {
+            "Duno, Alfredo": "806957",
+            "Valdez, Derniche": "806961",
+            "Rodriguez, Jose": "800412",
+            "Vargas, Marco": "804614",
+            "Weiss, Zack": "592848",
+            "Figuereo, Gleider": "699213",
+            "Guerrero, Brailer": "806967",
+            "Burrowes, Ryan": "802018",
+            "Morales, Luis": "806960",
+            "Guerrero, Pablo": "808326",
+            "Francisca, Welbyn": "806988",
+            "Cespedes, Yoelin": "806985",
+            "Pegero, Antony": "803433",
+        }
+
         year_cols = ["2023","2024","2025","2026","2027","2028","2029","2030"]
 
         for t in models.Team.objects.all():
@@ -23,8 +39,14 @@ class Command(BaseCommand):
                             player_obj = models.Player.objects.get(mlb_id=p[3].strip())
 
                     if not player_obj:
-                        player_obj = models.Player.objects.get(scoresheet_id=p[2].strip())
 
+                        try:
+                            player_obj = models.Player.objects.get(scoresheet_id=p[2].strip())
+
+                        except models.Player.DoesNotExist:
+                            if CROSSWALK.get(p[1].strip(), None):
+                                player_obj = models.Player.objects.get(mlb_id=CROSSWALK.get(p[1].strip(), None))
+                                
                     try:
                         c_obj = models.Contract.objects.get(team=t, player=player_obj)
 

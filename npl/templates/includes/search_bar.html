@@ -2,7 +2,7 @@
     <form action="/players/search/">
         <div class="field">
             <div class="control">
-                <input style="width: 60%;" name="name" class="input is-large" type="text" placeholder="Search by name; blank returns all players" {% if name %}value="{{ name }}"{% endif %}>
+                <input style="width: 60%;" name="name" class="input is-large" type="text" placeholder="Search name; blank for all" {% if name %}value="{{ name }}"{% endif %}>
                 <input type="submit" class="button is-large is-dark"></button>
             </div>
         </div>

@@ -4,9 +4,9 @@
 {% block content %}
 <section class="block" style="padding-top:25px;">
 <div class="tile is-ancestor">
-  <div class="tile is-vertical is-16">
+  <div class="tile is-vertical is-8">
     <div class="tile is-parent">
-      <article class="tile is-child notification is-light is-primary">
+      <article class="tile is-child notification is-light">
         <p class="title">Player search</p>
         <p class="subtitle">Tracking {{ total_count|intcomma }} unowned players in our database</p>
         <div class="content">
@@ -17,19 +17,6 @@
     <div class="tile">
       <div class="tile is-parent is-vertical">
         <article class="tile is-child notification is-light is-warning">
-          <p class="title">Recent transactions</p>
-          {% regroup transactions by date as date_transactions %}
-
-          {% for date in date_transactions %}
-          <p>
-            <h1 class="title is-6">{{ date.grouper }}</h1>
-            <ul>
-            {% for t in date.list %}
-            <li><strong>{{ t.transaction_type }}</strong>: {{ t.calculated_team }} &rarr; {{ t.calculated_player }}{% if t.calculated_acquiring_team %} &rarr; {{ t.calculated_acquiring_team }}{% endif %}</li>
-            {% endfor %}
-            </ul>
-          </p>
-          {% endfor %}
         </article>
       </div>
       <div class="tile is-parent">
@@ -44,6 +31,20 @@
       </div>
     </div>
   </div>
+
+  <div class="tile is-parent">
+    <article class="tile is-child notification is-light is-success">
+      <div class="content">
+        <p class="title"><a href="/transactions/">Transactions</a></p>
+          {% for t in transactions %}
+          <p>
+          {{ t.date }}: <strong>{{ t.transaction_type }}</strong><br/><a href="/transactions/#transaction-{{ t.id }}">{{ t.calculated_team }} &larr; {{ t.calculated_player }}{% if t.calculated_acquiring_team %} &larr; {{ t.calculated_acquiring_team }}{% endif %}
+          </a></p>
+          {% endfor %}
+      </div>
+    </article>
+  </div>
+  
 </div>
 </section>
 {% endblock %}

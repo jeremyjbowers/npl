@@ -14,7 +14,7 @@
         <tbody>
             {% for t in transactions %}
             <tr>
-                <td style="text-align:center;">{{ t.date }}</td>
+                <td style="text-align:center;" id="transaction-{{ t.id }}">{{ t.date }}</td>
                 <td style="text-align:center;">{{ t.calculated_team }}</td>
                 <td>{{ t.calculated_player }}</td>
                 <td style="text-align:center;">{{ t.transaction_type }}</td>

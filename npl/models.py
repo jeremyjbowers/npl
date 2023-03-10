@@ -307,13 +307,13 @@ class Transaction(BaseModel):
     @property
     def calculated_team(self):
         if self.team:
-            return self.team
+            return self.team.nickname
         return self.raw_team
 
     @property
     def calculated_acquiring_team(self):
         if self.acquiring_team:
-            return self.acquiring_team
+            return self.acquiring_team.nickname
         return self.raw_acquiring_team
 
     def set_player(self):
