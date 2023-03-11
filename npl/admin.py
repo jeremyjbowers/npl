@@ -29,6 +29,7 @@ class NonMLBAuctionBidInline(admin.TabularInline):
     exclude = ("active",)
     extra = 0
     autocomplete_fields = ['team']
+    readonly_fields = ('last_modified',)
 
 
 class MLBAuctionBidInline(admin.TabularInline):
@@ -36,6 +37,7 @@ class MLBAuctionBidInline(admin.TabularInline):
     exclude = ("active",)
     extra = 0
     autocomplete_fields = ['team']
+    readonly_fields = ('last_modified',)
 
 
 @admin.register(Auction)

@@ -477,22 +477,35 @@ class Auction(BaseModel):
 
     def max_bid(self):
         if self.is_mlb_auction:
-            bids = MLBAuctionBid.objects.filter(auction=self).order_by('-max_bid')
+            bids = MLBAuctionBid.objects.filter(auction=self).order_by('-max_bid', 'last_modified')
+            if len(bids) > 0:
+                return (bids[0].team.pk, bids[0].max_bid)
+            return (None, 0)
+
+        bids = NonMLBAuctionBid.objects.filter(auction=self).order_by('-max_bid', 'last_modified')
+        if len(bids) > 0:
+            return (bids[0].team.pk, bids[0].max_bid)
+        getcontext().prec = 1
+        return (None, Decimal('0.0'))
+
+    def leading_bid(self):
+        if self.is_mlb_auction:
+            bids = MLBAuctionBid.objects.filter(auction=self).order_by('-max_bid', 'last_modified')
             if len(bids) > 0:
                 if len(bids) == 1:
-                    return bids[0].max_bid
+                    return (bids[0].team.pk, bids[0].max_bid)
                 else:
-                    return bids[1].max_bid + 1
-            return 0
+                    return (bids[0].team.pk, bids[1].max_bid + 1)
+            return (None, 0)
 
-        bids = NonMLBAuctionBid.objects.filter(auction=self).order_by('-max_bid')
+        bids = NonMLBAuctionBid.objects.filter(auction=self).order_by('-max_bid', 'last_modified')
         if len(bids) > 0:
             if len(bids) == 1:
-                return bids[0].max_bid
+                return (bids[0].team.pk, bids[0].max_bid)
             else:
-                return bids[1].max_bid + Decimal('0.1')
+                return (bids[0].team.pk, bids[1].max_bid + Decimal('0.1'))
         getcontext().prec = 1
-        return Decimal('0.0')
+        return (None, Decimal('0.0'))
 
 
 class MLBAuctionBid(BaseModel):

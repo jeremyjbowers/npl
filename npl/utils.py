@@ -31,6 +31,7 @@ def build_context(request):
         try:
             owner = models.Owner.objects.get(user=request.user)
             context["owner"] = owner
+            context['team'] = models.Team.objects.get(owners=owner)
         except models.Owner.DoesNotExist:
             pass
 

@@ -9,12 +9,118 @@ from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.http import JsonResponse
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from decimal import *
 
 import ujson as json
 from datetime import datetime
 import pytz
 
 from npl import models, utils
+
+def auction_bid_api(request, auctionid):
+    now = datetime.now(pytz.timezone('US/Eastern'))
+    payload = {
+        "message": None,
+        "success": False,
+        "auction": {
+            "is_mlb_auction": None,
+            "closes": None,
+            "player": None
+        },
+        "bid": None,
+        "bid_team": None,
+        "bid_team_nick": None,
+        "leading_bid": None,
+        "leading_bid_team": None,
+        "leading_bid_team_nick": None,
+        "max_bid": None,
+        "max_bid_team": None,
+        "max_bid_team_nick": None,
+    }
+    context = utils.build_context(request)
+    context['time'] = now
+
+    # return a 404 if there's no matching auction
+    auction = get_object_or_404(models.Auction, pk=auctionid)
+
+    # auction is still alive and there is an active owner with an associated team
+    if auction.closes >= now and context['owner'] and context['team']:
+
+        payload['auction']['player'] = auction.player.name
+        payload['auction']['closes'] = auction.closes
+        payload['auction']['is_mlb_auction'] = auction.is_mlb_auction
+        payload['bid'] = request.GET.get('bid', None)
+
+        payload['max_bid'] = auction.max_bid()[1]
+        payload['max_bid_team'] = auction.max_bid()[0]
+        payload['max_bid_team_nick'] = models.Team.objects.get(id=payload['max_bid_team']).nickname
+
+        payload['leading_bid'] = auction.leading_bid()[1]
+        payload['leading_bid_team'] = auction.leading_bid()[0]
+        payload['leading_bid_team_nick'] = models.Team.objects.get(id=payload['leading_bid_team']).nickname
+
+        payload['bid_team'] = context['team'].pk
+        payload['bid_team_nick'] = context['team'].nickname
+
+        # determine if this is an MLB or NonMLB auction bid
+        if auction.is_mlb_auction:
+            obj = models.MLBAuctionBid
+            payload['bid'] = int(payload['bid'])            
+        else:
+            obj = models.NonMLBAuctionBid
+            payload['bid'] = Decimal(payload['bid'])
+
+        # find the bid, and increase the bid only, no decreases
+        # no bid? create one.
+        try:
+            obj = obj.objects.get(auction=auction, team=context['team'])
+            if obj.max_bid <= payload['bid']:
+                obj.max_bid = payload['bid']
+                obj.save()
+
+        except models.MLBAuctionBid.DoesNotExist:
+            obj.max_bid = payload['bid']
+            obj.auction = auction
+            obj.team = context['team']
+            obj.save()
+        
+        except models.NonMLBAuctionBid.DoesNotExist:
+            obj.max_bid = payload['bid']
+            obj.auction = auction
+            obj.team = context['team']
+            obj.save()
+
+        # get the newest state for the auction and its bids
+        payload['max_bid'] = auction.max_bid()[1]
+        payload['max_bid_team'] = auction.max_bid()[0]
+        payload['max_bid_team_nick'] = models.Team.objects.get(id=payload['max_bid_team']).nickname
+
+        payload['leading_bid'] = auction.leading_bid()[1]
+        payload['leading_bid_team'] = auction.leading_bid()[0]
+        payload['leading_bid_team_nick'] = models.Team.objects.get(id=payload['leading_bid_team']).nickname
+
+        # before we return a message, evaluate the bids
+        if payload['max_bid_team'] == context['team'].pk:
+            # you have the high bid
+            payload['message'] = f"{payload['bid_team_nick']} successfully bid ${payload['bid']} on {auction.player.name}. The leading bid is now ${payload['leading_bid']}."
+            payload['success'] = True 
+        
+        elif payload['bid'] > payload['max_bid']:
+            # you have the high bid
+            payload['message'] = f"{payload['bid_team_nick']} successfully bid ${payload['bid']} on {auction.player.name}. The leading bid is now ${payload['leading_bid']}."
+            payload['success'] = True 
+            
+        else:
+            # you do not have the high bid
+            payload['message'] = f"{payload['bid_team_nick']} bid ${payload['bid']} on {auction.player.name} which does not exceed the leading bid of ${payload['leading_bid']}."
+
+    else:
+        if auction.closes < now:
+            payload['message'] = "Bidding for this auction has ended."
+        else:
+            payload['message'] = "This bid was not cast by an owner of an NPL team."
+
+    return JsonResponse(payload)
 
 def auction_list(request):
     context = utils.build_context(request)
