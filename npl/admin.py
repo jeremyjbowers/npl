@@ -13,12 +13,39 @@ from npl.models import (
     TransactionType,
     Page,
     Collection,
-    Event
+    Event,
+    Auction,
+    MLBAuctionBid,
+    NonMLBAuctionBid
 )
 
 admin.site.site_title = "The NPL"
 admin.site.site_header = "The NPL: Admin"
 admin.site.index_title = "Administer The NPL Website"
+
+
+class NonMLBAuctionBidInline(admin.TabularInline):
+    model = NonMLBAuctionBid
+    exclude = ("active",)
+    extra = 0
+    autocomplete_fields = ['team']
+
+
+class MLBAuctionBidInline(admin.TabularInline):
+    model = MLBAuctionBid
+    exclude = ("active",)
+    extra = 0
+    autocomplete_fields = ['team']
+
+
+@admin.register(Auction)
+class AuctionAdmin(admin.ModelAdmin):
+    model = Auction
+    search_fields = ['player']
+    list_display = ['player', 'closes']
+    inlines = [NonMLBAuctionBidInline, MLBAuctionBidInline]
+    autocomplete_fields = ['player']
+
 
 @admin.register(Event)
 class EventAdmin(VersionAdmin):

@@ -10,6 +10,9 @@ from django.dispatch import receiver
 from django.conf import settings
 from nameparser import HumanName
 from django_quill.fields import QuillField
+import pytz
+
+from decimal import *
 
 from npl import utils
 from users.models import User
@@ -302,18 +305,33 @@ class Transaction(BaseModel):
     def calculated_player(self):
         if self.player:
             return self.player
+        try:
+            if self.raw_player.strip() == "-":
+                return None
+        except:
+            pass
         return self.raw_player
 
     @property
     def calculated_team(self):
         if self.team:
             return self.team.nickname
+        try:
+            if self.raw_team.strip() == "-":
+                return None
+        except:
+            pass
         return self.raw_team
 
     @property
     def calculated_acquiring_team(self):
         if self.acquiring_team:
             return self.acquiring_team.nickname
+        try:
+            if self.raw_acquiring_team.strip() == "-":
+                return None
+        except:
+            pass
         return self.raw_acquiring_team
 
     def set_player(self):
@@ -438,3 +456,64 @@ class Event(BaseModel):
 
     def __unicode__(self):
         return f"{self.date}: {self.title}"
+
+
+class Auction(BaseModel):
+    player = models.ForeignKey(Player, null=True, on_delete=models.SET_NULL)
+    closes = models.DateTimeField()
+    is_mlb_auction = models.BooleanField(default=True, help_text="Mark true for MLB auctions, which should use MLBAuctionBid. Mark false for non-MLB auctions, which should use NonMLBAuctionBid.")
+
+    class Meta:
+        ordering = ['-closes']
+
+    def time_left(self):
+        now = datetime.datetime.now(pytz.timezone('US/Eastern'))
+        if self.closes >= now:
+            return self.closes - now
+        return None
+
+    def __unicode__(self):
+        return f"{self.player.name} @ {self.closes}"
+
+    def max_bid(self):
+        if self.is_mlb_auction:
+            bids = MLBAuctionBid.objects.filter(auction=self).order_by('-max_bid')
+            if len(bids) > 0:
+                if len(bids) == 1:
+                    return bids[0].max_bid
+                else:
+                    return bids[1].max_bid + 1
+            return 0
+
+        bids = NonMLBAuctionBid.objects.filter(auction=self).order_by('-max_bid')
+        if len(bids) > 0:
+            if len(bids) == 1:
+                return bids[0].max_bid
+            else:
+                return bids[1].max_bid + Decimal('0.1')
+        getcontext().prec = 1
+        return Decimal('0.0')
+
+
+class MLBAuctionBid(BaseModel):
+    team = models.ForeignKey(Team, on_delete=models.CASCADE)
+    auction = models.ForeignKey(Auction, on_delete=models.CASCADE)
+    max_bid = models.IntegerField()
+
+    class Meta:
+        unique_together = ['team', 'auction']
+
+    def __unicode__(self):
+        return f"{self.auction} > {self.team.nickname} ({self.max_bid})"
+
+
+class NonMLBAuctionBid(BaseModel):
+    team = models.ForeignKey(Team, on_delete=models.CASCADE)
+    auction = models.ForeignKey(Auction, on_delete=models.CASCADE)
+    max_bid = models.DecimalField(max_digits=4, decimal_places=1)
+
+    class Meta:
+        unique_together = ['team', 'auction']
+
+    def __unicode__(self):
+        return f"{self.auction} > {self.team.nickname} ({self.max_bid})"

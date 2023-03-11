@@ -18,8 +18,8 @@
                 <td style="text-align:center;">{{ t.calculated_team }}</td>
                 <td>{{ t.calculated_player }}</td>
                 <td style="text-align:center;">{{ t.transaction_type }}</td>
-                <td style="text-align:center;">{{ t.calculated_acquiring_team|default_if_none:"-" }}</td>
-                <td>{{ t.notes|default_if_none:"-" }}</td>
+                <td style="text-align:center;">{{ t.calculated_acquiring_team|default_if_none:"" }}</td>
+                <td>{{ t.notes|default_if_none:"" }}</td>
             </tr>
             {% endfor %}
         </tbody>

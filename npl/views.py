@@ -12,8 +12,15 @@ from django.contrib.auth.decorators import login_required
 
 import ujson as json
 from datetime import datetime
+import pytz
 
 from npl import models, utils
+
+def auction_list(request):
+    context = utils.build_context(request)
+    context['time'] = datetime.now(pytz.timezone('US/Eastern'))
+    context['auctions'] = models.Auction.objects.filter(closes__gte=context['time'])
+    return render(request, "auction_list.html", context)
 
 def npl_page_list(request):
     context = utils.build_context(request)

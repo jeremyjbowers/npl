@@ -91,6 +91,11 @@ AUTH_PASSWORD_VALIDATORS = [
 
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
+# TIME
+
+TIME_ZONE = 'US/Eastern'
+USE_TZ = True
+
 # LOGIN STUFF
 AUTH_USER_MODEL = 'users.User'
 LOGIN_REDIRECT_URL = "/"

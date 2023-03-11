@@ -1,0 +1,5 @@
+{{ time }}
+
+{% for a in auctions %}
+<p>{{ a.time_left }} {{ a.player.name }} — ${{ a.max_bid }} {% if a.is_mlb_auction %}[MLB]{% endif %}</p>
+{% endfor %}
