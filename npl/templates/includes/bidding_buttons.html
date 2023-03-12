@@ -1,0 +1,14 @@
+<div class="field has-addons">
+    {% if user.is_staff %}<div class="control">
+        <a target="_blank" class="button is-info" href="/admin/npl/auction/{{ a.id }}/change/"><span class="icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></span></a>
+    </div>{% endif %}
+    <div class="control">
+      <input class="input" type="text" placeholder="More than ${{ a.leading_bid.bid }}" id="input-auction-{{ a.id }}">
+    </div>
+    <div class="control">
+      <a class="button is-success bid-button" data-auctionid="{{ a.id }}">
+        <strong>Make bid</strong>
+      </a>
+    </div>
+  </div>
+</div>

@@ -8,6 +8,12 @@
             /* tr.red td {
                 background-color: pink;
             } */
+            .hidden {
+                display:none;
+            }
+            tr.auction-nonmlb td {
+                background-color: #eee;
+            }
             tr.owned td {
                 background-color: aliceblue;
             }
@@ -57,11 +63,17 @@
             <div class="content">
                 <div class="columns">
                     <div class="column">
+                        {% block topscript %}{% endblock %}
+                        <script src="//code.jquery.com/jquery-2.2.4.min.js" crossorigin="anonymous"></script>
                         <main>{% block content %}{% endblock %}</main>
                     </div>
                 </div>
             </div>
         </div>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/sortable/0.8.0/js/sortable.min.js" crossorigin="anonymous"></script>
+        <script src="//cdn.jsdelivr.net/npm/lodash@4.17.11/lodash.min.js" crossorigin="anonymous"></script>
         <script src="//kit.fontawesome.com/f569decd4a.js" crossorigin="anonymous"></script>
+        {% block extrascript %}{% endblock %}
+        {% block modal %}{% endblock %}
     </body>
 </html>

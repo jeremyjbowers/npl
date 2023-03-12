@@ -23,6 +23,7 @@
         </div>
         <a class="navbar-item" href="/transactions/">Transactions</a>
         <a class="navbar-item" href="/pages/">Rules</a>
+        <a class="navbar-item" href="/auctions/">Auctions</a>
     </div>
 
     <div class="navbar-end">
@@ -31,7 +32,7 @@
             <div class="buttons">
                 <button class="button is-small is-outlined is-static">{{ user }}</button>
                 {% if user.is_staff %}
-                <a class="button is-small is-success" href="/admin/">Admin</a>
+                <a class="button is-small is-info" href="/admin/">Admin</a>
                 {% endif %}
                 <!-- <a class="button is-success is-outlined is-small" href="/my/team/">My Team</a> -->
                 <a class="button is-danger is-small" href="/accounts/logout/">Log out</a>

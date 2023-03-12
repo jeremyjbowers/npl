@@ -44,9 +44,10 @@ class MLBAuctionBidInline(admin.TabularInline):
 class AuctionAdmin(admin.ModelAdmin):
     model = Auction
     search_fields = ['player']
-    list_display = ['player', 'closes']
+    list_display = ['player', 'closes', 'active']
     inlines = [NonMLBAuctionBidInline, MLBAuctionBidInline]
     autocomplete_fields = ['player']
+    list_editable = ['active']
 
 
 @admin.register(Event)

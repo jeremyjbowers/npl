@@ -44,20 +44,20 @@ def auction_bid_api(request, auctionid):
     auction = get_object_or_404(models.Auction, pk=auctionid)
 
     # auction is still alive and there is an active owner with an associated team
-    if auction.closes >= now and context['owner'] and context['team']:
+    if auction.closes >= now and context['owner'] and context['team'] and auction.active:
 
         payload['auction']['player'] = auction.player.name
         payload['auction']['closes'] = auction.closes
         payload['auction']['is_mlb_auction'] = auction.is_mlb_auction
         payload['bid'] = request.GET.get('bid', None)
 
-        payload['max_bid'] = auction.max_bid()[1]
-        payload['max_bid_team'] = auction.max_bid()[0]
-        payload['max_bid_team_nick'] = models.Team.objects.get(id=payload['max_bid_team']).nickname
+        payload['max_bid'] = auction.max_bid()['bid']
+        payload['max_bid_team'] = auction.max_bid()['team_id']
+        payload['max_bid_team_nick'] = auction.max_bid()['team_nick']
 
-        payload['leading_bid'] = auction.leading_bid()[1]
-        payload['leading_bid_team'] = auction.leading_bid()[0]
-        payload['leading_bid_team_nick'] = models.Team.objects.get(id=payload['leading_bid_team']).nickname
+        payload['leading_bid'] = auction.leading_bid()['bid']
+        payload['leading_bid_team'] = auction.leading_bid()['team_id']
+        payload['leading_bid_team_nick'] = auction.max_bid()['team_nick']
 
         payload['bid_team'] = context['team'].pk
         payload['bid_team_nick'] = context['team'].nickname
@@ -79,35 +79,34 @@ def auction_bid_api(request, auctionid):
                 obj.save()
 
         except models.MLBAuctionBid.DoesNotExist:
-            obj.max_bid = payload['bid']
-            obj.auction = auction
-            obj.team = context['team']
+            obj = models.MLBAuctionBid(max_bid=payload['bid'], auction=auction, team=context['team'])
             obj.save()
         
         except models.NonMLBAuctionBid.DoesNotExist:
-            obj.max_bid = payload['bid']
-            obj.auction = auction
-            obj.team = context['team']
+            obj = models.NonMLBAuctionBid(max_bid=payload['bid'], auction=auction, team=context['team'])
             obj.save()
 
         # get the newest state for the auction and its bids
-        payload['max_bid'] = auction.max_bid()[1]
-        payload['max_bid_team'] = auction.max_bid()[0]
-        payload['max_bid_team_nick'] = models.Team.objects.get(id=payload['max_bid_team']).nickname
+        payload['max_bid'] = auction.max_bid()['bid']
+        payload['max_bid_team'] = auction.max_bid()['team_id']
+        payload['max_bid_team_nick'] = auction.max_bid()['team_nick']
 
-        payload['leading_bid'] = auction.leading_bid()[1]
-        payload['leading_bid_team'] = auction.leading_bid()[0]
-        payload['leading_bid_team_nick'] = models.Team.objects.get(id=payload['leading_bid_team']).nickname
+        payload['leading_bid'] = auction.leading_bid()['bid']
+        payload['leading_bid_team'] = auction.leading_bid()['team_id']
+        payload['leading_bid_team_nick'] = auction.max_bid()['team_nick']
 
         # before we return a message, evaluate the bids
         if payload['max_bid_team'] == context['team'].pk:
-            # you have the high bid
-            payload['message'] = f"{payload['bid_team_nick']} successfully bid ${payload['bid']} on {auction.player.name}. The leading bid is now ${payload['leading_bid']}."
-            payload['success'] = True 
+            if payload['max_bid'] <= payload['bid']:
+                payload['message'] = f"{payload['bid_team_nick']} has set a higher max bid of ${payload['bid']} on {auction.player.name}. The leading bid is still ${payload['leading_bid']}."
+                payload['success'] = True 
+            else:
+                payload['message'] = f"Your bid of ${payload['bid']} is less than an earlier max bid by {payload['bid_team_nick']} of ${payload['max_bid']} on {auction.player.name}. The leading bid is still ${payload['leading_bid']}."
+                payload['success'] = True 
         
         elif payload['bid'] > payload['max_bid']:
             # you have the high bid
-            payload['message'] = f"{payload['bid_team_nick']} successfully bid ${payload['bid']} on {auction.player.name}. The leading bid is now ${payload['leading_bid']}."
+            payload['message'] = f"{payload['bid_team_nick']} has set a max bid ${payload['bid']} on {auction.player.name}. The leading bid is now ${payload['leading_bid']}."
             payload['success'] = True 
             
         else:
@@ -125,7 +124,7 @@ def auction_bid_api(request, auctionid):
 def auction_list(request):
     context = utils.build_context(request)
     context['time'] = datetime.now(pytz.timezone('US/Eastern'))
-    context['auctions'] = models.Auction.objects.filter(closes__gte=context['time'])
+    context['auctions'] = models.Auction.objects.filter(closes__gte=context['time'], active=True)
     return render(request, "auction_list.html", context)
 
 def npl_page_list(request):
