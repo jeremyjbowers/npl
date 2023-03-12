@@ -40,3 +40,5 @@ I recommend editing your `/etc/hosts` to add a line like this:
 ```
 127.0.0.1   localhost.nationalpastime.org
 ```
+
+Then you can see the site at `http://localhost.nationalpastime.org:8000` in your browser.
