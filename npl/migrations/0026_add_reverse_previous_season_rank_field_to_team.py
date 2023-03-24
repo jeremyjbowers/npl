@@ -7,5 +7,5 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(model_name="team",
                             name="reverse_previous_season_rank",
-                            field=models.IntegerField())
+                            field=models.IntegerField(blank=True, null=True))
     ]
