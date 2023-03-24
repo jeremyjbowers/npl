@@ -52,6 +52,7 @@ class Team(BaseModel):
     playoffs = ArrayField(models.CharField(max_length=4), blank=True, null=True)
     tab_id = models.CharField(max_length=255, blank=True, null=True)
     owners = models.ManyToManyField(Owner, blank=True)
+    reverse_previous_season_rank = models.IntegerField()
 
     # Financials
     cap_space = models.IntegerField(blank=True, null=True)
