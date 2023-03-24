@@ -169,6 +169,11 @@ def transactions(request):
 
     return render(request, 'transactions.html', context)
 
+def waivers(request):
+    context = utils.build_context(request)
+    outrighted = models.Player.objects.filter(is_on_outright_waivers=True)
+    context['outrighted'] = outrighted
+    return render(request, "waivers.html", context)
 def search(request):
     def to_bool(b):
         if b.lower() in ["y", "yes", "t", "true", "on"]:

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+<section>
+    <h1 class="title is-3">Outright Waivers</h1>
+    <table class="table">
+        <thead>
+        <!-- TODO: dynamically populate year rows rather than hard code -->
+            <th style="text-align:center;">40</th>
+            <th style="text-align:center;">player</th>
+            <th style="text-align:center;">position</th>
+            <th style="text-align:center;">age</th>
+            <th style="text-align:center;">mlb</th>
+            <th style="text-align:center;">mls</th>
+            <th style="text-align:center;">opt</th>
+            <th style="text-align:center;">stat</th>
+            <th style="text-align:center;">2023</th>
+            <th style="text-align:center;">2024</th>
+            <th style="text-align:center;">2025</th>
+            <th style="text-align:center;">2026</th>
+            <th style="text-align:center;">2027</th>
+            <th style="text-align:center;">2028</th>
+            <th style="text-align:center;">2029</th>
+            <th style="text-align:center;">2030</th>
+        </thead>
+        <tbody>
+        {% for o in outrighted.list %}{% include "includes/player_row.html" %}{% endfor %}
+        </tbody>
+    </table>
+</section>
