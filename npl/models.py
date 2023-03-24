@@ -125,6 +125,7 @@ class Player(BaseModel):
     is_roster_aaa_nri = models.BooleanField(default=False)
     is_roster_aa = models.BooleanField(default=False)
     is_roster_a = models.BooleanField(default=False)
+    is_on_outright_waivers = models.BooleanField(default=False)
 
     # STATS
     # Here's the schema for a stats dictionary
