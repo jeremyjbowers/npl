@@ -173,6 +173,7 @@ def waivers(request):
     context = utils.build_context(request)
     outrighted = models.Player.objects.filter(is_on_outright_waivers=True)
     context['outrighted'] = outrighted
+    context['is_waivers'] = True
     return render(request, "waivers.html", context)
 def search(request):
     def to_bool(b):

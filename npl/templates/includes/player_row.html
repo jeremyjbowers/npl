@@ -2,6 +2,11 @@
 <tr class="{% if p.options == '99'%} red{% endif %}{% if not team %}{% if p.team %} owned{% endif %}{% endif %}">
   {% if team %}
   <td style="text-align:center;">{% if p.is_roster_40_man %}<span class="icon"><i class="fa fa-check-circle" aria-hidden="true"></i></span>{% else %}<span class="icon"><i class="fa fa-times-circle-o" aria-hidden="true"></i></span>{% endif %}</td>
+      <!-- TODO: add the ability for a player to be waived or released on the frontend
+      {%  elif is_waivers %}
+      <!-- TODO: change to something that makes sense -->
+  <td style="text-align:center;">{% if p.is_roster_40_man %}<span class="icon"><i class="fa fa-check-circle" aria-hidden="true"></i></span>{% else %}<span class="icon"><i class="fa fa-times-circle-o" aria-hidden="true"></i></span>{% endif %}</td>
+
   {% endif %}
   <td>
     <strong><a href="/players/{{ p.mlb_id }}/">{{ p.name }}</a></strong>{% if not team %}{% if p.team %}<small> @ <strong><a href="/teams/{{ p.team.nickname|lower }}/">{{ p.team.nickname }}</a></strong></small>{% endif %}{% endif %}</br>
@@ -14,7 +19,7 @@
     <td style="text-align:center;">{% if p.is_roster_40_man %}{{ p.mls_time|floatformat:"1" }}{% else %}{{ p.mls_year|default_if_none:"" }}{% endif %}</td>
     <td style="text-align:center;">{{ p.options|default_if_none:"" }}</td>
     <td style="text-align:center;">{{ p.status|default_if_none:""|upper }}</td>
-    {% if team %}
+    {% if team or is_waivers %}
     <!-- contract stuff -->
     {% if p.contract %}
       {% for year in p.contract.years %}
