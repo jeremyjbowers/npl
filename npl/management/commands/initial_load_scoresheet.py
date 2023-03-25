@@ -26,6 +26,16 @@ class Command(BaseCommand):
 
             for p in players:
                 print(p)
+
+                # special cases for when scoresheet gets
+                # the wrong MLBid for a player
+
+                # 2023-03-25
+                if p['MLBAM'] == '469176.0' and p['SSBB'] == '5075.0':
+                    p['MLBAM'] = "692230"
+
+
+                # continue
                 obj = None
                 clean_mlbid = p['MLBAM'].split('.')[0].strip()
                 clean_scoresheetid = p['SSBB'].split('.')[0].strip()
@@ -33,24 +43,26 @@ class Command(BaseCommand):
                 clean_last = p['lastName'].split('(')[0].strip()
 
                 try:
-                    if clean_mlbid != "":
+                    if clean_mlbid != "" and not obj:
                         obj = models.Player.objects.get(mlb_id=clean_mlbid)
 
-                    elif clean_scoresheetid != "":
+                    if clean_scoresheetid != "" and not obj:
                         obj = models.Player.objects.get(scoresheet_id=clean_scoresheetid)
 
-                    else:
+                    if not obj:
                         obj = models.Player.objects.get(first_name=clean_first,last_name=clean_last)
 
                 except models.Player.DoesNotExist:
-                    if clean_mlbid != "" and clean_scoresheetid != "":
-                        obj = models.Player()
-                        obj.first_name = clean_first
-                        obj.last_name = clean_last
-                        obj.mlb_id = clean_mlbid
-                        obj.scoresheet_id = clean_scoresheetid
+                    try:
+                        obj = models.Player.objects.get(first_name=clean_first,last_name=clean_last)
 
-                print(obj)
+                    except models.Player.DoesNotExist:
+                        if clean_mlbid != "" and clean_scoresheetid != "":
+                            obj = models.Player()
+                            obj.first_name = clean_first
+                            obj.last_name = clean_last
+                            obj.mlb_id = clean_mlbid
+                            obj.scoresheet_id = clean_scoresheetid
 
                 if not obj.scoresheet_id and clean_scoresheetid != "":
                     obj.scoresheet_id = clean_scoresheetid

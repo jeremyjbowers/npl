@@ -233,6 +233,10 @@ class Player(BaseModel):
             self.is_owned = True
 
     def set_name(self):
+        if not self.name and not self.first_name and not self.last_name:
+            if self.raw_name:
+                self.name = self.raw_name
+
         if self.first_name and self.last_name:
             name_string = "%s" % self.first_name
             name_string += " %s" % self.last_name

@@ -165,6 +165,7 @@ class PlayerAdmin(admin.ModelAdmin):
             {
                 "fields": (
                     "name",
+                    ("first_name", "last_name"),
                     "birthdate",
                     "raw_age",
                     ("position", 'simple_position'),

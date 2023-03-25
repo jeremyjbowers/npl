@@ -9,6 +9,8 @@ from npl import models, utils
 class Command(BaseCommand):
     def handle(self, *args, **options):
 
+        models.Player.objects.filter(team__isnull=False).update(team=None)
+
         CROSSWALK = {
             "Duno, Alfredo": "806957",
             "Valdez, Derniche": "806961",
@@ -23,6 +25,17 @@ class Command(BaseCommand):
             "Francisca, Welbyn": "806988",
             "Cespedes, Yoelin": "806985",
             "Pegero, Antony": "803433",
+            "Cepeda, Angel": "806980",
+            "Lantigua, Arnaldo": "806984",
+            "Espinoza, Ludwig": "806968",
+            "Fleury, Jose": "800067",
+            "Valdez, Luis": "692835",
+            "De Los Santos, Anderson": "698945",
+            "Pan, Wen-Hui": "808207",
+            "Gonzalez, Cesar": "800177",
+            "Mateo, Carlos": "801786",
+            "Pachardo, Bladimir": "808097",
+            "Di Turi, Filippo": "806995",
         }
 
         for t in models.Team.objects.all():
@@ -71,7 +84,7 @@ class Command(BaseCommand):
                         player_obj.set_name()
 
                         search_url = f"https://statsapi.mlb.com/api/v1/people/search?names={player_obj.name}&sportIds=11,12,13,14,15,5442,16&active=true&hydrate=currentTeam,team"
-                        print(search_url)
+                        # print(search_url)
 
                         r = requests.get(search_url, timeout=5)
                         results = r.json().get('people', None)

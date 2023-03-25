@@ -21,6 +21,20 @@ class Command(BaseCommand):
             "Francisca, Welbyn": "806988",
             "Cespedes, Yoelin": "806985",
             "Pegero, Antony": "803433",
+            "Cepeda, Angel": "806980",
+            "Lantigua, Arnaldo": "806984",
+            "Espinoza, Ludwig": "806968",
+            "Fleury, Jose": "800067",
+            "Valdez, Luis": "692835",
+            "De Los Santos, Anderson": "698945",
+            "Pan, Wen-Hui": "808207",
+            "Gonzalez, Cesar": "800177",
+            "Mateo, Carlos": "801786",
+            "Pachardo, Bladimir": "808097",
+            "Di Turi, Filippo": "806995",
+            "Antunez, Wuilfredo": "686404",
+            "Liranzo, Joshua": "808162",
+            "Monteverde, Carlos": "808272",
         }
 
         year_cols = ["2023","2024","2025","2026","2027","2028","2029","2030"]
