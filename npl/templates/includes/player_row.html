@@ -2,10 +2,8 @@
 <tr class="{% if p.options == '99'%} red{% endif %}{% if not team %}{% if p.team %} owned{% endif %}{% endif %}">
   {% if team %}
   <td style="text-align:center;">{% if p.is_roster_40_man %}<span class="icon"><i class="fa fa-check-circle" aria-hidden="true"></i></span>{% else %}<span class="icon"><i class="fa fa-times-circle-o" aria-hidden="true"></i></span>{% endif %}</td>
-      <!-- TODO: add the ability for a player to be waived or released on the frontend
-      {%  elif is_waivers %}
-      <!-- TODO: change to something that makes sense -->
-  <td style="text-align:center;">{% if p.is_roster_40_man %}<span class="icon"><i class="fa fa-check-circle" aria-hidden="true"></i></span>{% else %}<span class="icon"><i class="fa fa-times-circle-o" aria-hidden="true"></i></span>{% endif %}</td>
+  {%  elif is_waivers %}
+  <td style="text-align:center;"><input type="checkbox" id="{{ p.mlb_id }}" name="{{ p.mlb_id }}" value="{{ p.mlb_id }}"></td>
 
   {% endif %}
   <td>
