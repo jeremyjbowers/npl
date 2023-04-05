@@ -13,3 +13,4 @@ class Command(BaseCommand):
         call_command('initial_load_npl_roster_sheet')
         call_command('initial_load_contracts')
         call_command('initial_load_transactions')
+        call_command('scrape_mlb_info')

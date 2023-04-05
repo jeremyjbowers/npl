@@ -11,6 +11,7 @@ from django.conf import settings
 from nameparser import HumanName
 from django_quill.fields import QuillField
 import pytz
+import requests
 
 from decimal import *
 
@@ -207,24 +208,55 @@ class Player(BaseModel):
             pass
         return None
 
+    def update_mlb_info(self):
+        r = requests.get(self.mlb_api_url + "?hydrate=currentTeam,team")
+        results = r.json().get('people', None)
+        if results:
+            if len(results) == 1:
+                person = results[0]
+                self.active = utils.to_bool(person['active'])
+
+                if self.active:
+                    self.first_name = person['firstName']
+                    self.last_name = person['lastName']
+                    self.birthdate = person['birthDate']
+
+                    self.position = person['primaryPosition']['abbreviation']
+
+                    try:
+                        self.mlb_org = person['currentTeam']['abbreviation']
+                    except KeyError:
+                        pass
+        
+                    self.height = person['height']
+                    self.weight = person['weight']
+                    self.bats = person['batSide']['code']
+
+                    try:
+                        self.throws = person['pitchHand']['code']
+                    except KeyError:
+                        print(person)
+
+
     def set_simple_position(self):
-        if self.position.upper() in ["P", "SP", "RP", "LHP", "RHP", "SR"]:
-            self.simple_position = "P"
+        if self.position:
+            if self.position.upper() in ["P", "SP", "RP", "LHP", "RHP", "SR"]:
+                self.simple_position = "P"
 
-        if self.position.upper() in ["IF", "1B", "2B", "3B", "SS"]:
-            self.simple_position = "IF"
+            if self.position.upper() in ["IF", "1B", "2B", "3B", "SS"]:
+                self.simple_position = "IF"
 
-        if self.position.upper() in ["OF", "CF", "LF", "RF"]:
-            self.simple_position = "OF"
+            if self.position.upper() in ["OF", "CF", "LF", "RF"]:
+                self.simple_position = "OF"
 
-        if "/" in self.position:
-            self.simple_position = "UT"
+            if "/" in self.position:
+                self.simple_position = "UT"
 
-        if self.position.upper() in ["C", "CA"]:
-            self.simple_position = "C"
+            if self.position.upper() in ["C", "CA"]:
+                self.simple_position = "C"
 
-        if self.position.upper() == "UT":
-            self.simple_position = "UT"
+            if self.position.upper() == "UT":
+                self.simple_position = "UT"
 
     def set_owned(self):
         if self.team == None:

@@ -169,8 +169,7 @@ class PlayerAdmin(admin.ModelAdmin):
                     "birthdate",
                     "raw_age",
                     ("position", 'simple_position'),
-                    "mlb_id",
-                    "scoresheet_id",
+                    ("mlb_id","scoresheet_id","fg_id"),
                     "mlb_org"
                 ),
             },

@@ -87,15 +87,16 @@ class Command(BaseCommand):
 
                     # loop over years and add contract years as necessary
                     for cy in contract_years:
-                        try:
-                            cy_obj = models.ContractYear.objects.get(contract=c_obj, year=cy['year'])
-                        except models.ContractYear.DoesNotExist:
-                            cy_obj = models.ContractYear(contract=c_obj, year=cy['year'])
+                        if cy['amount']:
+                            try:
+                                cy_obj = models.ContractYear.objects.get(contract=c_obj, year=cy['year'])
+                            except models.ContractYear.DoesNotExist:
+                                cy_obj = models.ContractYear(contract=c_obj, year=cy['year'])
 
-                        cy_obj.amount = cy['amount']
-                        cy_obj.save()
+                            cy_obj.amount = cy['amount']
+                            cy_obj.save()
 
-                    c_obj.total_amount = sum([y['amount'] for y in contract_years])
+                    c_obj.total_amount = sum([y['amount'] for y in contract_years if y['amount']])
                     c_obj.total_years = len(contract_years)
                     c_obj.save()
                     print(c_obj)

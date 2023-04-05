@@ -111,7 +111,11 @@ class Command(BaseCommand):
             p.save()
 
         for p in models.Player.objects.all():
-            p.first_name = p.first_name.strip()
-            p.last_name = p.last_name.strip()
-            p.name = p.name.strip()
-            p.save()
+            try:
+                p.first_name = p.first_name.strip()
+                p.last_name = p.last_name.strip()
+                p.name = p.name.strip()
+                p.save()
+
+            except AttributeError:
+                pass

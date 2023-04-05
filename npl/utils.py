@@ -37,6 +37,12 @@ def build_context(request):
 
     return context
 
+def to_bool(bool_string):
+    if isinstance(bool_string, str):
+        if bool_string.strip().lower() in ['y', 'yes', 'true', 't']:
+            return True
+        return False
+    return bool_string
 
 def dollars_to_ints(num_string):
     payload = None
