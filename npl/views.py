@@ -1,6 +1,9 @@
 import csv
 import datetime
 import itertools
+
+import django.core.exceptions
+from django.core.exceptions import ValidationError
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render, get_object_or_404
@@ -170,10 +173,31 @@ def transactions(request):
     return render(request, 'transactions.html', context)
 
 def waivers(request):
+    now = datetime.now(tz=pytz.timezone("US/Eastern"))
     context = utils.build_context(request)
     outrighted = models.Player.objects.filter(is_on_outright_waivers=True)
     context['outrighted'] = outrighted
     context['is_waivers'] = True
+    if request.method == 'POST':
+        # check if username is associated with a team
+        # if so, submit a claim for that team
+        players_claimed = request.POST.getlist('outright_claims')
+        [owner] = models.Owner.objects.filter(user_id=request.user.id).values()
+
+        if owner is None:
+            raise ValidationError('Cannot create a waiver claim if you do not own a team')
+        [team] = models.Team.objects.filter(owners__in=[owner['id']])
+
+
+        for player in players_claimed:
+            outright_claim = models.OutrightWaiverClaim()
+            outright_claim.team = team
+            outright_claim.player = models.Player.objects.filter(mlb_id=player).get()
+            outright_claim.submission_time = now
+            outright_claim.deadline = utils.calculate_next_friday_at_one_pm_eastern(now)
+            outright_claim.save()
+
+        print("User " +  str(request.user) + " claims player ID " + str(players_claimed))
     return render(request, "waivers.html", context)
 def search(request):
     def to_bool(b):

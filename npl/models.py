@@ -73,7 +73,6 @@ class Team(BaseModel):
     def players(self):
         return Player.objects.filter(team=self)
 
-
 class Player(BaseModel):
     first_name = models.CharField(max_length=255, null=True)
     last_name = models.CharField(max_length=255, null=True)
@@ -257,6 +256,13 @@ class Player(BaseModel):
         self.set_simple_position()
 
         super().save(*args, **kwargs)
+
+
+class OutrightWaiverClaim(BaseModel):
+    player = models.ForeignKey(Player, on_delete=models.CASCADE, blank=False, null=False)
+    team = models.ForeignKey(Team, on_delete=models.CASCADE,blank=False, null=False)
+    submission_time = models.DateTimeField()
+    deadline = models.DateTimeField()
 
 class TransactionType(BaseModel):
     transaction_type = models.CharField(max_length=255)

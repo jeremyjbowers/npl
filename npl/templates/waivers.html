@@ -24,7 +24,12 @@
             <th style="text-align:center;">2030</th>
         </thead>
         <tbody>
-        {% for p in outrighted %}{% include "includes/player_row.html" %}{% endfor %}
+        <form method="post">
+          {% csrf_token %}
+
+            {% for p in outrighted %}{% include "includes/player_row.html" %}{% endfor %}
+            <button type="submit">Submit Claims</button>
+        </form>
         </tbody>
     </table>
 </section>

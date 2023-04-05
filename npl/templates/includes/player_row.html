@@ -1,10 +1,9 @@
 {% load humanize %}
 <tr class="{% if p.options == '99'%} red{% endif %}{% if not team %}{% if p.team %} owned{% endif %}{% endif %}">
-  {% if team %}
+  {% if is_waivers %}
+  <td style="text-align:center;"><input type="checkbox" id="{{ p.mlb_id }}" name="outright_claims" value="{{ p.mlb_id }}"></td>
+  {% elif team %}
   <td style="text-align:center;">{% if p.is_roster_40_man %}<span class="icon"><i class="fa fa-check-circle" aria-hidden="true"></i></span>{% else %}<span class="icon"><i class="fa fa-times-circle-o" aria-hidden="true"></i></span>{% endif %}</td>
-  {%  elif is_waivers %}
-  <td style="text-align:center;"><input type="checkbox" id="{{ p.mlb_id }}" name="{{ p.mlb_id }}" value="{{ p.mlb_id }}"></td>
-
   {% endif %}
   <td>
     <strong><a href="/players/{{ p.mlb_id }}/">{{ p.name }}</a></strong>{% if not team %}{% if p.team %}<small> @ <strong><a href="/teams/{{ p.team.nickname|lower }}/">{{ p.team.nickname }}</a></strong></small>{% endif %}{% endif %}</br>

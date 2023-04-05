@@ -1,5 +1,11 @@
+import datetime
+
 from googleapiclient.discovery import build
 from google.oauth2 import service_account
+from datetime import time
+from dateutil.relativedelta import relativedelta, FR
+from copy import copy
+
 
 import os
 
@@ -54,6 +60,14 @@ def dollars_to_ints(num_string):
         pass
 
     return payload
+
+
+def calculate_next_friday_at_one_pm_eastern(dt):
+    if dt.weekday() == 4 and dt.time() < time(13):
+        return copy(dt) + relativedelta(hour=13, minute=0, second=0)
+    else:
+        next_friday = relativedelta(days=1, weekday=FR, hour=13, minute=0, second=0)
+        return copy(dt) + next_friday
 
 
 def is_player(row):
