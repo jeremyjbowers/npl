@@ -257,12 +257,12 @@ class Player(BaseModel):
 
         super().save(*args, **kwargs)
 
-
 class OutrightWaiverClaim(BaseModel):
     player = models.ForeignKey(Player, on_delete=models.CASCADE, blank=False, null=False)
     team = models.ForeignKey(Team, on_delete=models.CASCADE,blank=False, null=False)
     submission_time = models.DateTimeField()
     deadline = models.DateTimeField()
+
 
 class TransactionType(BaseModel):
     transaction_type = models.CharField(max_length=255)
