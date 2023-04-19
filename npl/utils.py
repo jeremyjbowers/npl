@@ -1,5 +1,6 @@
 import datetime
 
+from django.core.exceptions import ValidationError
 from googleapiclient.discovery import build
 from google.oauth2 import service_account
 from datetime import time
@@ -69,6 +70,18 @@ def calculate_next_friday_at_one_pm_eastern(dt):
         next_friday = relativedelta(days=1, weekday=FR, hour=13, minute=0, second=0)
         return copy(dt) + next_friday
 
+def get_team_making_request(request):
+    [owner] = models.Owner.objects.filter(user_id=request.user.id).values()
+
+    if owner is None:
+        raise ValidationError('Cannot create a waiver claim if you do not own a team')
+    [team] = models.Team.objects.filter(owners__in=[owner['id']])
+    return team
+
+def is_user_owner(request, team):
+    [owner] = models.Owner.objects.filter(user_id=request.user.id).values()
+    [user_team] = models.Team.objects.filter(owners__in=[owner['id']])
+    return user_team == team
 
 def is_player(row):
     if len(row) > 0:

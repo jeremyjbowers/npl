@@ -5,19 +5,27 @@
   {% elif team %}
       {% if p.is_roster_40_man %}
           <td style="text-align:center;"><span class="icon"><i class="fa fa-check-circle" aria-hidden="true"></i></span></td>
-          <td style="text-align:center;"><select class="custom-select custom-select-sm">
-              <option name="outright_to_aaa" value="{{ p.mlb_id }}">Place on Outright Waivers</option>
+          {%  if is_owner %}
+            <td style="text-align:center;">
+              <select class="custom-select custom-select-sm">
+                <option name="outright_to_aaa" value="{{ p.mlb_id }}">Place on Outright Waivers</option>
                 <!-- TODO: if player is not on active roster, give ability to recall option. There are also rules governing this -->
-              {% if p.options != '99' and p.options is not None and p.options != '0'%}<option name="option_to_minors" value="{{ p.mlb_id }}"> Option to Minors</option> {%  endif %}
-              <option name="release" value="{{ p.mlb_id }}">Release</option>
-          </select></td>
+                {% if p.options != '99' and p.options is not None and p.options != '0'%}<option name="option_to_minors" value="{{ p.mlb_id }}"> Option to Minors</option> {%  endif %}
+                <option name="release" value="{{ p.mlb_id }}">Release</option>
+              </select>
+            </td>
+          {% endif %}
       {% else %}
           <td style="text-align:center;"><span class="icon"><i class="fa fa-times-circle-o" aria-hidden="true"></i></span></td>
-          <td><select class="custom-select custom-select-sm">
+          {%  if is_owner %}
+          <td>
+              <select class="custom-select custom-select-sm">
               <option name="purchase_contract" value="{{ p.mlb_id }}">Purchase Contract</option>
               <option name="release" value="{{ p.mlb_id }}">Release</option>
-          </select><</td>{% endif %}
-
+            </select>
+          </td>
+          {% endif %}
+      {% endif %}
   {% endif %}
   <td>
     <strong><a href="/players/{{ p.mlb_id }}/">{{ p.name }}</a></strong>{% if not team %}{% if p.team %}<small> @ <strong><a href="/teams/{{ p.team.nickname|lower }}/">{{ p.team.nickname }}</a></strong></small>{% endif %}{% endif %}</br>

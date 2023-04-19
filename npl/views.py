@@ -157,9 +157,11 @@ def player_detail(request, playerid):
 
 def team_detail(request, nickname):
     context = utils.build_context(request)
-    context["team"] = get_object_or_404(models.Team, nickname__icontains=nickname)
+    team = get_object_or_404(models.Team, nickname__icontains=nickname)
+    context["team"] = team
+    context["is_owner"] = utils.is_user_owner(request, team)
 
-    team_players = models.Player.objects.filter(team=context["team"])
+    team_players = models.Player.objects.filter(team=team)
     context['total_count'] = team_players.count()
     context['roster_40_man_count'] = team_players.filter(is_roster_40_man=True).count()
     context['hitters'] = team_players.exclude(simple_position="P").order_by('simple_position', '-is_roster_40_man', '-mls_time', 'mls_year')
@@ -179,15 +181,8 @@ def waivers(request):
     context['outrighted'] = outrighted
     context['is_waivers'] = True
     if request.method == 'POST':
-        # check if username is associated with a team
-        # if so, submit a claim for that team
         players_claimed = request.POST.getlist('outright_claims')
-        [owner] = models.Owner.objects.filter(user_id=request.user.id).values()
-
-        if owner is None:
-            raise ValidationError('Cannot create a waiver claim if you do not own a team')
-        [team] = models.Team.objects.filter(owners__in=[owner['id']])
-
+        team = utils.get_team_making_request(request)
 
         for player in players_claimed:
             outright_claim = models.OutrightWaiverClaim()
@@ -197,7 +192,6 @@ def waivers(request):
             outright_claim.deadline = utils.calculate_next_friday_at_one_pm_eastern(now)
             outright_claim.save()
 
-        print("User " +  str(request.user) + " claims player ID " + str(players_claimed))
     return render(request, "waivers.html", context)
 def search(request):
     def to_bool(b):
