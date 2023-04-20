@@ -79,6 +79,8 @@ def get_team_making_request(request):
     return team
 
 def is_user_owner(request, team):
+    if request.user.id is None:
+        return False
     [owner] = models.Owner.objects.filter(user_id=request.user.id).values()
     [user_team] = models.Team.objects.filter(owners__in=[owner['id']])
     return user_team == team
