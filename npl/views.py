@@ -1,6 +1,7 @@
 import csv
 import datetime
 import itertools
+import urllib
 
 import django.core.exceptions
 from django.core.exceptions import ValidationError
@@ -166,6 +167,16 @@ def team_detail(request, nickname):
     context['roster_40_man_count'] = team_players.filter(is_roster_40_man=True).count()
     context['hitters'] = team_players.exclude(simple_position="P").order_by('simple_position', '-is_roster_40_man', '-mls_time', 'mls_year')
     context['pitchers'] = team_players.filter(simple_position="P").order_by('-is_roster_40_man', '-mls_time', 'mls_year')
+    if request.method == 'POST':
+        body_unicode = request.body.decode('utf-8')
+        body = dict(urllib.parse.parse_qsl(body_unicode))
+        transactions = utils.reverse_team_dict(body)
+        outright_waivers = transactions['outright_to_aaa']
+        for player_id in outright_waivers:
+            player = models.Player.objects.filter(mlb_id=player_id).get()
+            player.is_on_outright_waivers = True
+            player.save()
+
     return render(request, "team.html", context)
 
 def transactions(request):
