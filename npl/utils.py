@@ -1,5 +1,12 @@
+
+from collections import defaultdict
+from copy import copy
+from django.core.exceptions import ValidationError
 from googleapiclient.discovery import build
 from google.oauth2 import service_account
+from datetime import time
+from dateutil.relativedelta import relativedelta, FR
+
 
 import os
 
@@ -61,6 +68,34 @@ def dollars_to_ints(num_string):
 
     return payload
 
+
+def calculate_next_friday_at_one_pm_eastern(dt):
+    if dt.weekday() == 4 and dt.time() < time(13):
+        return copy(dt) + relativedelta(hour=13, minute=0, second=0)
+    else:
+        next_friday = relativedelta(days=1, weekday=FR, hour=13, minute=0, second=0)
+        return copy(dt) + next_friday
+
+def get_team_making_request(request):
+    [owner] = models.Owner.objects.filter(user_id=request.user.id).values()
+
+    if owner is None:
+        raise ValidationError('Cannot create a waiver claim if you do not own a team')
+    [team] = models.Team.objects.filter(owners__in=[owner['id']])
+    return team
+
+def is_user_owner(request, team):
+    if request.user.id is None:
+        return False
+    [owner] = models.Owner.objects.filter(user_id=request.user.id).values()
+    [user_team] = models.Team.objects.filter(owners__in=[owner['id']])
+    return user_team == team
+
+def reverse_team_dict(dict):
+    reversed_dict = defaultdict(list)
+    for key, value in dict.items():
+        reversed_dict[value].append(key)
+    return reversed_dict
 
 def is_player(row):
     if len(row) > 0:

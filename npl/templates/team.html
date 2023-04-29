@@ -1,98 +1,109 @@
 {% extends "base.html" %}
 
 {% block content %}
-<section class="hero" style="padding-top: 25px;">
-    <h1>{{ team.name }}</h1>
-    <p><strong>Owner{% if team.owners.all|length > 1 %}s{% endif %}</strong>: {% for owner in team.owners.all %}{% if not forloop.first %}, {% endif %}{{ owner }}{% endfor %}</p>
-</section>
-<section>
-    <hr>
-    <nav class="level position-count">
-        <div class="level-item has-text-centered">
-            <div>
-              <p class="heading">Total</p>
-              <p class="title">{{ total_count }}</p>
+    <section class="hero" style="padding-top: 25px;">
+        <h1>{{ team.name }}</h1>
+        <p><strong>Owner{% if team.owners.all|length > 1 %}s{% endif %}</strong>:
+            {% for owner in team.owners.all %}{% if not forloop.first %}, {% endif %}{{ owner }}{% endfor %}</p>
+    </section>
+    <section>
+        <hr>
+        <nav class="level position-count">
+            <div class="level-item has-text-centered">
+                <div>
+                    <p class="heading">Total</p>
+                    <p class="title">{{ total_count }}</p>
+                </div>
             </div>
-          </div>
-          <div class="level-item has-text-centered">
-            <div>
-              <p class="heading">40-man</p>
-              <p class="title">{{ roster_40_man_count }}</p>
+            <div class="level-item has-text-centered">
+                <div>
+                    <p class="heading">40-man</p>
+                    <p class="title">{{ roster_40_man_count }}</p>
+                </div>
             </div>
-          </div>
-          {% regroup hitters by simple_position as position_players %}
-        {% for position in position_players %}
-        <div class="level-item has-text-centered">
-          <div>
-            <p class="heading">{{ position.grouper }}</p>
-            <p class="title"><a href="#position-{{ position.grouper }}">{{ position.list|length }}</a></p>
-          </div>
-        </div>
-        {% endfor %}
-        <div class="level-item has-text-centered">
-            <div>
-              <p class="heading">Pitcher</p>
-              <p class="title"><a href="#position-p">{{ pitchers|length }}</a></p>
+            {% regroup hitters by simple_position as position_players %}
+            {% for position in position_players %}
+                <div class="level-item has-text-centered">
+                    <div>
+                        <p class="heading">{{ position.grouper }}</p>
+                        <p class="title"><a href="#position-{{ position.grouper }}">{{ position.list|length }}</a></p>
+                    </div>
+                </div>
+            {% endfor %}
+            <div class="level-item has-text-centered">
+                <div>
+                    <p class="heading">Pitcher</p>
+                    <p class="title"><a href="#position-p">{{ pitchers|length }}</a></p>
+                </div>
             </div>
-          </div>
-      </nav>
-      <hr>
-</section>
+        </nav>
+        <hr>
+    </section>
 
+    <form method="post">
+        {% csrf_token %}
+        <section>
+            {% regroup hitters by simple_position as position_players %}
 
-<section>
-    {% regroup hitters by simple_position as position_players %}
-    {% for position in position_players %}
-    <h1 class="title is-3" id="position-{{ position.grouper }}">{{ position.grouper }} ({{ position.list|length }})</h1>
-    <table class="table">
-        <thead>
-            <th style="text-align:center;">40</th>
-            <th style="text-align:center;">player</th>
-            <th style="text-align:center;">position</th>
-            <th style="text-align:center;">age</th>
-            <th style="text-align:center;">mlb</th>
-            <th style="text-align:center;">mls</th>
-            <th style="text-align:center;">opt</th>
-            <th style="text-align:center;">stat</th>
-            <th style="text-align:center;">2023</th>
-            <th style="text-align:center;">2024</th>
-            <th style="text-align:center;">2025</th>
-            <th style="text-align:center;">2026</th>
-            <th style="text-align:center;">2027</th>
-            <th style="text-align:center;">2028</th>
-            <th style="text-align:center;">2029</th>
-            <th style="text-align:center;">2030</th>
-        </thead>
-        <tbody>
-        {% for p in position.list %}{% include "includes/player_row.html" %}{% endfor %}
-        </tbody>
-    </table>
-    {% endfor %}
-</section>
-<section>
-    <h1 class="title is-3" id="position-p">Pitchers ({{ pitchers|length }})</h1>
-    <table class="table">
-        <thead>
-            <th style="text-align:center;">40</th>
-            <th style="text-align:center;">player</th>
-            <th style="text-align:center;">position</th>
-            <th style="text-align:center;">age</th>
-            <th style="text-align:center;">mlb</th>
-            <th style="text-align:center;">mls</th>
-            <th style="text-align:center;">opt</th>
-            <th style="text-align:center;">stat</th>
-            <th style="text-align:center;">2023</th>
-            <th style="text-align:center;">2024</th>
-            <th style="text-align:center;">2025</th>
-            <th style="text-align:center;">2026</th>
-            <th style="text-align:center;">2027</th>
-            <th style="text-align:center;">2028</th>
-            <th style="text-align:center;">2029</th>
-            <th style="text-align:center;">2030</th>
-        </thead>
-        <tbody>
-        {% for p in pitchers %}{% include "includes/player_row.html" %}{% endfor %}
-        </tbody>
-    </table>
-</section>
+            {% for position in position_players %}
+                <h1 class="title is-3" id="position-{{ position.grouper }}">{{ position.grouper }}
+                    ({{ position.list|length }})</h1>
+                <table class="table">
+                    <thead>
+                    <th style="text-align:center;">40</th>
+                    {% if is_owner %}
+                        <th style=text-align:center;">actions</th> {% endif %}
+                    <th style="text-align:center;">player</th>
+                    <th style="text-align:center;">position</th>
+                    <th style="text-align:center;">age</th>
+                    <th style="text-align:center;">mlb</th>
+                    <th style="text-align:center;">mls</th>
+                    <th style="text-align:center;">opt</th>
+                    <th style="text-align:center;">stat</th>
+                    <th style="text-align:center;">2023</th>
+                    <th style="text-align:center;">2024</th>
+                    <th style="text-align:center;">2025</th>
+                    <th style="text-align:center;">2026</th>
+                    <th style="text-align:center;">2027</th>
+                    <th style="text-align:center;">2028</th>
+                    <th style="text-align:center;">2029</th>
+                    <th style="text-align:center;">2030</th>
+                    </thead>
+                    <tbody>
+                    {% for p in position.list %}{% include "includes/player_row.html" %}{% endfor %}
+                    </tbody>
+                </table>
+            {% endfor %}
+        </section>
+        <section>
+            <h1 class="title is-3" id="position-p">Pitchers ({{ pitchers|length }})</h1>
+            <table class="table">
+                <thead>
+                <th style="text-align:center;">40</th>
+                {% if is_owner %}
+                    <th style=text-align:center;">actions</th> {% endif %}
+                <th style="text-align:center;">player</th>
+                <th style="text-align:center;">position</th>
+                <th style="text-align:center;">age</th>
+                <th style="text-align:center;">mlb</th>
+                <th style="text-align:center;">mls</th>
+                <th style="text-align:center;">opt</th>
+                <th style="text-align:center;">stat</th>
+                <th style="text-align:center;">2023</th>
+                <th style="text-align:center;">2024</th>
+                <th style="text-align:center;">2025</th>
+                <th style="text-align:center;">2026</th>
+                <th style="text-align:center;">2027</th>
+                <th style="text-align:center;">2028</th>
+                <th style="text-align:center;">2029</th>
+                <th style="text-align:center;">2030</th>
+                </thead>
+                <tbody>
+                {% for p in pitchers %}{% include "includes/player_row.html" %}{% endfor %}
+                </tbody>
+            </table>
+        </section>
+    <button type="submit">Submit Transactions</button>
+    </form>
+
 {% endblock %}

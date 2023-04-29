@@ -53,6 +53,7 @@ class Team(BaseModel):
     playoffs = ArrayField(models.CharField(max_length=4), blank=True, null=True)
     tab_id = models.CharField(max_length=255, blank=True, null=True)
     owners = models.ManyToManyField(Owner, blank=True)
+    reverse_previous_season_rank = models.IntegerField(blank=True, null=True)
 
     # Financials
     cap_space = models.IntegerField(blank=True, null=True)
@@ -72,7 +73,6 @@ class Team(BaseModel):
 
     def players(self):
         return Player.objects.filter(team=self)
-
 
 class Player(BaseModel):
     first_name = models.CharField(max_length=255, null=True)
@@ -125,6 +125,7 @@ class Player(BaseModel):
     is_roster_aaa_nri = models.BooleanField(default=False)
     is_roster_aa = models.BooleanField(default=False)
     is_roster_a = models.BooleanField(default=False)
+    is_on_outright_waivers = models.BooleanField(default=False)
 
     # STATS
     # Here's the schema for a stats dictionary
@@ -291,6 +292,13 @@ class Player(BaseModel):
         self.set_simple_position()
 
         super().save(*args, **kwargs)
+
+class OutrightWaiverClaim(BaseModel):
+    player = models.ForeignKey(Player, on_delete=models.CASCADE, blank=False, null=False)
+    team = models.ForeignKey(Team, on_delete=models.CASCADE,blank=False, null=False)
+    submission_time = models.DateTimeField()
+    deadline = models.DateTimeField()
+
 
 class TransactionType(BaseModel):
     transaction_type = models.CharField(max_length=255)

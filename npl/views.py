@@ -1,6 +1,10 @@
 import csv
 import datetime
 import itertools
+import urllib
+
+import django.core.exceptions
+from django.core.exceptions import ValidationError
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render, get_object_or_404
@@ -154,13 +158,25 @@ def player_detail(request, playerid):
 
 def team_detail(request, nickname):
     context = utils.build_context(request)
-    context["team"] = get_object_or_404(models.Team, nickname__icontains=nickname)
+    team = get_object_or_404(models.Team, nickname__icontains=nickname)
+    context["team"] = team
+    context["is_owner"] = utils.is_user_owner(request, team)
 
-    team_players = models.Player.objects.filter(team=context["team"])
+    team_players = models.Player.objects.filter(team=team)
     context['total_count'] = team_players.count()
     context['roster_40_man_count'] = team_players.filter(is_roster_40_man=True).count()
     context['hitters'] = team_players.exclude(simple_position="P").order_by('simple_position', '-is_roster_40_man', '-mls_time', 'mls_year')
     context['pitchers'] = team_players.filter(simple_position="P").order_by('-is_roster_40_man', '-mls_time', 'mls_year')
+    if request.method == 'POST':
+        body_unicode = request.body.decode('utf-8')
+        body = dict(urllib.parse.parse_qsl(body_unicode))
+        transactions = utils.reverse_team_dict(body)
+        outright_waivers = transactions['outright_to_aaa']
+        for player_id in outright_waivers:
+            player = models.Player.objects.filter(mlb_id=player_id).get()
+            player.is_on_outright_waivers = True
+            player.save()
+
     return render(request, "team.html", context)
 
 def transactions(request):
@@ -169,6 +185,25 @@ def transactions(request):
 
     return render(request, 'transactions.html', context)
 
+def waivers(request):
+    now = datetime.now(tz=pytz.timezone("US/Eastern"))
+    context = utils.build_context(request)
+    outrighted = models.Player.objects.filter(is_on_outright_waivers=True)
+    context['outrighted'] = outrighted
+    context['is_waivers'] = True
+    if request.method == 'POST':
+        players_claimed = request.POST.getlist('outright_claims')
+        team = utils.get_team_making_request(request)
+
+        for player in players_claimed:
+            outright_claim = models.OutrightWaiverClaim()
+            outright_claim.team = team
+            outright_claim.player = models.Player.objects.filter(mlb_id=player).get()
+            outright_claim.submission_time = now
+            outright_claim.deadline = utils.calculate_next_friday_at_one_pm_eastern(now)
+            outright_claim.save()
+
+    return render(request, "waivers.html", context)
 def search(request):
     def to_bool(b):
         if b.lower() in ["y", "yes", "t", "true", "on"]:
