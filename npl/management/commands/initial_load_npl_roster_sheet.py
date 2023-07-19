@@ -39,8 +39,9 @@ class Command(BaseCommand):
         }
 
         for t in models.Team.objects.all():
+            print(t)
             team_players = utils.get_sheet(settings.ROSTER_SHEET_ID, f"{t.tab_id}!A:V", value_cutoff=None)
-            team_players = [utils.format_player_row(row, t) for row in team_players if utils.is_player(row)]
+            team_players = [utils.format_player_row(row, t) for row in team_players if utils.is_player(row)][:90]
 
             for p in team_players:
                 """
@@ -103,7 +104,7 @@ class Command(BaseCommand):
                                 print(f"+ {player_obj}")
 
                         else:
-                            print(f'"{p["raw_name"]}": "",')
+                            print(f'\t"{p["raw_name"]}": "",')
 
         for p in models.Player.objects.filter(last_name=""):
             p.first_name = p.raw_name.split(', ')[1].strip()

@@ -44,7 +44,7 @@ def auction_bid_api(request, auctionid):
     auction = get_object_or_404(models.Auction, pk=auctionid)
 
     # auction is still alive and there is an active owner with an associated team
-    if auction.closes >= now and context['owner'] and context['team'] and auction.active:
+    if auction.closes >= now and context['owner'] and context['owner_team'] and auction.active:
 
         payload['auction']['player'] = auction.player.name
         payload['auction']['closes'] = auction.closes
@@ -59,8 +59,8 @@ def auction_bid_api(request, auctionid):
         payload['leading_bid_team'] = auction.leading_bid()['team_id']
         payload['leading_bid_team_nick'] = auction.max_bid()['team_nick']
 
-        payload['bid_team'] = context['team'].pk
-        payload['bid_team_nick'] = context['team'].nickname
+        payload['bid_team'] = context['owner_team'].pk
+        payload['bid_team_nick'] = context['owner_team'].nickname
 
         # determine if this is an MLB or NonMLB auction bid
         if auction.is_mlb_auction:
@@ -73,17 +73,17 @@ def auction_bid_api(request, auctionid):
         # find the bid, and increase the bid only, no decreases
         # no bid? create one.
         try:
-            obj = obj.objects.get(auction=auction, team=context['team'])
+            obj = obj.objects.get(auction=auction, team=context['owner_team'])
             if obj.max_bid <= payload['bid']:
                 obj.max_bid = payload['bid']
                 obj.save()
 
         except models.MLBAuctionBid.DoesNotExist:
-            obj = models.MLBAuctionBid(max_bid=payload['bid'], auction=auction, team=context['team'])
+            obj = models.MLBAuctionBid(max_bid=payload['bid'], auction=auction, team=context['owner_team'])
             obj.save()
         
         except models.NonMLBAuctionBid.DoesNotExist:
-            obj = models.NonMLBAuctionBid(max_bid=payload['bid'], auction=auction, team=context['team'])
+            obj = models.NonMLBAuctionBid(max_bid=payload['bid'], auction=auction, team=context['owner_team'])
             obj.save()
 
         # get the newest state for the auction and its bids
@@ -96,7 +96,7 @@ def auction_bid_api(request, auctionid):
         payload['leading_bid_team_nick'] = auction.max_bid()['team_nick']
 
         # before we return a message, evaluate the bids
-        if payload['max_bid_team'] == context['team'].pk:
+        if payload['max_bid_team'] == context['owner_team'].pk:
             if payload['max_bid'] <= payload['bid']:
                 payload['message'] = f"{payload['bid_team_nick']} has set a higher max bid of ${payload['bid']} on {auction.player.name}. The leading bid is still ${payload['leading_bid']}."
                 payload['success'] = True 
@@ -201,6 +201,12 @@ def search(request):
         if owned.lower() != "":
             query = query.filter(is_owned=to_bool(owned))
             context["owned"] = owned
+
+    if request.GET.get("roster_status", None):
+        roster_status = request.GET['roster_status']
+        if roster_status.lower() != "":
+            query = query.filter(roster_status=roster_status.upper())
+            context['roster_status'] = roster_status
 
     context['total_count'] = query.count()
     context["hitters"] = query.exclude(simple_position="P").order_by("simple_position", "last_name")

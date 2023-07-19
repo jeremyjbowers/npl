@@ -67,34 +67,34 @@ class Command(BaseCommand):
 
             time.sleep(random.choice([1,2]))
 
-        print("NO MLB_ORG")
-        for p in models.Player.objects.filter(mlb_org__isnull=True):
-            r = requests.get(p.mlb_api_url + "?hydrate=currentTeam,team")
+        # print("NO MLB_ORG")
+        # for p in models.Player.objects.filter(mlb_org__isnull=True):
+        #     r = requests.get(p.mlb_api_url + "?hydrate=currentTeam,team")
 
-            player_json = r.json().get('people', None)
-            print(p.mlb_api_url + "?hydrate=currentTeam,team")
+        #     player_json = r.json().get('people', None)
+        #     print(p.mlb_api_url + "?hydrate=currentTeam,team")
 
 
-            if player_json:
-                if len(player_json) == 1:
-                    player_json = player_json[0]
-                    if player_json.get('currentTeam', None):
-                        org_id = None
+        #     if player_json:
+        #         if len(player_json) == 1:
+        #             player_json = player_json[0]
+        #             if player_json.get('currentTeam', None):
+        #                 org_id = None
 
-                        if player_json['currentTeam'].get('parentOrgId', None):
-                            org_id = player_json['currentTeam']['parentOrgId']
-                        else:
-                            org_id = player_json['currentTeam']['id']
+        #                 if player_json['currentTeam'].get('parentOrgId', None):
+        #                     org_id = player_json['currentTeam']['parentOrgId']
+        #                 else:
+        #                     org_id = player_json['currentTeam']['id']
 
-                        try:
-                            rorg = requests.get(f'https://statsapi.mlb.com/api/v1/teams/{org_id}')
-                            org_json = rorg.json()['teams'][0]
-                            p.mlb_org = org_json['abbreviation']
-                            p.save()
-                            print(p)
+        #                 try:
+        #                     rorg = requests.get(f'https://statsapi.mlb.com/api/v1/teams/{org_id}')
+        #                     org_json = rorg.json()['teams'][0]
+        #                     p.mlb_org = org_json['abbreviation']
+        #                     p.save()
+        #                     print(p)
                         
-                        except:
-                            pass
+        #                 except:
+        #                     pass
 
             time.sleep(random.choice([1,2]))
 

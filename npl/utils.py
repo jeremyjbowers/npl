@@ -31,7 +31,7 @@ def build_context(request):
         try:
             owner = models.Owner.objects.get(user=request.user)
             context["owner"] = owner
-            context['team'] = models.Team.objects.get(owners=owner)
+            context['owner_team'] = models.Team.objects.get(owners=owner)
         except models.Owner.DoesNotExist:
             pass
 
@@ -63,9 +63,24 @@ def dollars_to_ints(num_string):
 
 
 def is_player(row):
-    if len(row) > 0:
+    if len(row) > 6:
+        name_terms = ["/"]
+
+        for term in name_terms:
+            if term in row[1].lower():
+                return False
+
+        dead_terms = ['>', "salary", "division", "carried", "termination", "released", "buyout"]
+        for term in dead_terms:
+            if term in row[4].lower():
+                return False
+
         if len(row[0].strip()) == 1:
             return True
+
+        if ", " in row[1]:
+            return True
+
     return False
 
 def format_player_row(row, team):
@@ -121,7 +136,10 @@ def format_player_row(row, team):
             player_dict['status'] = row[8].lower()
 
     else:
-        player_dict['mls_year'] = int(row[6])
+        if row[6].strip() == "":
+            row[6] = None
+        else:
+            player_dict['mls_year'] = int(row[6])
 
     return player_dict
 

@@ -10,7 +10,7 @@ SECRET_KEY = os.environ.get(
 DEBUG = os.environ.get("DEBUG", True)
 
 ALLOWED_HOSTS = ["*"]
-CSRF_TRUSTED_ORIGINS = ['https://*.ngrok.io', 'http://127.0.0.1', 'http://localhost.nationalpastime.org']
+CSRF_TRUSTED_ORIGINS = ['https://*.ngrok.io', 'http://127.0.0.1', 'http://localhost.nationalpastime.org', 'https://*.ngrok-free.app']
 
 SITE_ID = 1
 
@@ -148,5 +148,41 @@ AWS_LOCATION = "static"
 ## MAIL
 MAILGUN_API_KEY = os.environ.get("MAILGUN_API_KEY", None)
 
+## SHEETS
 ROSTER_SHEET_ID = "1On6uRXLRQ3pzl2FHYRgWKCedsCdl6UNbNaSF6pwlGiw"
 LEAGUE_SHEET_ID = "1UQv_vnBBWUT8BiFRd7tAbvW4COWJ61BNkme7iyzf5po"
+
+## LOOKUPS
+MLB_URL_TO_ORG_NAME = {
+    "orioles": "BAL",
+    "whitesox": "CWS",
+    "astros": "HOU",
+    "redsox": "BOS",
+    "guardians": "CLE",
+    "indians": "CLE",
+    "angels": "LAA",
+    "athletics": "OAK",
+    "yankees": "NYY",
+    "tigers": "DET",
+    "rays": "TB",
+    "royals": "KC",
+    "mariners": "SEA",
+    "bluejays": "TOR",
+    "twins": "MIN",
+    "rangers": "TEX",
+    "braves": "ATL",
+    "cubs": "CHC",
+    "dbacks": "AZ",
+    "marlins": "MIA",
+    "reds": "CIN",
+    "rockies": "COL",
+    "mets": "NYM",
+    "brewers": "MIL",
+    "dodgers": "LAD",
+    "phillies": "PHI",
+    "pirates": "PIT",
+    "padres": "SD",
+    "nationals": "WSH",
+    "cardinals": "STL",
+    "giants": "SF"
+}

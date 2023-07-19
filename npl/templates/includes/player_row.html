@@ -1,5 +1,5 @@
 {% load humanize %}
-<tr class="{% if p.options == '99'%} red{% endif %}{% if not team %}{% if p.team %} owned{% endif %}{% endif %}">
+<tr class="{{ p.roster_status|default_if_none:'MINORS'|lower }} {% if p.options == '99'%} red{% endif %}{% if not team %}{% if p.team %} owned{% endif %}{% endif %}">
   {% if team %}
   <td style="text-align:center;">{% if p.is_roster_40_man %}<span class="icon"><i class="fa fa-check-circle" aria-hidden="true"></i></span>{% else %}<span class="icon"><i class="fa fa-times-circle-o" aria-hidden="true"></i></span>{% endif %}</td>
   {% endif %}
@@ -8,6 +8,7 @@
     {% if user.is_staff %}<small><a target="_blank" href="/admin/npl/player/{{ p.mlb_id }}/change/"><span class="icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></span></a></small>{% endif %}
     <small><a target="_blank" href="{{ p.mlb_url }}">MLB&nbsp;&rarr;</a></small>
   </td>
+  <td style="text-align:center;">{{ p.roster_status|default_if_none:"MINORS" }}</td>
   <td style="text-align:center;">{{ p.position|default_if_none:"" }}</td>
   <td style="text-align:center;">{{ p.age|default_if_none:"" }}</td>
   <td style="text-align:center;">{{ p.mlb_org|default_if_none:""}}</td>

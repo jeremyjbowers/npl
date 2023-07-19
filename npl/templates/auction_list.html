@@ -4,6 +4,8 @@
 {% block content %}
 
 <section class="block" style="padding-top:25px;">
+    <h1>Auctions</h1>
+    {% if auctions %}
     <table class="table">
         <thead>
             <th>player</th>
@@ -39,6 +41,9 @@
             {% endfor %}
         </tbody>
     </table>
+    {% else %}
+    <p>There are no auctions at the moment.</p>
+    {% endif %}
 </section>
 {% endblock %}
 

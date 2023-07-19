@@ -92,6 +92,8 @@ class Player(BaseModel):
     weight = models.CharField(max_length=3, blank=True, null=True)
     checked = models.BooleanField(default=False)
 
+    roster_status = models.CharField(max_length=255, blank=True, null=True)
+
     scoresheet_defense = models.JSONField(null=True, blank=True)
     scoresheet_offense = models.JSONField(null=True, blank=True)
 

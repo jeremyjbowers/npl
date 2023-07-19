@@ -13,9 +13,17 @@ class Command(BaseCommand):
         soup = BeautifulSoup(r.content, 'html.parser')
         team_urls = [a.attrs['href'] for a in soup.select('a.p-forge-logo--link') if "www" in a.attrs['href']]
         for url in team_urls:
+
+            if url == "https://www.sugarlandskeeters.com/":
+                url = "https://www.milb.com/sugar-land"
+
+            if url == "https://www.saintsbaseball.com/":
+                url = "https://www.milb.com/st-paul"
+
             tr = requests.get(f"{url}/roster")
             ts = BeautifulSoup(tr.content, 'html.parser')
-            
+            org = ts.select('button.tabs__filter-buttons--button')[2].text.split(' Transactions')[0].strip()
+
             player_rows = ts.select('div.players tr')
             for row in player_rows:
                 cells = row.select('td')
@@ -28,6 +36,14 @@ class Command(BaseCommand):
                     month = cells[5].text.strip().split('/')[0].zfill(2)
                     day = cells[5].text.strip().split('/')[1].zfill(2)
                     player_dict['birthdate'] = f"{year}-{month}-{day}"
+                    player_dict['roster_status'] = "MINORS"
+                    player_dict['mlb_org'] = org
+
+                    if "Injured 7" in cells[6].text.strip():
+                        player_dict['roster_status'] = "IL-7"
+
+                    if "Injured 60" in cells[6].text.strip():
+                        player_dict['roster_status'] = "IL-60"
 
                 except:
                     pass
@@ -54,22 +70,28 @@ class Command(BaseCommand):
         for url in team_urls:
             tr = requests.get(url.replace('depth-chart', '40-man'))
             ts = BeautifulSoup(tr.content, 'html.parser')
-            
-            player_rows = ts.select('div.players tr')
+
+            org = settings.MLB_URL_TO_ORG_NAME.get(url.split('mlb.com/')[1].split('/roster')[0].strip(), None)
+
+            player_rows = ts.select('div.players tbody tr')
             for row in player_rows:
                 cells = row.select('td')
                 player_dict = None
-                try:
-                    player_dict = {}
-                    player_dict['name'] = cells[1].select('a')[0].text.strip()
-                    player_dict['mlb_id'] = cells[1].select('a')[0].attrs['href'].split('-')[-1].strip()
-                    year = cells[5].text.strip().split('/')[2]
-                    month = cells[5].text.strip().split('/')[0].zfill(2)
-                    day = cells[5].text.strip().split('/')[1].zfill(2)
-                    player_dict['birthdate'] = f"{year}-{month}-{day}"
 
-                except:
-                    pass
+                player_dict = {}
+                player_dict['name'] = cells[1].select('a')[0].text.strip()
+                player_dict['roster_status'] = "MLB"
+
+                for span in cells[1].select('span'):
+                    if "status" in span.attrs['class'][0]:
+                        player_dict['roster_status'] = cells[1].select('span')[1].text.strip().upper()
+
+                player_dict['mlb_id'] = cells[1].select('a')[0].attrs['href'].split('-')[-1].strip()
+                year = cells[5].text.strip().split('/')[2]
+                month = cells[5].text.strip().split('/')[0].zfill(2)
+                day = cells[5].text.strip().split('/')[1].zfill(2)
+                player_dict['birthdate'] = f"{year}-{month}-{day}"
+                player_dict['mlb_org'] = org
                     
                 if player_dict:
                     try:

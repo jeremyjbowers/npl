@@ -10,6 +10,16 @@
             <div class="control">
                 <div style=""class="columns">
                     <div class="column">
+                        <p class="has-text-weight-bold">Roster</p>
+                        <div class="select">
+                            <select name="roster_status">
+                                <option></option>
+                                <option value="mlb"{% if roster_status == "mlb" %} selected{% endif %}>MLB</option>
+                                <option value="minors"{% if roster_status == "minors" %} selected{% endif %}>Minors</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="column">
                         <p class="has-text-weight-bold">Owned</p>
                         <div class="select">
                             <select name="owned">

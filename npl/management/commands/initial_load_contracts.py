@@ -45,6 +45,7 @@ class Command(BaseCommand):
 
             for p in team_players:
                 player_obj = None
+                print(p)
                 if len(p) > 9:
                     contract_cells = p[9:]
                     contract_years = [{"year": v, "amount": utils.dollars_to_ints(k)} for k,v in list(zip(contract_cells, year_cols)) if k.strip() != ""]
