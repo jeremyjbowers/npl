@@ -10,8 +10,12 @@ from npl import models, utils
 class Command(BaseCommand):
     def handle(self, *args, **options):
         call_command("migrate")
+
+        # Update the universe of players from MLB
+        call_command('initial_load_mlb_rosters')
+        call_command('load_mlb_stats')
+
+        # Update NPL specific data
         call_command('initial_load_npl_roster_sheet')
         call_command('initial_load_contracts')
         call_command('initial_load_transactions')
-        call_command('initial_load_mlb_rosters')
-        call_command('load_mlb_stats')
