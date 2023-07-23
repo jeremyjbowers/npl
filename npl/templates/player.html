@@ -11,12 +11,7 @@
         <div class="media-content">
             <p class="title is-2">{{ p.position|default_if_none:"" }} {{ p.name }}</p>
             <p class="subtitle"><strong>{% if p.team %}{{ p.team.name }}{% else %}Unowned{% endif %}</strong></p>
-            {% if p.stats.hitting %}
-            <p><h3>hitting</h3><code>{{ p.stats.hitting }}</code></p>
-            {% endif %}
-            {% if p.stats.pitching %}
-            <p><h3>pitching</h3><code>{{ p.stats.pitching }}</code></p>
-            {% endif %}
+            <p>{{ p.stats }}</p>
           </div>
       </div>
     </div>

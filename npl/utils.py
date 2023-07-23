@@ -11,6 +11,11 @@ import base64
 
 from npl import models
 
+def get_mlb_season(date):
+    if date.month >= 11:
+        return int(date.year) + 1
+    return date.year
+
 def build_context(request):
     context = {}
 
