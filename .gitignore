@@ -3,3 +3,4 @@ credentials.json
 
 data/*.json
 data/*/*.json
+!data/fixtures/*.json
