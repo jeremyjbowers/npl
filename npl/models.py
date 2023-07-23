@@ -111,6 +111,7 @@ class Player(BaseModel):
     mls_year = models.CharField(max_length=255, blank=True, null=True)
 
     # Roster status
+    is_mlb_eligible = models.BooleanField(default=False)
     team = models.ForeignKey(Team, on_delete=models.SET_NULL, blank=True, null=True)
     is_owned = models.BooleanField(default=False)
     is_roster_40_man = models.BooleanField(default=False)

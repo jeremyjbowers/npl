@@ -38,6 +38,8 @@ class Command(BaseCommand):
         for p in players:
             try:
                 obj = models.Player.objects.get(mlb_id=p['playerId'])
+                if league_info['sportId'] == 1:
+                    obj.is_mlb_eligible = True
                 league = league_info['level']
 
                 if not obj.stats:
