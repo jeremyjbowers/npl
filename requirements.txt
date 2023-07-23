@@ -16,6 +16,7 @@ django-nyt==1.2.4
 django-quill-editor==0.1.40
 django-reversion==5.0.4
 django-sekizai==4.0.0
+django-storages==1.13.2
 google-api-core==2.11.0
 google-api-python-client==2.76.0
 google-auth==2.16.0
