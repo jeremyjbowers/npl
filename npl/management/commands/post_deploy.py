@@ -11,3 +11,4 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         # call_command('loaddata', 'data/fixtures/users.json')
         # call_command('loaddata', 'data/fixtures/npl.json')
+        pass
