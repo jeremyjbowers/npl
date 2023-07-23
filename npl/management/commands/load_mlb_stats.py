@@ -85,7 +85,7 @@ class Command(BaseCommand):
 
                 keys = self.KEYS[side]
                 players = self.get_api_json(url)
-                self.parse_stats('hitting', players, keys, l)
+                self.parse_stats(side, players, keys, l)
 
 
     def handle(self, *args, **options):
