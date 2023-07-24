@@ -11,7 +11,10 @@
         <div class="media-content">
             <p class="title is-2">{{ p.position|default_if_none:"" }} {{ p.name }}</p>
             <p class="subtitle"><strong>{% if p.team %}{{ p.team.name }}{% else %}Unowned{% endif %}</strong></p>
-            <p>{{ p.stats }}</p>
+            {% for stat in p.stats reversed %}
+                <h2>{{ stat.level }}</h2>
+                {% include "includes/hitter_stat_row.html" %}
+            {% endfor %}
           </div>
       </div>
     </div>

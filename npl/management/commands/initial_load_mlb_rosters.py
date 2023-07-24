@@ -8,6 +8,18 @@ from npl import models, utils
 
 
 class Command(BaseCommand):
+    def get_cpx_rosters(self):
+        roster_urls = []
+        for league_url in [self.FCL_URL, self.AZL_URL, self.DSL_URL]:
+            r = requests.get(league_url)
+            soup = BeautifulSoup(r.content, 'html.parser')
+            print(league_url)
+            for a in soup.select('a'):
+                if a.get('href', None):
+                    if 'roster' in a.attrs['href']:
+                        roster_urls.append(a.attrs['href'])
+        print(roster_urls)
+
     def get_milb_rosters(self):
         r = requests.get(self.MILB_AFFILIATE_URL)
         soup = BeautifulSoup(r.content, 'html.parser')
@@ -110,8 +122,10 @@ class Command(BaseCommand):
 
         self.MLB_DEPTH_URL = "https://www.mlb.com/team/roster/depth-chart"
         self.MILB_AFFILIATE_URL = "https://www.milb.com/about/teams/by-affiliate"
+        self.FCL_URL = "https://www.milb.com/florida-complex"
+        self.AZL_URL = "https://www.milb.com/arizona-complex"
+        self.DSL_URL = "https://www.milb.com/dominican-summer"
 
-        self.get_milb_rosters()
-        self.get_mlb_rosters()
-
-
+        self.get_cpx_rosters()
+        # self.get_milb_rosters()
+        # self.get_mlb_rosters()

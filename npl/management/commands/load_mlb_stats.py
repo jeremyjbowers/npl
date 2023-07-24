@@ -21,7 +21,7 @@ class Command(BaseCommand):
     }
 
     def nuke_stats(self):
-        models.Player.objects.update(stats={})
+        models.Player.objects.update(stats=[])
 
     def get_api_json(self, url):
         r = requests.get(url)
@@ -43,29 +43,17 @@ class Command(BaseCommand):
                 league = league_info['level']
 
                 if not obj.stats:
-                    obj.stats = {}
+                    obj.stats = []
 
-                if not obj.stats.get('current', None):
-                    obj.stats['current'] = {}
-
-                if not obj.stats.get(self.CURRENT_SEASON, None):
-                    obj.stats[self.CURRENT_SEASON] = {}
-
-                if not obj.stats['current'].get(league, None):
-                    obj.stats['current'][league] = {"hitting": {}, "pitching": {}}
-
-                if not obj.stats[self.CURRENT_SEASON].get(league, None):
-                    obj.stats[self.CURRENT_SEASON][league] = {"hitting": {}, "pitching": {}}
-
+                stat_dict = {}
                 for k,v in p.items():
                     if k in keys:
-                        obj.stats[self.CURRENT_SEASON][league][stat_type][k] = v
-                        obj.stats['current'][league][stat_type][k] = v
+                        stat_dict[k] = v
 
-                obj.stats[self.CURRENT_SEASON][league][stat_type]['season'] = self.CURRENT_SEASON
-                obj.stats[self.CURRENT_SEASON][league][stat_type]['leavel'] = league_info['level']
-                obj.stats['current'][league][stat_type]['season'] = self.CURRENT_SEASON
-                obj.stats['current'][league][stat_type]['leavel'] = league_info['level']
+                stat_dict['season'] = self.CURRENT_SEASON
+                stat_dict['level'] = league_info['level']
+
+                obj.stats.append(stat_dict)
 
                 obj.save()
                 print(f"* {obj}")
