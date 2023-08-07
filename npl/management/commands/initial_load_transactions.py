@@ -38,43 +38,47 @@ class Command(BaseCommand):
         transactions = utils.get_sheet(settings.LEAGUE_SHEET_ID, f"2023 Transactions!A:F", value_cutoff=None)[3:]
 
         for t in transactions:
-            t_obj = None
-            tt_obj = None
-
-            transaction_dict = {}
-            transaction_dict['raw_date'] = t[0]
-            transaction_dict['date'] = parse(t[0])
-
-            transaction_dict['raw_team'] = t[1]
-            transaction_dict['raw_player'] = t[2]
-            transaction_dict['raw_transaction_type'] = t[3]
-
             try:
-                transaction_dict['raw_acquiring_team'] = t[4]
-            except IndexError:
+                t_obj = None
+                tt_obj = None
+
+                transaction_dict = {}
+                transaction_dict['raw_date'] = t[0]
+                transaction_dict['date'] = parse(t[0])
+
+                transaction_dict['raw_team'] = t[1]
+                transaction_dict['raw_player'] = t[2]
+                transaction_dict['raw_transaction_type'] = t[3]
+
+                try:
+                    transaction_dict['raw_acquiring_team'] = t[4]
+                except IndexError:
+                    pass
+
+                try:
+                    transaction_dict['notes'] = t[5]
+                except IndexError:
+                    pass
+
+                transaction_dict['is_archive_transaction'] = True
+
+                try:
+                    tt_obj = models.TransactionType.objects.get(transaction_type=t[3])
+
+                except models.TransactionType.DoesNotExist:
+                    tt_obj = models.TransactionType(transaction_type=t[3])
+                    tt_obj.save()
+                    print(f"+ {tt_obj}")
+
+                try:
+                    t_obj = models.Transaction.objects.get(**transaction_dict)
+
+                except models.Transaction.DoesNotExist:
+                    t_obj = models.Transaction(**transaction_dict)
+                    t_obj.transaction_type = tt_obj
+                    t_obj.save()
+                    print(f"+ {t_obj}")
+
+            except:
                 pass
-
-            try:
-                transaction_dict['notes'] = t[5]
-            except IndexError:
-                pass
-
-            transaction_dict['is_archive_transaction'] = True
-
-            try:
-                tt_obj = models.TransactionType.objects.get(transaction_type=t[3])
-
-            except models.TransactionType.DoesNotExist:
-                tt_obj = models.TransactionType(transaction_type=t[3])
-                tt_obj.save()
-                print(f"+ {tt_obj}")
-
-            try:
-                t_obj = models.Transaction.objects.get(**transaction_dict)
-
-            except models.Transaction.DoesNotExist:
-                t_obj = models.Transaction(**transaction_dict)
-                t_obj.transaction_type = tt_obj
-                t_obj.save()
-                print(f"+ {t_obj}")
             
