@@ -10,6 +10,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
 
         models.Player.objects.filter(team__isnull=False).update(team=None)
+        models.Player.objects.all().update(is_roster_30_man=False)
+        models.Player.objects.all().update(is_roster_40_man=False)
 
         CROSSWALK = {
             "Duno, Alfredo": "806957",
@@ -43,7 +45,7 @@ class Command(BaseCommand):
             team_players = utils.get_sheet(settings.ROSTER_SHEET_ID, f"{t.tab_id}!A:V", value_cutoff=None)
             team_players = [utils.format_player_row(row, t) for row in team_players if utils.is_player(row)][:90]
 
-            for p in team_players:
+            for idx, p in enumerate(team_players):
                 """
                 debug
                 """
@@ -65,6 +67,10 @@ class Command(BaseCommand):
                         for k,v in p.items():
                             if k != "mlb_id":
                                 setattr(player_obj, k, v)
+
+
+                        if idx < 30:
+                            player_obj.is_roster_30_man = True
 
                         player_obj.team = t
                         player_obj.save()

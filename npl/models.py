@@ -154,6 +154,36 @@ class Player(BaseModel):
             return f"{self.position} {self.name} {self.mlb_org} ({self.team.nickname})"
         return f"{self.position} {self.name} {self.mlb_org}"
 
+
+    @property
+    def is_sp(self):
+        starter = False
+        mlb_checked = False
+        all_games = 0
+        started_games = 0
+        if "P" in self.simple_position:
+            if self.stats:
+                for stat in self.stats:
+                    gs = stat.get('gamesStarted', 0)
+                    g = stat.get('gamesPitched', 0)
+
+                    if stat.get('level', '') == "MLB":
+                        mlb_checked = True
+                        if gs > 0 and g > 0:
+                            if (gs / g) > 0.3: 
+                                starter = True
+                            else:
+                                starter = False
+                    else:
+                        all_games += g
+                        started_games += gs
+
+                if started_games > 0 and all_games > 0:
+                    if (started_games / all_games) > 0.3:
+                        if not mlb_checked:
+                            starter = True
+        return starter
+
     @property
     def level(self):
         if self.team:

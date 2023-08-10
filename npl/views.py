@@ -159,8 +159,15 @@ def team_detail(request, nickname):
     team_players = models.Player.objects.filter(team=context["team"])
     context['total_count'] = team_players.count()
     context['roster_40_man_count'] = team_players.filter(is_roster_40_man=True).count()
-    context['hitters'] = team_players.exclude(simple_position="P").order_by('simple_position', '-is_roster_40_man', '-mls_time', 'mls_year')
-    context['pitchers'] = team_players.filter(simple_position="P").order_by('-is_roster_40_man', '-mls_time', 'mls_year')
+    context['roster_30_man_count'] = team_players.filter(is_roster_30_man=True).count()
+    context['hitters'] = team_players.exclude(simple_position="P").order_by('simple_position','-mls_time', 'mls_year')
+    context['pitchers'] = team_players.filter(simple_position="P").order_by('-mls_time', 'mls_year')
+    context['30_man_hitters'] = team_players.exclude(simple_position="P").exclude(is_roster_30_man=False).order_by('simple_position','-mls_time', 'mls_year')
+    context['30_man_pitchers'] = team_players.filter(simple_position="P", is_roster_30_man=True).order_by('-mls_time', 'mls_year')
+    context['aaa_pitchers'] = team_players.filter(simple_position="P", is_roster_30_man=False, is_roster_40_man=True).order_by('-mls_time', 'mls_year')
+    context['aaa_hitters'] = team_players.exclude(simple_position="P").exclude(is_roster_30_man=True).filter(is_roster_40_man=True).order_by('-mls_time', 'mls_year')
+    context['minors_hitters'] = team_players.exclude(simple_position="P").exclude(is_roster_30_man=True).exclude(is_roster_40_man=True).order_by('-mls_time', 'mls_year')
+    context['minors_pitchers'] = team_players.filter(simple_position="P", is_roster_30_man=False).exclude(is_roster_40_man=True).order_by('-mls_time', 'mls_year')
     return render(request, "team.html", context)
 
 def transactions(request):
