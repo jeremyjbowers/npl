@@ -8,17 +8,55 @@ from npl import models, utils
 
 
 class Command(BaseCommand):
-    # def get_cpx_rosters(self):
-    #    roster_urls = []
-    #    for league_url in [self.FCL_URL, self.AZL_URL, self.DSL_URL]:
-    #        r = requests.get(league_url)
-    #        soup = BeautifulSoup(r.content, 'html.parser')
-    #        print(league_url)
-    #        for a in soup.select('a'):
-    #            if a.get('href', None):
-    #                if 'roster' in a.attrs['href']:
-    #                    roster_urls.append(a.attrs['href'])
-    #    print(roster_urls)
+    def get_cpx_rosters(self):
+        roster_urls = []
+        for league_url in [self.FCL_URL, self.AZL_URL, self.DSL_URL]:
+            r = requests.get(league_url)
+            soup = BeautifulSoup(r.content, 'html.parser')
+            for a in soup.select('a'):
+                if a.get('href', None):
+                    if 'roster' in a.attrs['href']:
+                        roster_urls.append(a.attrs['href'])
+
+        for url in roster_urls:
+            tr = requests.get(url)
+            ts = BeautifulSoup(tr.content, 'html.parser')
+            player_rows = ts.select('div.players tr')
+
+            for row in player_rows:
+                cells = row.select('td')
+                player_dict = None
+                try:
+                    player_dict = {}
+                    player_dict['name'] = cells[1].select('a')[0].text.strip()
+                    player_dict['mlb_id'] = cells[1].select('a')[0].attrs['href'].split('/')[-1].strip()
+                    year = cells[5].text.strip().split('/')[2]
+                    month = cells[5].text.strip().split('/')[0].zfill(2)
+                    day = cells[5].text.strip().split('/')[1].zfill(2)
+                    player_dict['birthdate'] = f"{year}-{month}-{day}"
+                    player_dict['roster_status'] = "MINORS"
+
+                    if "Injured 7" in cells[6].text.strip():
+                        player_dict['roster_status'] = "IL-7"
+
+                    if "Injured 60" in cells[6].text.strip():
+                        player_dict['roster_status'] = "IL-60"
+
+                except:
+                    pass
+                    
+                if player_dict:
+                    try:
+                        obj = models.Player.objects.get(mlb_id=player_dict['mlb_id'])
+                    
+                    except models.Player.DoesNotExist:
+                        obj = models.Player()
+                    
+                    for k,v in player_dict.items():
+                        setattr(obj, k, v)
+
+                    obj.save()
+                    print(obj)
 
     def get_milb_rosters(self):
         r = requests.get(self.MILB_AFFILIATE_URL)
@@ -126,6 +164,6 @@ class Command(BaseCommand):
         self.AZL_URL = "https://www.milb.com/arizona-complex"
         self.DSL_URL = "https://www.milb.com/dominican-summer"
 
-        # self.get_cpx_rosters()
+        self.get_cpx_rosters()
         self.get_milb_rosters()
         self.get_mlb_rosters()

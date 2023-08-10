@@ -2,6 +2,7 @@ from googleapiclient.discovery import build
 from google.oauth2 import service_account
 
 import os
+import datetime
 
 import gspread
 import json
@@ -10,6 +11,12 @@ from nameparser import HumanName
 import base64
 
 from npl import models
+
+def get_timestamp():
+    current_time = datetime.datetime.now()  
+    stamp = current_time.timestamp()
+    stamp = f"{stamp}".split('.')[0]
+    return int(stamp)
 
 def get_mlb_season(date):
     if date.month >= 11:

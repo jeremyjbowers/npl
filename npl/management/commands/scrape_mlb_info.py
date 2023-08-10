@@ -12,16 +12,17 @@ from npl import models, utils
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        print("NO NAMES")
-        for p in models.Player.objects.filter(name__isnull=True):
-            r = requests.get(p.mlb_api_url + "?hydrate=currentTeam,team")
-            
-            player_json = r.json().get('people', None)
+        stamp = utils.get_timestamp()
+        one_week_ago_stamp = stamp - 600000
 
-            print(p.mlb_api_url + "?hydrate=currentTeam,team")
+        for p in models.Player.objects.filter(last_verified__lte=one_week_ago_stamp):
+            url = p.mlb_api_url + "?hydrate=currentTeam,team"
+            r = requests.get(url)
+            player_json = r.json().get('people', None)
 
             if player_json:
                 if len(player_json) == 1:
+
                     player_json = player_json[0]
                     p.active = player_json['active']
                     p.birthdate = player_json['birthDate']
@@ -31,71 +32,46 @@ class Command(BaseCommand):
 
                     try:
                         p.height = player_json['height']
-                        p.weight = player_json['weight']
-                        p.bats = player_json['batSide']['code']
-                        p.throws = player_json['pitchHand']['code']
-
-                    except KeyError:
+                    except:
                         pass
-                    p.save()
-                    print(p)
-
-        print("NO BIRTHDATE")
-        for p in models.Player.objects.filter(birthdate__isnull=True):
-            r = requests.get(p.mlb_api_url + "?hydrate=currentTeam,team")
-            
-            player_json = r.json().get('people', None)
-
-            print(p.mlb_api_url + "?hydrate=currentTeam,team")
-
-            if player_json:
-                if len(player_json) == 1:
-                    player_json = player_json[0]
-                    p.active = player_json['active']
-                    p.birthdate = player_json['birthDate']
+                    
+                    try:
+                        p.weight = player_json['weight']
+                    except:
+                        pass
 
                     try:
-                        p.height = player_json['height']
-                        p.weight = player_json['weight']
                         p.bats = player_json['batSide']['code']
-                        p.throws = player_json['pitchHand']['code']
-
-                    except KeyError:
+                    except:
                         pass
+
+                    try:
+                        p.throws = player_json['pitchHand']['code']
+                    except:
+                        pass
+                    
+                    try:
+                        p.position = player_json['primaryPosition']['abbreviation']
+                    except:
+                        pass
+
+                    team_abbrev = None
+
+                    if player_json.get('currentTeam', None):
+                        if player_json['currentTeam'].get('sport', None):
+                            if player_json['currentTeam']['sport']['id'] == 1:
+                                # MLB team, get the ID directly
+                                team_abbrev = player_json['currentTeam']['abbreviation']
+                            else:
+                                # MiLB team
+                                if player_json['currentTeam'].get('parentOrgId', None):
+                                    team_abbrev = requests.get(f'https://statsapi.mlb.com/api/v1/teams/{player_json["currentTeam"]["parentOrgId"]}/').json()['teams'][0]['abbreviation']
+                    
+                    p.mlb_org = team_abbrev
+                    p.last_verified = stamp
                     p.save()
                     print(p)
 
-            time.sleep(random.choice([1,2]))
-
-        # print("NO MLB_ORG")
-        # for p in models.Player.objects.filter(mlb_org__isnull=True):
-        #     r = requests.get(p.mlb_api_url + "?hydrate=currentTeam,team")
-
-        #     player_json = r.json().get('people', None)
-        #     print(p.mlb_api_url + "?hydrate=currentTeam,team")
-
-
-        #     if player_json:
-        #         if len(player_json) == 1:
-        #             player_json = player_json[0]
-        #             if player_json.get('currentTeam', None):
-        #                 org_id = None
-
-        #                 if player_json['currentTeam'].get('parentOrgId', None):
-        #                     org_id = player_json['currentTeam']['parentOrgId']
-        #                 else:
-        #                     org_id = player_json['currentTeam']['id']
-
-        #                 try:
-        #                     rorg = requests.get(f'https://statsapi.mlb.com/api/v1/teams/{org_id}')
-        #                     org_json = rorg.json()['teams'][0]
-        #                     p.mlb_org = org_json['abbreviation']
-        #                     p.save()
-        #                     print(p)
-                        
-        #                 except:
-        #                     pass
-
-            time.sleep(random.choice([1,2]))
+            time.sleep(1)
 
             
