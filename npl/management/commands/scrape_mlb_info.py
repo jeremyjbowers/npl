@@ -27,8 +27,8 @@ class Command(BaseCommand):
                     p.active = player_json['active']
                     p.birthdate = player_json['birthDate']
                     p.name = player_json['fullName']
-                    p.last_name = player_json['lastName']
-                    p.first_name = player_json['firstName']
+                    p.last_name = player_json['useLastName']
+                    p.first_name = player_json['useName']
 
                     try:
                         p.height = player_json['height']
