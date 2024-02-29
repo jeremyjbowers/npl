@@ -7,6 +7,8 @@ from npl import models, utils
 class Command(BaseCommand):
     def handle(self, *args, **options):
 
+        models.Contract.objects.all().delete()
+
         CROSSWALK = {
             "Duno, Alfredo": "806957",
             "Valdez, Derniche": "806961",
@@ -37,15 +39,15 @@ class Command(BaseCommand):
             "Monteverde, Carlos": "808272",
         }
 
-        year_cols = ["2023","2024","2025","2026","2027","2028","2029","2030"]
+        year_cols = ["2024","2025","2026","2027","2028","2029","2030","2031"]
 
         for t in models.Team.objects.all():
             team_players = utils.get_sheet(settings.ROSTER_SHEET_ID, f"{t.tab_id}!A:V", value_cutoff=None)
             team_players = [row for row in team_players if utils.is_player(row)]
 
             for p in team_players:
-                player_obj = None
                 print(p)
+                player_obj = None
                 if len(p) > 9:
                     contract_cells = p[9:]
                     contract_years = [{"year": v, "amount": utils.dollars_to_ints(k)} for k,v in list(zip(contract_cells, year_cols)) if k.strip() != ""]

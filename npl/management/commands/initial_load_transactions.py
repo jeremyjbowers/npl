@@ -35,9 +35,13 @@ from npl import models, utils
 class Command(BaseCommand):
     def handle(self, *args, **options):
 
-        transactions = utils.get_sheet(settings.LEAGUE_SHEET_ID, f"2023 Transactions!A:F", value_cutoff=None)[3:]
+        models.Transaction.objects.all().delete()
+        models.TransactionType.objects.all().delete()
+
+        transactions = utils.get_sheet(settings.LEAGUE_SHEET_ID, f"2024 Transactions!A:H", value_cutoff=None)[3:]
 
         for t in transactions:
+            print(t)
             try:
                 t_obj = None
                 tt_obj = None
@@ -48,25 +52,28 @@ class Command(BaseCommand):
 
                 transaction_dict['raw_team'] = t[1]
                 transaction_dict['raw_player'] = t[2]
-                transaction_dict['raw_transaction_type'] = t[3]
+                transaction_dict['mlb_id'] = None
+                if len(t[4].strip()) > 5:
+                    transaction_dict['mlb_id'] = int(t[4].strip())
+                transaction_dict['raw_transaction_type'] = t[5]
 
                 try:
-                    transaction_dict['raw_acquiring_team'] = t[4]
+                    transaction_dict['raw_acquiring_team'] = t[6]
                 except IndexError:
                     pass
 
                 try:
-                    transaction_dict['notes'] = t[5]
+                    transaction_dict['notes'] = t[7]
                 except IndexError:
                     pass
 
                 transaction_dict['is_archive_transaction'] = True
 
                 try:
-                    tt_obj = models.TransactionType.objects.get(transaction_type=t[3])
+                    tt_obj = models.TransactionType.objects.get(transaction_type=t[5])
 
                 except models.TransactionType.DoesNotExist:
-                    tt_obj = models.TransactionType(transaction_type=t[3])
+                    tt_obj = models.TransactionType(transaction_type=t[5])
                     tt_obj.save()
                     print(f"+ {tt_obj}")
 

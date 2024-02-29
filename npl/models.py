@@ -120,6 +120,7 @@ class Player(BaseModel):
     is_roster_covid_il = models.BooleanField(default=False)
     is_roster_eos_il = models.BooleanField(default=False)
     is_roster_restricted = models.BooleanField(default=False)
+    is_roster_aaa = models.BooleanField(default=False)
     is_roster_aaa_option = models.BooleanField(default=False)
     is_roster_aaa_outright = models.BooleanField(default=False)
     is_roster_aaa_foreign = models.BooleanField(default=False)
@@ -342,6 +343,7 @@ class Transaction(BaseModel):
 
     raw_player = models.CharField(max_length=255, blank=True, null=True)
     player = models.ForeignKey(Player, on_delete=models.CASCADE, blank=True, null=True)
+    mlb_id = models.CharField(max_length=255, blank=True, null=True)
 
     cash_considerations = models.IntegerField(blank=True, null=True)
 
@@ -404,7 +406,8 @@ class Transaction(BaseModel):
         return self.raw_acquiring_team
 
     def set_player(self):
-        pass
+        if self.mlb_id and not self.player:
+            self.player = Player.objects.get(mlb_id=self.mlb_id)
 
     def set_team(self):
         if self.raw_team and not self.team:

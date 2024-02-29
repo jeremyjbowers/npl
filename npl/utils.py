@@ -12,6 +12,14 @@ import base64
 
 from npl import models
 
+
+def is_player(row):
+    if row != []:
+        if row[0].strip() in ["-", "1"]:
+            return True
+    return False
+
+
 def get_timestamp():
     current_time = datetime.datetime.now()  
     stamp = current_time.timestamp()
@@ -73,36 +81,8 @@ def dollars_to_ints(num_string):
 
     return payload
 
-
-def is_player(row):
-    if len(row) > 6:
-        name_terms = ["/"]
-
-        for term in name_terms:
-            if term in row[1].lower():
-                return False
-
-        dead_terms = ['>', "salary", "division", "carried", "termination", "released", "buyout"]
-        for term in dead_terms:
-            if term in row[4].lower():
-                return False
-
-        if len(row[0].strip()) == 1:
-            return True
-
-        if ", " in row[1]:
-            return True
-
-    return False
-
-def format_player_row(row, team):
-    player_dict = {}
-
+def format_player_row(row, team, player_dict):
     player_dict['team'] = team
-
-    player_dict['is_roster_40_man'] = False
-    if row[0] == "1":
-        player_dict['is_roster_40_man'] = True 
 
     raw_name = row[1].strip()
     if "Junior" in raw_name:

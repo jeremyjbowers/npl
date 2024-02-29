@@ -195,3 +195,7 @@ LEVELS = [
     (11,"AAA"),
     (1,"MLB"),
 ]
+
+## LEAGUE STUFF
+LEAGUE_YEAR = 2024
+LEAGUE_SEASON = "offseason"
