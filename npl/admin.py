@@ -15,21 +15,12 @@ from npl.models import (
     Collection,
     Event,
     Auction,
-    MLBAuctionBid,
-    NonMLBAuctionBid
+    MLBAuctionBid
 )
 
 admin.site.site_title = "The NPL"
 admin.site.site_header = "The NPL: Admin"
 admin.site.index_title = "Administer The NPL Website"
-
-
-class NonMLBAuctionBidInline(admin.TabularInline):
-    model = NonMLBAuctionBid
-    exclude = ("active",)
-    extra = 0
-    autocomplete_fields = ['team']
-    readonly_fields = ('last_modified',)
 
 
 class MLBAuctionBidInline(admin.TabularInline):
@@ -45,7 +36,7 @@ class AuctionAdmin(admin.ModelAdmin):
     model = Auction
     search_fields = ['player']
     list_display = ['player', 'closes', 'active']
-    inlines = [NonMLBAuctionBidInline, MLBAuctionBidInline]
+    inlines = [MLBAuctionBidInline]
     autocomplete_fields = ['player']
     list_editable = ['active']
 

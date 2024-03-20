@@ -533,7 +533,6 @@ class Event(BaseModel):
 class Auction(BaseModel):
     player = models.ForeignKey(Player, null=True, on_delete=models.SET_NULL)
     closes = models.DateTimeField()
-    is_mlb_auction = models.BooleanField(default=True, help_text="Mark true for MLB auctions, which should use MLBAuctionBid. Mark false for non-MLB auctions, which should use NonMLBAuctionBid.")
 
     class Meta:
         ordering = ['-closes']
@@ -547,55 +546,27 @@ class Auction(BaseModel):
     def __unicode__(self):
         return f"{self.player.name} @ {self.closes}"
 
-    def max_bid(self):
-        if self.is_mlb_auction:
-            bids = MLBAuctionBid.objects.filter(auction=self).order_by('-max_bid', 'last_modified')
-            if len(bids) > 0:
-                return {"team_id": bids[0].team.pk, "team_nick": bids[0].team.nickname, "bid": bids[0].max_bid}
-            return {"team_id": None, "team_nick": None, "bid": 0}
 
-        bids = NonMLBAuctionBid.objects.filter(auction=self).order_by('-max_bid', 'last_modified')
+    def max_bid(self):
+        bids = MLBAuctionBid.objects.filter(auction=self).order_by('-max_bid')
         if len(bids) > 0:
-            return {"team_id": bids[0].team.pk, "team_nick": bids[0].team.nickname, "bid": bids[0].max_bid}
-        getcontext().prec = 1
-        return {"team_id": None, "team_nick": None, "bid": Decimal('0.0')}
+            return {"team_id": bids[0].team.pk,"bid": bids[0].max_bid}
+        return {"team_id": None,"bid": 0}
 
     def leading_bid(self):
-        if self.is_mlb_auction:
-            bids = MLBAuctionBid.objects.filter(auction=self).order_by('-max_bid', 'last_modified')
-            if len(bids) > 0:
-                if len(bids) == 1:
-                    return {"team_id": bids[0].team.pk, "team_nick": bids[0].team.nickname, "bid": bids[0].max_bid}
-                else:
-                    return {"team_id": bids[0].team.pk, "team_nick": bids[0].team.nickname, "bid": bids[1].max_bid + 1}
-            return {"team_id": None, "team_nick": None, "bid": 0}
-
-        bids = NonMLBAuctionBid.objects.filter(auction=self).order_by('-max_bid', 'last_modified')
+        bids = MLBAuctionBid.objects.filter(auction=self).order_by('-max_bid')
         if len(bids) > 0:
             if len(bids) == 1:
-                return {"team_id": bids[0].team.pk, "team_nick": bids[0].team.nickname, "bid": bids[0].max_bid}
+                return {"team_id": bids[0].team.pk,"bid": bids[0].max_bid}
             else:
-                return {"team_id": bids[0].team.pk, "team_nick": bids[0].team.nickname, "bid": bids[1].max_bid +  Decimal('0.1')}
-        getcontext().prec = 1
-        return {"team_id": None, "team_nick": None, "bid": Decimal('0.0')}
+                return {"team_id": bids[0].team.pk,"bid": bids[1].max_bid + 1}
+        return {"team_id": None,"bid": 0}
 
 
 class MLBAuctionBid(BaseModel):
     team = models.ForeignKey(Team, on_delete=models.CASCADE)
     auction = models.ForeignKey(Auction, on_delete=models.CASCADE)
     max_bid = models.IntegerField()
-
-    class Meta:
-        unique_together = ['team', 'auction']
-
-    def __unicode__(self):
-        return f"{self.auction} > {self.team.nickname} ({self.max_bid})"
-
-
-class NonMLBAuctionBid(BaseModel):
-    team = models.ForeignKey(Team, on_delete=models.CASCADE)
-    auction = models.ForeignKey(Auction, on_delete=models.CASCADE)
-    max_bid = models.DecimalField(max_digits=4, decimal_places=1)
 
     class Meta:
         unique_together = ['team', 'auction']

@@ -42,41 +42,44 @@ class Command(BaseCommand):
 
         for t in transactions:
             print(t)
+            t_obj = None
+            tt_obj = None
+
+            transaction_dict = {}
+            transaction_dict['raw_date'] = t[0]
+            transaction_dict['date'] = parse(t[0])
+
+            transaction_dict['raw_team'] = t[1]
+            transaction_dict['raw_player'] = t[2]
+            transaction_dict['mlb_id'] = None
+            if len(t[4].strip()) > 5:
+                transaction_dict['mlb_id'] = int(t[4].strip())
+                if transaction_dict['mlb_id'] == "":
+                    transaction_dict['mlb_id'] = None
+
+            transaction_dict['raw_transaction_type'] = t[5]
+
             try:
-                t_obj = None
-                tt_obj = None
+                transaction_dict['raw_acquiring_team'] = t[6]
+            except IndexError:
+                pass
 
-                transaction_dict = {}
-                transaction_dict['raw_date'] = t[0]
-                transaction_dict['date'] = parse(t[0])
+            try:
+                transaction_dict['notes'] = t[7]
+            except IndexError:
+                pass
 
-                transaction_dict['raw_team'] = t[1]
-                transaction_dict['raw_player'] = t[2]
-                transaction_dict['mlb_id'] = None
-                if len(t[4].strip()) > 5:
-                    transaction_dict['mlb_id'] = int(t[4].strip())
-                transaction_dict['raw_transaction_type'] = t[5]
+            transaction_dict['is_archive_transaction'] = True
 
-                try:
-                    transaction_dict['raw_acquiring_team'] = t[6]
-                except IndexError:
-                    pass
+            try:
+                tt_obj = models.TransactionType.objects.get(transaction_type=t[5])
 
-                try:
-                    transaction_dict['notes'] = t[7]
-                except IndexError:
-                    pass
+            except models.TransactionType.DoesNotExist:
+                tt_obj = models.TransactionType(transaction_type=t[5])
+                tt_obj.save()
+                print(f"+ {tt_obj}")
 
-                transaction_dict['is_archive_transaction'] = True
-
-                try:
-                    tt_obj = models.TransactionType.objects.get(transaction_type=t[5])
-
-                except models.TransactionType.DoesNotExist:
-                    tt_obj = models.TransactionType(transaction_type=t[5])
-                    tt_obj.save()
-                    print(f"+ {tt_obj}")
-
+            if transaction_dict['mlb_id']:
                 try:
                     t_obj = models.Transaction.objects.get(**transaction_dict)
 
@@ -85,7 +88,4 @@ class Command(BaseCommand):
                     t_obj.transaction_type = tt_obj
                     t_obj.save()
                     print(f"+ {t_obj}")
-
-            except:
-                pass
             
