@@ -71,7 +71,7 @@ class Command(BaseCommand):
             player_dict['name'] = p['person']['fullName']
             player_dict['position'] = p['position']['abbreviation']
             player_dict['mlb_org'] = mlb_team
-            player_dict['roster_stats'] = "MLB"
+            player_dict['roster_stats'] = "MINORS"
 
             if "injured" in p['status']['description'].lower():
                 if "10" in p['status']['description']:
@@ -81,8 +81,9 @@ class Command(BaseCommand):
                 if "60" in p['status']['description']:
                     player_dict['roster_status'] = "IL-60"
 
-            if "minor" in p['status']['description']:
-                player_dict['roster_status'] = "MINORS"
+            if t['sport']['id'] == 1:
+                if 'active' in p['status']['description'].lower():
+                    player_dict['roster_status'] = "MLB"
 
             try:
                 obj = models.Player.objects.get(mlb_id=player_dict['mlb_id'])
