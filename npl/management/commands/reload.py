@@ -10,7 +10,7 @@ from npl import models, utils
 class Command(BaseCommand):
     def handle(self, *args, **options):
         # Update the universe of players from MLB
-        # call_command('load_mlb_rosters')
+        call_command('load_mlb_rosters')
         # call_command('load_mlb_stats')
 
         # Update NPL specific data

@@ -151,13 +151,15 @@ class Command(BaseCommand):
                         if "status" in span.attrs['class'][0]:
                             player_dict['roster_status'] = cells[1].select('span')[1].text.strip().upper()
 
-                    player_dict['mlb_id'] = cells[1].select('a')[0].attrs['href'].split('-')[-1].strip()
+                    player_dict['mlb_id'] = cells[1].select('a')[0].attrs['href'].split('-')[-1].strip().split('/')[-1].strip()
                     year = cells[5].text.strip().split('/')[2]
                     month = cells[5].text.strip().split('/')[0].zfill(2)
                     day = cells[5].text.strip().split('/')[1].zfill(2)
                     player_dict['birthdate'] = f"{year}-{month}-{day}"
                     player_dict['mlb_org'] = org
-                        
+
+                    print(player_dict)
+
                     if player_dict:
                         try:
                             obj = models.Player.objects.get(mlb_id=player_dict['mlb_id'])
@@ -171,6 +173,15 @@ class Command(BaseCommand):
                         obj.save()
                         print(obj)
 
+    def fix_bad_player_ids(self):
+        bad_ids = models.Player.objects.filter(mlb_id__icontains="/")
+        print(bad_ids.count())
+
+        bad_ids.delete()
+
+        bad_ids = models.Player.objects.filter(mlb_id__icontains="/")
+        print(bad_ids.count())
+
     def handle(self, *args, **options):
 
         self.MLB_DEPTH_URL = "https://www.mlb.com/team/roster/depth-chart"
@@ -179,6 +190,8 @@ class Command(BaseCommand):
         self.AZL_URL = "https://www.milb.com/arizona-complex"
         self.DSL_URL = "https://www.milb.com/dominican-summer"
 
-        self.get_cpx_rosters()
+        self.fix_bad_player_ids()
+
+        # self.get_cpx_rosters()
         self.get_milb_rosters()
         self.get_mlb_rosters()
