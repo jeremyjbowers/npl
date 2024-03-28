@@ -42,6 +42,7 @@ class Command(BaseCommand):
     }
     
     def get_rosters(self):
+        models.Player.objects.all().update(roster_status="MINORS")
         team_list_url = "https://statsapi.mlb.com/api/v1/teams/"
 
         r = requests.get(team_list_url)
@@ -71,7 +72,6 @@ class Command(BaseCommand):
             player_dict['name'] = p['person']['fullName']
             player_dict['position'] = p['position']['abbreviation']
             player_dict['mlb_org'] = mlb_team
-            player_dict['roster_stats'] = "MINORS"
 
             if "injured" in p['status']['description'].lower():
                 if "10" in p['status']['description']:
