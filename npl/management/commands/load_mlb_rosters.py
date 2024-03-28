@@ -158,8 +158,6 @@ class Command(BaseCommand):
                     player_dict['birthdate'] = f"{year}-{month}-{day}"
                     player_dict['mlb_org'] = org
 
-                    print(player_dict)
-
                     if player_dict:
                         try:
                             obj = models.Player.objects.get(mlb_id=player_dict['mlb_id'])
