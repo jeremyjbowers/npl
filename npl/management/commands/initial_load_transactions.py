@@ -84,8 +84,11 @@ class Command(BaseCommand):
                     t_obj = models.Transaction.objects.get(**transaction_dict)
 
                 except models.Transaction.DoesNotExist:
-                    t_obj = models.Transaction(**transaction_dict)
-                    t_obj.transaction_type = tt_obj
-                    t_obj.save()
-                    print(f"+ {t_obj}")
-            
+                    try:
+                        t_obj = models.Transaction(**transaction_dict)
+                        t_obj.transaction_type = tt_obj
+                        t_obj.save()
+                        print(f"+ {t_obj}")
+
+                    except models.Player.DoesNotExist:
+                        pass
