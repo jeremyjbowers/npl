@@ -74,6 +74,8 @@ class Command(BaseCommand):
             player_dict['mlb_org'] = mlb_team
 
             if "injured" in p['status']['description'].lower():
+                if "7" in p['status']['description']:
+                    player_dict['roster_status'] = "IL-7"
                 if "10" in p['status']['description']:
                     player_dict['roster_status'] = "IL-10"
                 if "15" in p['status']['description']:
