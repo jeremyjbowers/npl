@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-
+{% load npl_tags %}
 
 {% block content %}
 <div class="card">
@@ -11,14 +11,96 @@
         <div class="media-content">
             <p class="title is-2">{{ p.position|default_if_none:"" }} {{ p.name }}</p>
             <p class="subtitle"><strong>{% if p.team %}{{ p.team.name }}{% else %}Unowned{% endif %}</strong></p>
-            {% for stat in p.stats reversed %}
-                <h2>{{ stat.level }}</h2>
-                {% if stat.plateAppearances %}
-                  {% include "includes/hitter_stat_row.html" %}
-                {% else %}
-                  {% include "includes/pitcher_stat_row.html" %}
-                {% endif %}
+            {% if p.hit_stats %}
+            <h2>Hitting</h2>
+            <table class="stat-table">
+              <thead>
+                <tr>
+                  <th>year</th>
+                  <th>lvl</th>
+                  <th>pa</th>
+                  <th>wrc+</th>
+                  <th>hr</th>
+                  <th>sb</th>
+                  <th>bb%</th>
+                  <th>k%</th>
+                  <th>avg</th>
+                  <th>obp</th>
+                  <th>slg</th>
+                  <th>iso</th>
+                  <th>xavg</th>
+                  <th>xwoba</th>
+                  <th>xslg</th>
+                </tr>
+              </thead>
+              <tbody>
+            {% for stat in p.hit_stats reversed %}
+            <tr{% if stat.level|upper == "MLB" %} class="majors"{% endif %}>
+              <td>{{ stat.year }}</td>
+              <td>{{ stat.level|upper }}</td>
+              <td>{{ stat.plate_appearances }}</td>
+              <td>{{ stat.wrc_plus|floatformat:0 }}</td>
+              <td>{{ stat.hr }}</td>
+              <td>{{ stat.sb }}</td>
+              <td>{{ stat.bb_pct|floatformat:1 }}</td>
+              <td>{{ stat.k_pct|floatformat:1 }}</td>
+              <td>{{ stat.avg|floatformat:3|kill_leading_zero }}</td>
+              <td>{{ stat.obp|floatformat:3|kill_leading_zero }}</td>
+              <td>{{ stat.slg|floatformat:3|kill_leading_zero }}</td>
+              <td>{{ stat.iso|floatformat:3|kill_leading_zero }}</td>
+              <td>{% if stat.xavg %}{{ stat.xavg|floatformat:3|kill_leading_zero }}{% else %}-{% endif %}</td>
+              <td>{% if stat.xwoba %}{{ stat.xwoba|floatformat:3|kill_leading_zero }}{% else %}-{% endif %}</td>
+              <td>{% if stat.xslg %}{{ stat.xslg|floatformat:3|kill_leading_zero }}{% else %}-{% endif %}</td>
+            </tr>
             {% endfor %}
+            </tbody>
+            </table>
+            {% endif %}
+            {% if p.pit_stats %}
+            <h2>Pitching</h2>
+            <table class="stat-table">
+              <thead>
+                <tr>
+                  <th>year</th>
+                  <th>lvl</th>
+                  <th>g</th>
+                  <th>gs</th>
+                  <th>ip</th>
+                  <th>k/9</th>
+                  <th>bb9</th>
+                  <th>era</th>
+                  <th>xera</th>
+                  <th>fip</th>
+                  <th>xfip</th>
+                  <th>siera</th>
+                  <th>stuff+</th>
+                  <th>loc+</th>
+                  <th>pitch+</th>
+                </tr>
+              </thead>
+              <tbody>
+            {% for stat in p.pit_stats reversed %}
+            <tr{% if stat.level|upper == "MLB" %} class="majors"{% endif %}>
+              <td>{{ stat.year }}</td>
+              <td>{{ stat.level|upper }}</td>
+              <td>{{ stat.g }}</td>
+              <td>{{ stat.gs }}</td>
+              <td>{{ stat.ip }}</td>
+              <td>{{ stat.k_9|floatformat:1|default_if_none:"-" }}</td>
+              <td>{{ stat.bb_9|floatformat:1|default_if_none:"-" }}</td>
+              <td>{{ stat.era|floatformat:2|default_if_none:"-" }}</td>
+              <td>{% if stat.xERA %}{{ stat.xERA|floatformat:2|default_if_none:"-" }}{% else %}-{% endif %}</td>
+              <td>{{ stat.fip|floatformat:2|default_if_none:"-" }}</td>
+              <td>{{ stat.xfip|floatformat:2|default_if_none:"-" }}</td>
+              <td>{% if stat.siera %}{{ stat.siera|floatformat:2|default_if_none:"-" }}{% else %}-{% endif %}</td>
+              <td>{% if stat.sp_stuff %}{{ stat.sp_stuff|floatformat:1|default_if_none:"-" }}{% else %}-{% endif %}</td>
+              <td>{% if stat.sp_location %}{{ stat.sp_location|floatformat:1|default_if_none:"-" }}{% else %}-{% endif %}</td>
+              <td>{% if stat.sp_pitching %}{{ stat.sp_pitching|floatformat:1|default_if_none:"-" }}{% else %}-{% endif %}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+            </table>
+            {% endif %}
           </div>
       </div>
     </div>

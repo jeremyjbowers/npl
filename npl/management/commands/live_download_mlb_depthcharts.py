@@ -60,18 +60,17 @@ class Command(BaseCommand):
         roster_link = f"https://statsapi.mlb.com/api/v1/teams/{t['id']}/roster/40Man"
         tr = requests.get(roster_link).json()
 
-        if t['sport']['id'] != 1:
+        if tr.get('roster', None):
 
-            try:
-                mlb_team = self.mlb_lookup[str(t['parentOrgId'])]
+            if t['sport']['id'] != 1:
+                try:
+                    mlb_team = self.mlb_lookup[str(t['parentOrgId'])]
+                except:
+                    pass
+            
+            else:
+                mlb_team = t['abbreviation']
 
-            except:
-               print(t)
-
-        else:
-            mlb_team = t['abbreviation']
-
-        if tr.get('roster'):
             for p in tr['roster']:
                 player_dict = {}
                 player_dict['mlb_id'] = p['person']['id']
@@ -107,12 +106,12 @@ class Command(BaseCommand):
 
     def fix_bad_player_ids(self):
         bad_ids = models.Player.objects.filter(mlb_id__icontains="/")
-        print(f" Bad IDs before fixing: {bad_ids.count()}")
+        print(bad_ids.count())
 
         bad_ids.delete()
 
         bad_ids = models.Player.objects.filter(mlb_id__icontains="/")
-        print(f"Bad IDs after fixing: {bad_ids.count()}")
+        print(bad_ids.count())
 
     def handle(self, *args, **options):
         self.fix_bad_player_ids()

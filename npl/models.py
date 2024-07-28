@@ -91,7 +91,16 @@ class Player(BaseModel):
     weight = models.CharField(max_length=3, blank=True, null=True)
     last_verified = models.IntegerField(default=0)
 
+    # Various MLB statuses
     roster_status = models.CharField(max_length=255, blank=True, null=True)
+    fg_is_mlb40man = models.BooleanField(default=False)
+    fg_is_injured = models.BooleanField(default=False)
+    fg_is_starter = models.BooleanField(default=False)
+    fg_is_bench = models.BooleanField(default=False)
+    fg_injury_description = models.CharField(max_length=255, blank=True, null=True)
+    fg_role = models.CharField(max_length=255, blank=True, null=True)
+    fg_role_type = models.CharField(max_length=255, blank=True, null=True)
+
 
     scoresheet_defense = models.JSONField(null=True, blank=True)
     scoresheet_offense = models.JSONField(null=True, blank=True)
@@ -109,7 +118,7 @@ class Player(BaseModel):
     status = models.CharField(max_length=255, blank=True, null=True)
     mls_year = models.CharField(max_length=255, blank=True, null=True)
 
-    # Roster status
+    # NPL roster status
     is_mlb_eligible = models.BooleanField(default=False)
     team = models.ForeignKey(Team, on_delete=models.SET_NULL, blank=True, null=True)
     is_owned = models.BooleanField(default=False)
@@ -157,33 +166,34 @@ class Player(BaseModel):
 
     @property
     def is_sp(self):
-        starter = False
-        mlb_checked = False
-        all_games = 0
-        started_games = 0
-        if self.simple_position:
-            if "P" in self.simple_position:
-                if self.stats:
-                    for stat in self.stats:
-                        gs = stat.get('gamesStarted', 0)
-                        g = stat.get('gamesPitched', 0)
+        return False
+        # starter = False
+        # mlb_checked = False
+        # all_games = 0
+        # started_games = 0
+        # if self.simple_position:
+        #     if "P" in self.simple_position:
+        #         if self.pit_stats:
+        #             for stat in self.pit_stats:
+        #                 gs = stat.get('gamesStarted', 0)
+        #                 g = stat.get('gamesPitched', 0)
 
-                        if stat.get('level', '') == "MLB":
-                            mlb_checked = True
-                            if gs > 0 and g > 0:
-                                if (gs / g) > 0.3: 
-                                    starter = True
-                                else:
-                                    starter = False
-                        else:
-                            all_games += g
-                            started_games += gs
+        #                 if stat.get('level', '') == "MLB":
+        #                     mlb_checked = True
+        #                     if gs > 0 and g > 0:
+        #                         if (gs / g) > 0.3: 
+        #                             starter = True
+        #                         else:
+        #                             starter = False
+        #                 else:
+        #                     all_games += g
+        #                     started_games += gs
 
-                    if started_games > 0 and all_games > 0:
-                        if (started_games / all_games) > 0.3:
-                            if not mlb_checked:
-                                starter = True
-        return starter
+        #             if started_games > 0 and all_games > 0:
+        #                 if (started_games / all_games) > 0.3:
+        #                     if not mlb_checked:
+        #                         starter = True
+        # return starter
 
     @property
     def level(self):
@@ -318,13 +328,52 @@ class Player(BaseModel):
                 if n.suffix:
                     self.last_name = n.last + " " + n.suffix
 
-
     def save(self, *args, **kwargs):
         self.set_name()
         self.set_owned()
         self.set_simple_position()
 
         super().save(*args, **kwargs)
+
+    def set_stats(self, stats_dict):
+        if not self.stats:
+            self.stats = {}
+
+        if type(self.stats) is not dict:
+            self.stats = {}
+
+        self.stats[stats_dict["slug"]] = stats_dict
+
+    def pit_stats(self):
+        # should return stats dict by level and year
+        payload = []
+        has_mlb = False
+        weak_mlb = False
+
+        if self.stats:
+            for year_side_level, stats in self.stats.items():
+                if stats['side'] == "pitch":
+                    payload.append(stats)
+
+        payload = sorted(payload, key=lambda x:int(x['year']))
+
+        return payload
+
+    def hit_stats(self):
+        # shoudl return stats dict by level and year
+        payload = []
+        has_mlb = False
+        weak_mlb = False
+
+        if self.stats:
+            for year_side_level, stats in self.stats.items():
+                if stats['side'] == "hit":
+                    payload.append(stats)
+
+        payload = sorted(payload, key=lambda x:int(x['year']))
+
+        return payload
+
 
 class TransactionType(BaseModel):
     transaction_type = models.CharField(max_length=255)
