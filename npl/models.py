@@ -347,13 +347,12 @@ class Player(BaseModel):
     def pit_stats(self):
         # should return stats dict by level and year
         payload = []
-        has_mlb = False
-        weak_mlb = False
 
         if self.stats:
             for year_side_level, stats in self.stats.items():
                 if stats['side'] == "pitch":
-                    payload.append(stats)
+                    if stats['g'] >= 1:
+                        payload.append(stats)
 
         payload = sorted(payload, key=lambda x:int(x['year']))
 
@@ -362,13 +361,12 @@ class Player(BaseModel):
     def hit_stats(self):
         # shoudl return stats dict by level and year
         payload = []
-        has_mlb = False
-        weak_mlb = False
 
         if self.stats:
             for year_side_level, stats in self.stats.items():
                 if stats['side'] == "hit":
-                    payload.append(stats)
+                    if stats['plate_appearances'] >= 1:
+                        payload.append(stats)
 
         payload = sorted(payload, key=lambda x:int(x['year']))
 
