@@ -121,6 +121,7 @@ class Player(BaseModel):
     # NPL roster status
     is_mlb_eligible = models.BooleanField(default=False)
     team = models.ForeignKey(Team, on_delete=models.SET_NULL, blank=True, null=True)
+    npl_status = models.CharField(max_length=255, blank=True, null=True)
     is_owned = models.BooleanField(default=False)
     is_roster_40_man = models.BooleanField(default=False)
     is_roster_30_man = models.BooleanField(default=False)
@@ -163,6 +164,31 @@ class Player(BaseModel):
             return f"{self.position} {self.name} {self.mlb_org} ({self.team.nickname})"
         return f"{self.position} {self.name} {self.mlb_org}"
 
+    @property
+    def get_roster_status(self):
+        if self.roster_status == "MLB":
+            return "Majors"
+
+        if self.roster_status == "MINORS":
+            return "Minors"
+
+        return self.roster_status
+
+    @property
+    def get_npl_status(self):
+        if self.npl_status == "is_roster_30_man":
+            return "MLB 30-man"
+
+        if self.npl_status == "is_roster_aaa_outright":
+            return "AAA Outright"
+
+        if self.npl_status == "is_roster_aaa_option":
+            return "AAA On Option"
+
+        if self.npl_status == "is_roster_7_day_il":
+            return "IL-7"
+
+        return self.npl_status
 
     @property
     def is_sp(self):

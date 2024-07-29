@@ -117,6 +117,33 @@ def player_detail(request, playerid):
     context['p'] = get_object_or_404(models.Player, mlb_id=playerid)
     return render(request, "player.html", context)
 
+def new_team_detail(request, nickname):
+    context = utils.build_context(request)
+    context["team"] = get_object_or_404(models.Team, nickname__icontains=nickname)
+
+    team_players = models.Player.objects.filter(team=context["team"])
+    context['total_count'] = team_players.exclude(is_roster_eos_il=True).count()
+    context['roster_40_man_count'] = team_players.filter(is_roster_40_man=True).count()
+    context['roster_30_man_count'] = team_players.filter(is_roster_30_man=True).count()
+    context['hitters'] = team_players.exclude(simple_position="P").order_by('simple_position','-mls_time', 'mls_year')
+    context['pitchers'] = team_players.filter(simple_position="P").order_by('-mls_time', 'mls_year')
+
+    context['30_man_hit'] = team_players.exclude(simple_position="P").exclude(is_roster_30_man=False).order_by('simple_position','-mls_time', 'mls_year')
+    context['30_man_pitch'] = team_players.filter(simple_position="P", is_roster_30_man=True).order_by('-mls_time', 'mls_year')
+
+    context['40_man_all'] = team_players.filter(is_roster_30_man=False, is_roster_40_man=True).order_by('npl_status','-mls_time', 'mls_year')
+
+    context['restricted'] = team_players.filter(is_roster_restricted=True).order_by('npl_status','-mls_time', 'mls_year')
+    context['eos_il'] = team_players.filter(is_roster_eos_il=True).order_by('npl_status','-mls_time', 'mls_year')
+    context['56_day_il'] = team_players.filter(is_roster_56_day_il=True).order_by('npl_status','-mls_time', 'mls_year')
+
+    context['aa_pitchers'] = team_players.filter(is_roster_30_man=False, is_roster_40_man=False, simple_position="P", is_roster_aa=True).order_by('-mls_time', 'mls_year')
+    context['aa_hitters'] = team_players.exclude(simple_position="P").filter(is_roster_30_man=False, is_roster_40_man=False, is_roster_aa=True).order_by('-mls_time', 'mls_year')
+    context['a_pitchers'] = team_players.filter(is_roster_30_man=False, is_roster_40_man=False, simple_position="P", is_roster_a=True).order_by('-mls_time', 'mls_year')
+    context['a_hitters'] = team_players.exclude(simple_position="P").filter(is_roster_30_man=False, is_roster_40_man=False, is_roster_a=True).order_by('-mls_time', 'mls_year')
+
+    return render(request, "team_new.html", context)
+
 def team_detail(request, nickname):
     context = utils.build_context(request)
     context["team"] = get_object_or_404(models.Team, nickname__icontains=nickname)

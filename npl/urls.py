@@ -13,6 +13,7 @@ urlpatterns = [
     path("transactions/", views.transactions),
     path("players/search/", views.search),
     path("players/<str:playerid>/", views.player_detail),
-    path("teams/<str:nickname>/", views.team_detail),
+    # path("teams/<str:nickname>/", views.team_detail),
+    path("teams/<str:nickname>/", views.new_team_detail),
     path("", views.index),
 ]

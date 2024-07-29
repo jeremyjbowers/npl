@@ -14,6 +14,10 @@ class Command(BaseCommand):
         models.Player.objects.all().update(is_roster_40_man=False)
 
         ROSTER_HEADERS = [
+            ("STARTING PITCHERS", "is_roster_30_man"),
+            ("RELIEF PITCHERS", "is_roster_30_man"),
+            ("INFIELDERS", "is_roster_30_man"),
+            ("OUTFIELDERS", "is_roster_30_man"),
             ("7-DAY INJURED LIST", "is_roster_7_day_il"),
             ("56-DAY INJURED LIST", "is_roster_56_day_il"),
             ("END OF SEASON INJURED LIST", "is_roster_eos_il"),
@@ -75,33 +79,33 @@ class Command(BaseCommand):
                     if header in row[1]:
                         current_header = header
                         
-                if row[0] in ["-", "1"]:
-                    player_dict = {
-                        "is_roster_7_day_il": False,
-                        "is_roster_56_day_il": False,
-                        "is_roster_eos_il": False,
-                        "is_roster_restricted": False,
-                        "is_roster_aaa": False,
-                        "is_roster_aaa_option": False,
-                        "is_roster_aaa_outright": False,
-                        "is_roster_aaa_retired": False,
-                        "is_roster_aaa_nri": False,
-                        "is_roster_30_man": False,
-                        "is_roster_40_man": False,
-                        "is_roster_aa": False,
-                        "is_roster_a": False,
-                    }
+                if row[0].strip() in ["", "x", "-", "1"]:
+                    if "," in row[1]:
+                        player_dict = {
+                            "is_roster_7_day_il": False,
+                            "is_roster_56_day_il": False,
+                            "is_roster_eos_il": False,
+                            "is_roster_restricted": False,
+                            "is_roster_aaa": False,
+                            "is_roster_aaa_option": False,
+                            "is_roster_aaa_outright": False,
+                            "is_roster_aaa_retired": False,
+                            "is_roster_aaa_nri": False,
+                            "is_roster_30_man": False,
+                            "is_roster_40_man": False,
+                            "is_roster_aa": False,
+                            "is_roster_a": False,
+                        }
 
-                    if row[0] == "1":
-                        player_dict['is_roster_40_man'] = True
-                        
-                    for header, key in ROSTER_HEADERS:
-                        if current_header == header:
-                            player_dict[key] = True
-                            if "aaa" in key:
-                                player_dict['is_roster_aaa'] = True
+                        if row[0] == "1":
+                            player_dict['is_roster_40_man'] = True
+                            
+                        for header, key in ROSTER_HEADERS:
+                            if current_header == header:
+                                player_dict[key] = True
+                                player_dict['npl_status'] = key
 
-                    players.append(utils.format_player_row(row, t, player_dict))
+                        players.append(utils.format_player_row(row, t, player_dict))
 
                 
             for idx, p in enumerate(players):
