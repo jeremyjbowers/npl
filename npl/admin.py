@@ -40,7 +40,6 @@ class AuctionAdmin(admin.ModelAdmin):
     autocomplete_fields = ['player']
     list_editable = ['active']
 
-
 @admin.register(Event)
 class EventAdmin(VersionAdmin):
     model = Event
