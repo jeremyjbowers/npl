@@ -18,6 +18,7 @@ from decimal import *
 from npl import utils
 from users.models import User
 
+
 class BaseModel(models.Model):
     active = models.BooleanField(default=True)
     created = models.DateTimeField(auto_now_add=True, blank=True, null=True)
@@ -30,13 +31,46 @@ class BaseModel(models.Model):
         return self.__unicode__()
 
 
+class League(BaseModel):
+    name = models.CharField(max_length=255, blank=True, null=True)
+
+    def __unicode__(self):
+        return self.name
+
+
+class Division(BaseModel):
+    name = models.CharField(max_length=255, blank=True, null=True)
+    league = models.ForeignKey(League, on_delete=models.SET_NULL, blank=True, null=True)
+    def __unicode__(self):
+        return self.name
+
+
+class Season(BaseModel):
+    year = models.IntegerField(max_length=4)
+    year_start = models.DateField(null=True, blank=True)
+    year_end = models.DateField(null=True, blank=True)
+    term_pay_1 = models.DateField(null=True, blank=True)
+    term_pay_2 = models.DateField(null=True, blank=True)
+    opening_day	= models.DateField(null=True, blank=True)
+    league_min = models.IntegerField(null=True, blank=True)
+    qo_salary = models.IntegerField(null=True, blank=True)
+    salary_cap = models.IntegerField(null=True, blank=True)
+
+    def __unicode__(self):
+        return f"The {self.year} NPL season"
+
+
 class Owner(BaseModel):
     name = models.CharField(max_length=255, null=True, blank=True)
     twitter = models.CharField(max_length=255, null=True, blank=True)
     phone = models.CharField(max_length=255, null=True, blank=True)
+    email = models.CharField(max_length=255, null=True, blank=True)
     hometown = models.CharField(max_length=255, null=True, blank=True)
     bio = models.TextField(null=True, blank=True)
-    first_year = models.IntegerField(null=True, blank=True)
+    year_joined = models.IntegerField(null=True, blank=True)
+    year_left = models.IntegerField(null=True, blank=True)
+    title = models.CharField(max_length=255, null=True, blank=True)
+    discord = models.CharField(max_length=255, null=True, blank=True)
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, blank=True, null=True)
 
@@ -45,27 +79,30 @@ class Owner(BaseModel):
 
 
 class Team(BaseModel):
-    name = models.CharField(max_length=255)
-    nickname = models.CharField(max_length=255)
-    league = models.CharField(max_length=255, null=True, blank=True)
-    division = models.CharField(max_length=255, null=True, blank=True)
-    championships = ArrayField(models.CharField(max_length=4), blank=True, null=True)
-    playoffs = ArrayField(models.CharField(max_length=4), blank=True, null=True)
-    tab_id = models.CharField(max_length=255, blank=True, null=True)
+    full_name = models.CharField(max_length=255)
+    short_name = models.CharField(max_length=255)
+    abbreviation = models.CharField(max_length=25)
+    initial_season = models.IntegerField(blank=True, null=True)
+    final_season = models.IntegerField(blank=True, null=True)
     owners = models.ManyToManyField(Owner, blank=True)
 
-    # Financials
+    # League + division / denormalized
+    league = models.ForeignKey(League, on_delete=models.SET_NULL, blank=True, null=True)
+    division = models.ForeignKey(Division, on_delete=models.SET_NULL, blank=True, null=True)
+    tab_id = models.CharField(max_length=255, blank=True, null=True)
+
+    # Farm system
+    triple_a_name = models.CharField(max_length=255, blank=True, null=True)
+    double_a_name = models.CharField(max_length=255, null=True, blank=True)
+    single_a_name = models.CharField(max_length=255, null=True, blank=True)
+
+    # Financials / denormalized
     cap_space = models.IntegerField(blank=True, null=True)
     reserves = models.IntegerField(blank=True, null=True)
     ifa_pool_space = models.IntegerField(blank=True, null=True)
 
-    # Rosters
-    roster_85_man = models.IntegerField(blank=True, null=True)
-    roster_40_man = models.IntegerField(blank=True, null=True)
-    roster_30_man = models.IntegerField(blank=True, null=True)
-
     class Meta:
-        ordering = ["nickname"]
+        ordering = ["full_name"]
 
     def __unicode__(self):
         return self.name
@@ -73,61 +110,112 @@ class Team(BaseModel):
     def players(self):
         return Player.objects.filter(team=self)
 
+    @property
+    def name(self):
+        return self.short_name
+
+
+class TeamSeason(BaseModel):
+    team = models.ForeignKey(Team, on_delete=models.SET_NULL, blank=True, null=True)
+    season = models.ForeignKey(Season, on_delete=models.SET_NULL, blank=True, null=True)
+    league = models.ForeignKey(League, on_delete=models.SET_NULL, blank=True, null=True)
+    division = models.ForeignKey(Division, on_delete=models.SET_NULL, blank=True, null=True)
+
+    # Performance
+    wins = models.IntegerField(blank=True, null=True)
+    losses = models.IntegerField(blank=True, null=True)
+    division_place = models.IntegerField(blank=True, null=True)
+    wild_card = models.BooleanField(default=False)
+    won_division = models.BooleanField(default=False)
+    won_wild_card = models.BooleanField(default=False)
+    won_divisional_series = models.BooleanField(default=False)
+    won_league_championship = models.BooleanField(default=False)
+    won_world_series =  = models.BooleanField(default=False)
+
+    # Rosters
+    roster_85_man = models.IntegerField(blank=True, null=True)
+    roster_40_man = models.IntegerField(blank=True, null=True)
+    roster_30_man = models.IntegerField(blank=True, null=True)
+
+    # Financials
+    contract_salary = models.IntegerField(blank=True, null=True)
+    carried_salary = models.IntegerField(blank=True, null=True)
+    cash_borrowing = models.IntegerField(blank=True, null=True)
+    cap_space = models.IntegerField(blank=True, null=True)
+    luxury_cap_space = models.IntegerField(blank=True, null=True)
+    cash = models.IntegerField(blank=True, null=True)
+    ifa = models.IntegerField(blank=True, null=True)
+
+    def __unicode__(self):
+        return f"{self.season.year} — {self.team.}"
 
 class Player(BaseModel):
+    team = models.ForeignKey(Team, on_delete=models.SET_NULL, blank=True, null=True)
+
     first_name = models.CharField(max_length=255, null=True)
     last_name = models.CharField(max_length=255, null=True)
     name = models.CharField(max_length=255)
-    raw_name = models.CharField(max_length=255, blank=True, null=True)
-    position = models.CharField(max_length=255, blank=True, null=True)
-    simple_position = models.CharField(max_length=255, blank=True, null=True)
-    birthdate = models.DateField(blank=True, null=True)
-    birthdate_qa = models.BooleanField(default=False)
-    mlb_org = models.CharField(max_length=255, blank=True, null=True)
-    raw_age = models.IntegerField(default=None, blank=True, null=True)
-    bats = models.CharField(max_length=3, blank=True, null=True)
-    throws = models.CharField(max_length=3, blank=True, null=True)
     height = models.CharField(max_length=15, blank=True, null=True)
     weight = models.CharField(max_length=3, blank=True, null=True)
-    last_verified = models.IntegerField(default=0)
+    birthdate = models.DateField(blank=True, null=True)
+    raw_name = models.CharField(max_length=255, blank=True, null=True)
+    raw_age = models.IntegerField(default=None, blank=True, null=True)
 
-    roster_status = models.CharField(max_length=255, blank=True, null=True)
+    # On the field
+    position = models.CharField(max_length=255, blank=True, null=True)
+    simple_position = models.CharField(max_length=255, blank=True, null=True)
+    bats = models.CharField(max_length=3, blank=True, null=True)
+    throws = models.CharField(max_length=3, blank=True, null=True)
 
+    # Scoresheet
     scoresheet_defense = models.JSONField(null=True, blank=True)
     scoresheet_offense = models.JSONField(null=True, blank=True)
 
-    # IDs
+    # Identifiers
     mlb_id = models.CharField(max_length=255, primary_key=True)
     scoresheet_id = models.CharField(max_length=255, blank=True, null=True)
     fg_id = models.CharField(max_length=255, blank=True, null=True)
     bp_id = models.CharField(max_length=255, blank=True, null=True)
     bref_id = models.CharField(max_length=255, blank=True, null=True)
 
+    # Real MLB status
+    mlb_org = models.CharField(max_length=255, blank=True, null=True)
+    roster_status = models.CharField(max_length=255, blank=True, null=True)
+
     # Contract status
     mls_time = models.CharField(max_length=255, blank=True, null=True)
-    options = models.CharField(max_length=255, blank=True, null=True)
     status = models.CharField(max_length=255, blank=True, null=True)
     mls_year = models.CharField(max_length=255, blank=True, null=True)
 
-    # Roster status
-    is_mlb_eligible = models.BooleanField(default=False)
-    team = models.ForeignKey(Team, on_delete=models.SET_NULL, blank=True, null=True)
-    is_owned = models.BooleanField(default=False)
-    is_roster_40_man = models.BooleanField(default=False)
-    is_roster_30_man = models.BooleanField(default=False)
-    is_roster_7_day_il = models.BooleanField(default=False)
-    is_roster_56_day_il = models.BooleanField(default=False)
-    is_roster_covid_il = models.BooleanField(default=False)
-    is_roster_eos_il = models.BooleanField(default=False)
-    is_roster_restricted = models.BooleanField(default=False)
-    is_roster_aaa = models.BooleanField(default=False)
-    is_roster_aaa_option = models.BooleanField(default=False)
-    is_roster_aaa_outright = models.BooleanField(default=False)
-    is_roster_aaa_foreign = models.BooleanField(default=False)
-    is_roster_aaa_retired = models.BooleanField(default=False)
-    is_roster_aaa_nri = models.BooleanField(default=False)
-    is_roster_aa = models.BooleanField(default=False)
-    is_roster_a = models.BooleanField(default=False)
+    # NPL statuses
+    grad_year = models.IntegerField(default=None, blank=True, null=True)
+    service_time = models.DecimalField(max_digits=5, decimal_places=3)
+    options = models.IntegerField(default=3, blank=True, null=True)
+    has_been_rostered = models.BooleanField(default=False)
+    has_been_npl40 = models.BooleanField(default=False)
+    has_been_qo = models.BooleanField(default=False)
+    has_been_outright = models.BooleanField(default=False)
+    roster_85man = models.BooleanField(default=False)
+    roster_40man = models.BooleanField(default=False)
+    roster_30man = models.BooleanField(default=False)
+    roster_7dayIL = models.BooleanField(default=False)
+    roster_56dayIL = models.BooleanField(default=False)
+    roster_eosIL = models.BooleanField(default=False)
+    roster_restricted = models.BooleanField(default=False)
+    roster_tripleA = models.BooleanField(default=False)
+    roster_outrighted = models.BooleanField(default=False)
+    roster_foreign = models.BooleanField(default=False)
+    roster_retired = models.BooleanField(default=False)
+    roster_nonroster = models.BooleanField(default=False)
+    roster_doubleA = models.BooleanField(default=False)
+    roster_singleA = models.BooleanField(default=False)
+    roster_owaivers = models.BooleanField(default=False)
+    roster_r5waivers = models.BooleanField(default=False)
+    recall_eligible = models.BooleanField(default=False)
+    activation_eligible = models.BooleanField(default=False)
+    waiver_clear = models.BooleanField(default=False)
+    is_r5 = models.BooleanField(default=False)
+    r5_return_team = models.ForeignKey(Team, on_delete=models.SET_NULL, blank=True, null=True)
 
     # STATS
     # Here's the schema for a stats dictionary
@@ -318,11 +406,22 @@ class Player(BaseModel):
                 if n.suffix:
                     self.last_name = n.last + " " + n.suffix
 
+    def set_options(self):
+        """
+        Options
+        """
+        if not self.options == 99:
+            if self.options > 3:
+                self.options = 3
+
+        if not self.options:
+            self.options = 3
 
     def save(self, *args, **kwargs):
         self.set_name()
         self.set_owned()
         self.set_simple_position()
+        self.set_options()
 
         super().save(*args, **kwargs)
 
