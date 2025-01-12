@@ -15,7 +15,10 @@ from npl.models import (
     Collection,
     Event,
     Auction,
-    MLBAuctionBid
+    MLBAuctionBid,
+    TeamSeason,
+    League,
+    Division
 )
 
 admin.site.site_title = "The NPL"
@@ -111,7 +114,7 @@ class TransactionTypeAdmin(admin.ModelAdmin):
 class TransactionAdmin(admin.ModelAdmin):
     model = Transaction
     list_display = ['date', 'transaction_type', 'calculated_player', 'calculated_team']
-    list_filter = ['date', 'team__nickname', 'transaction_type__transaction_type']
+    list_filter = ['date', 'team__short_name', 'transaction_type__transaction_type']
     autocomplete_fields = ['team', 'acquiring_team', 'player', 'transaction_type']
     fieldsets = (
         (
@@ -146,26 +149,9 @@ class ContractAdmin(admin.ModelAdmin):
 @admin.register(Player)
 class PlayerAdmin(admin.ModelAdmin):
     model = Player
-    list_display = ['last_name', 'first_name', 'position', 'team', 'mlb_org', 'is_roster_40_man', 'mlb_id', 'scoresheet_id']
-    list_filter = ['team', 'mlb_org', 'is_roster_40_man', 'position']
-    list_editable = ['scoresheet_id']
-    search_fields = ['name', 'team__name', 'mlb_org', 'scoresheet_id']
-    fieldsets = (
-        (
-            None,
-            {
-                "fields": (
-                    "name",
-                    ("first_name", "last_name"),
-                    "birthdate",
-                    "raw_age",
-                    ("position", 'simple_position'),
-                    ("mlb_id","scoresheet_id","fg_id"),
-                    "mlb_org"
-                ),
-            },
-        ),
-    )
+    list_display = ['last_name', 'first_name', 'position', 'team', 'mlb_org', 'mlb_id', 'scoresheet_id']
+    list_filter = ['team', 'mlb_org', 'position']
+    search_fields = ['name', 'team__full_name', 'mlb_org', 'scoresheet_id']
 
 @admin.register(Owner)
 class OwnerAdmin(admin.ModelAdmin):
@@ -176,21 +162,17 @@ class OwnerAdmin(admin.ModelAdmin):
 @admin.register(Team)
 class TeamAdmin(admin.ModelAdmin):
     model = Team
-    list_display = ["name", "division", "league"]
-    list_filter = ["division", "league"]
-    search_fields = ["name"]
-    fieldsets = (
-        (
-            None,
-            {
-                "fields": (
-                    "name",
-                    "nickname",
-                    "division",
-                    "league",
-                    "tab_id",
-                    "owners",
-                ),
-            },
-        ),
-    )
+    list_display = ['full_name']
+    search_fields = ['full_name']
+
+@admin.register(TeamSeason)
+class TeamSeasonAdmin(admin.ModelAdmin):
+    model = TeamSeason
+
+@admin.register(League)
+class LeagueAdmin(admin.ModelAdmin):
+    model = League
+
+@admin.register(Division)
+class DivisionAdmin(admin.ModelAdmin):
+    model = Division

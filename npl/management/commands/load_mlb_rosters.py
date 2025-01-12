@@ -66,45 +66,43 @@ class Command(BaseCommand):
         else:
             mlb_team = t['abbreviation']
 
-        for p in tr['roster']:
-            player_dict = {}
-            player_dict['mlb_id'] = p['person']['id']
-            player_dict['name'] = p['person']['fullName']
-            player_dict['position'] = p['position']['abbreviation']
-            player_dict['mlb_org'] = mlb_team
+        if not tr.get('roster', None):
+            print(tr)
+        else:
+            for p in tr['roster']:
+                player_dict = {}
+                player_dict['mlb_id'] = p['person']['id']
+                player_dict['name'] = p['person']['fullName']
+                player_dict['position'] = p['position']['abbreviation']
+                player_dict['mlb_org'] = mlb_team
 
-            if "injured" in p['status']['description'].lower():
-                if "10" in p['status']['description']:
-                    player_dict['roster_status'] = "IL-10"
-                if "15" in p['status']['description']:
-                    player_dict['roster_status'] = "IL-15"
-                if "60" in p['status']['description']:
-                    player_dict['roster_status'] = "IL-60"
+                if "injured" in p['status']['description'].lower():
+                    if "10" in p['status']['description']:
+                        player_dict['roster_status'] = "IL-10"
+                    if "15" in p['status']['description']:
+                        player_dict['roster_status'] = "IL-15"
+                    if "60" in p['status']['description']:
+                        player_dict['roster_status'] = "IL-60"
 
-            if t['sport']['id'] == 1:
-                if 'active' in p['status']['description'].lower():
-                    player_dict['roster_status'] = "MLB"
+                if t['sport']['id'] == 1:
+                    if 'active' in p['status']['description'].lower():
+                        player_dict['roster_status'] = "MLB"
 
-            try:
-                obj = models.Player.objects.get(mlb_id=player_dict['mlb_id'])
-            
-            except models.Player.DoesNotExist:
-                obj = models.Player()
-            
-            for k,v in player_dict.items():
-                setattr(obj, k, v)
+                try:
+                    obj = models.Player.objects.get(mlb_id=player_dict['mlb_id'])
+                
+                except models.Player.DoesNotExist:
+                    obj = models.Player()
+                
+                for k,v in player_dict.items():
+                    setattr(obj, k, v)
 
-            obj.save()
-            print(obj)
+                obj.save()
 
     def fix_bad_player_ids(self):
         bad_ids = models.Player.objects.filter(mlb_id__icontains="/")
-        print(bad_ids.count())
-
         bad_ids.delete()
-
         bad_ids = models.Player.objects.filter(mlb_id__icontains="/")
-        print(bad_ids.count())
 
     def handle(self, *args, **options):
         self.fix_bad_player_ids()

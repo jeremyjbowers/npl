@@ -42,11 +42,11 @@ class Division(BaseModel):
     name = models.CharField(max_length=255, blank=True, null=True)
     league = models.ForeignKey(League, on_delete=models.SET_NULL, blank=True, null=True)
     def __unicode__(self):
-        return self.name
+        return f"{self.league}: {self.name}"
 
 
 class Season(BaseModel):
-    year = models.IntegerField(max_length=4)
+    year = models.IntegerField()
     year_start = models.DateField(null=True, blank=True)
     year_end = models.DateField(null=True, blank=True)
     term_pay_1 = models.DateField(null=True, blank=True)
@@ -79,9 +79,9 @@ class Owner(BaseModel):
 
 
 class Team(BaseModel):
-    full_name = models.CharField(max_length=255)
-    short_name = models.CharField(max_length=255)
-    abbreviation = models.CharField(max_length=25)
+    full_name = models.CharField(max_length=255, null=True)
+    short_name = models.CharField(max_length=255, null=True)
+    abbreviation = models.CharField(max_length=25, null=True)
     initial_season = models.IntegerField(blank=True, null=True)
     final_season = models.IntegerField(blank=True, null=True)
     owners = models.ManyToManyField(Owner, blank=True)
@@ -97,9 +97,13 @@ class Team(BaseModel):
     single_a_name = models.CharField(max_length=255, null=True, blank=True)
 
     # Financials / denormalized
+    contract_salary = models.IntegerField(blank=True, null=True)
+    carried_salary = models.IntegerField(blank=True, null=True)
+    cash_borrowing = models.IntegerField(blank=True, null=True)
     cap_space = models.IntegerField(blank=True, null=True)
-    reserves = models.IntegerField(blank=True, null=True)
-    ifa_pool_space = models.IntegerField(blank=True, null=True)
+    luxury_cap_space = models.IntegerField(blank=True, null=True)
+    cash = models.IntegerField(blank=True, null=True)
+    ifa = models.IntegerField(blank=True, null=True)
 
     class Meta:
         ordering = ["full_name"]
@@ -130,7 +134,7 @@ class TeamSeason(BaseModel):
     won_wild_card = models.BooleanField(default=False)
     won_divisional_series = models.BooleanField(default=False)
     won_league_championship = models.BooleanField(default=False)
-    won_world_series =  = models.BooleanField(default=False)
+    won_world_series = models.BooleanField(default=False)
 
     # Rosters
     roster_85_man = models.IntegerField(blank=True, null=True)
@@ -147,7 +151,7 @@ class TeamSeason(BaseModel):
     ifa = models.IntegerField(blank=True, null=True)
 
     def __unicode__(self):
-        return f"{self.season.year} — {self.team.}"
+        return f"{self.season} Season: {self.team}"
 
 class Player(BaseModel):
     team = models.ForeignKey(Team, on_delete=models.SET_NULL, blank=True, null=True)
@@ -189,7 +193,7 @@ class Player(BaseModel):
 
     # NPL statuses
     grad_year = models.IntegerField(default=None, blank=True, null=True)
-    service_time = models.DecimalField(max_digits=5, decimal_places=3)
+    service_time = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
     options = models.IntegerField(default=3, blank=True, null=True)
     has_been_rostered = models.BooleanField(default=False)
     has_been_npl40 = models.BooleanField(default=False)
@@ -203,6 +207,7 @@ class Player(BaseModel):
     roster_eosIL = models.BooleanField(default=False)
     roster_restricted = models.BooleanField(default=False)
     roster_tripleA = models.BooleanField(default=False)
+    roster_tripleA_option = models.BooleanField(default=False)
     roster_outrighted = models.BooleanField(default=False)
     roster_foreign = models.BooleanField(default=False)
     roster_retired = models.BooleanField(default=False)
@@ -215,7 +220,7 @@ class Player(BaseModel):
     activation_eligible = models.BooleanField(default=False)
     waiver_clear = models.BooleanField(default=False)
     is_r5 = models.BooleanField(default=False)
-    r5_return_team = models.ForeignKey(Team, on_delete=models.SET_NULL, blank=True, null=True)
+    r5_return_team = models.ForeignKey(Team, on_delete=models.SET_NULL, blank=True, null=True, related_name="r5_return_team")
 
     # STATS
     # Here's the schema for a stats dictionary
@@ -235,7 +240,7 @@ class Player(BaseModel):
     stats = models.JSONField(null=True, blank=True)
 
     class Meta():
-        ordering = ['team__name', '-is_roster_40_man', 'position', 'last_name']
+        ordering = ['team__short_name', '-roster_40man', 'position', 'last_name']
 
     def __unicode__(self):
         if self.team:

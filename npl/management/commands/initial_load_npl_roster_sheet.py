@@ -10,22 +10,22 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
 
         models.Player.objects.filter(team__isnull=False).update(team=None)
-        models.Player.objects.all().update(is_roster_30_man=False)
-        models.Player.objects.all().update(is_roster_40_man=False)
+        models.Player.objects.all().update(roster_30man=False)
+        models.Player.objects.all().update(roster_40man=False)
 
         ROSTER_HEADERS = [
-            ("7-DAY INJURED LIST", "is_roster_7_day_il"),
-            ("56-DAY INJURED LIST", "is_roster_56_day_il"),
-            ("END OF SEASON INJURED LIST", "is_roster_eos_il"),
-            ("RESTRICTED LIST", "is_roster_restricted"),
-            ("TRIPLE-A", "is_roster_aaa"),
-            ("DOUBLE-A", "is_roster_aa"),
-            ("SINGLE-A", "is_roster_a"),
-            ("ON OPTION", "is_roster_aaa_option"),
-            ("ASSIGNED OUTRIGHT", "is_roster_aaa_outright"),
-            ("FOREIGN", "is_roster_aaa_foreign"),
-            ("RETIRED", "is_roster_aaa_retired"),
-            ("NON-ROSTER", "is_roster_aaa_nri")
+            ("7-DAY INJURED LIST", "roster_7dayIL"),
+            ("56-DAY INJURED LIST", "roster_56dayIL"),
+            ("END OF SEASON INJURED LIST", "roster_eosIL"),
+            ("RESTRICTED LIST", "roster_restricted"),
+            ("TRIPLE-A", "roster_tripleA"),
+            ("DOUBLE-A", "roster_doubleA"),
+            ("SINGLE-A", "roster_singleA"),
+            ("ON OPTION", "roster_tripleA_option"),
+            ("ASSIGNED OUTRIGHT", "roster_outrighted"),
+            ("FOREIGN", "roster_foreign"),
+            ("RETIRED", "roster_retired"),
+            ("NON-ROSTER", "roster_nonroster")
         ]
 
         CROSSWALK = {}
@@ -77,29 +77,37 @@ class Command(BaseCommand):
                         
                 if row[0] in ["-", "1"]:
                     player_dict = {
-                        "is_roster_7_day_il": False,
-                        "is_roster_56_day_il": False,
-                        "is_roster_eos_il": False,
-                        "is_roster_restricted": False,
-                        "is_roster_aaa": False,
-                        "is_roster_aaa_option": False,
-                        "is_roster_aaa_outright": False,
-                        "is_roster_aaa_retired": False,
-                        "is_roster_aaa_nri": False,
-                        "is_roster_30_man": False,
-                        "is_roster_40_man": False,
-                        "is_roster_aa": False,
-                        "is_roster_a": False,
+                        "roster_85man": False,
+                        "roster_40man": False,
+                        "roster_30man": False,
+                        "roster_7dayIL": False,
+                        "roster_56dayIL": False,
+                        "roster_eosIL": False,
+                        "roster_restricted": False,
+                        "roster_tripleA": False,
+                        "roster_tripleA_option": False,
+                        "roster_outrighted": False,
+                        "roster_foreign": False,
+                        "roster_retired": False,
+                        "roster_nonroster": False,
+                        "roster_doubleA": False,
+                        "roster_singleA": False,
+                        "roster_owaivers": False,
+                        "roster_r5waivers": False,
+                        "recall_eligible": False,
+                        "activation_eligible": False,
+                        "waiver_clear": False,
+                        "is_r5": False
                     }
 
                     if row[0] == "1":
-                        player_dict['is_roster_40_man'] = True
+                        player_dict['roster_40man'] = True
                         
                     for header, key in ROSTER_HEADERS:
                         if current_header == header:
                             player_dict[key] = True
                             if "aaa" in key:
-                                player_dict['is_roster_aaa'] = True
+                                player_dict['roster_tripleA'] = True
 
                     players.append(utils.format_player_row(row, t, player_dict))
 
