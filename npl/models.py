@@ -116,6 +116,10 @@ class Team(BaseModel):
 
     @property
     def name(self):
+        return self.full_name
+
+    @property
+    def nickname(self):
         return self.short_name
 
 
@@ -244,7 +248,7 @@ class Player(BaseModel):
 
     def __unicode__(self):
         if self.team:
-            return f"{self.position} {self.name} {self.mlb_org} ({self.team.nickname})"
+            return f"{self.position} {self.name} {self.mlb_org} ({self.team.short_name})"
         return f"{self.position} {self.name} {self.mlb_org}"
 
 

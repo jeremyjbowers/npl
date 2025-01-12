@@ -162,7 +162,8 @@ class OwnerAdmin(admin.ModelAdmin):
 @admin.register(Team)
 class TeamAdmin(admin.ModelAdmin):
     model = Team
-    list_display = ['full_name']
+    list_display = ['full_name', 'short_name', 'tab_id', 'abbreviation']
+    list_editable = ['tab_id', 'abbreviation']
     search_fields = ['full_name']
 
 @admin.register(TeamSeason)

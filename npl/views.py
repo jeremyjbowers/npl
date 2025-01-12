@@ -117,24 +117,24 @@ def player_detail(request, playerid):
     context['p'] = get_object_or_404(models.Player, mlb_id=playerid)
     return render(request, "player.html", context)
 
-def team_detail(request, nickname):
+def team_detail(request, short_name):
     context = utils.build_context(request)
-    context["team"] = get_object_or_404(models.Team, nickname__icontains=nickname)
+    context["team"] = get_object_or_404(models.Team, short_name__icontains=short_name)
 
     team_players = models.Player.objects.filter(team=context["team"])
     context['total_count'] = team_players.count()
-    context['roster_40_man_count'] = team_players.filter(is_roster_40_man=True).count()
-    context['roster_30_man_count'] = team_players.filter(is_roster_30_man=True).count()
+    context['roster_40_man_count'] = team_players.filter(roster_40man=True).count()
+    context['roster_30_man_count'] = team_players.filter(roster_30man=True).count()
     context['hitters'] = team_players.exclude(simple_position="P").order_by('simple_position','-mls_time', 'mls_year')
     context['pitchers'] = team_players.filter(simple_position="P").order_by('-mls_time', 'mls_year')
-    context['mlb_hitters'] = team_players.exclude(simple_position="P").exclude(is_roster_40_man=False).order_by('simple_position','-mls_time', 'mls_year')
-    context['mlb_pitchers'] = team_players.filter(simple_position="P", is_roster_40_man=True).order_by('-mls_time', 'mls_year')
-    context['aaa_pitchers'] = team_players.filter(simple_position="P", is_roster_aaa=True).order_by('-mls_time', 'mls_year')
-    context['aaa_hitters'] = team_players.exclude(simple_position="P").filter(is_roster_aaa=True).order_by('-mls_time', 'mls_year')
-    context['aa_pitchers'] = team_players.filter(simple_position="P", is_roster_aa=True).order_by('-mls_time', 'mls_year')
-    context['aa_hitters'] = team_players.exclude(simple_position="P").filter(is_roster_aa=True).order_by('-mls_time', 'mls_year')
-    context['a_pitchers'] = team_players.filter(simple_position="P", is_roster_a=True).order_by('-mls_time', 'mls_year')
-    context['a_hitters'] = team_players.exclude(simple_position="P").filter(is_roster_a=True).order_by('-mls_time', 'mls_year')
+    context['mlb_hitters'] = team_players.exclude(simple_position="P").exclude(roster_40man=False).order_by('simple_position','-mls_time', 'mls_year')
+    context['mlb_pitchers'] = team_players.filter(simple_position="P", roster_40man=True).order_by('-mls_time', 'mls_year')
+    context['aaa_pitchers'] = team_players.filter(simple_position="P", roster_tripleA=True).order_by('-mls_time', 'mls_year')
+    context['aaa_hitters'] = team_players.exclude(simple_position="P").filter(roster_tripleA=True).order_by('-mls_time', 'mls_year')
+    context['aa_pitchers'] = team_players.filter(simple_position="P", roster_doubleA=True).order_by('-mls_time', 'mls_year')
+    context['aa_hitters'] = team_players.exclude(simple_position="P").filter(roster_doubleA=True).order_by('-mls_time', 'mls_year')
+    context['a_pitchers'] = team_players.filter(simple_position="P", roster_singleA=True).order_by('-mls_time', 'mls_year')
+    context['a_hitters'] = team_players.exclude(simple_position="P").filter(roster_singleA=True).order_by('-mls_time', 'mls_year')
     return render(request, "team.html", context)
 
 def transactions(request):

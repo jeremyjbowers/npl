@@ -35,7 +35,7 @@ def build_context(request):
     context = {}
 
     # to build the nav
-    context["all_teams"] = models.Team.objects.all().order_by('league', 'division', 'name')
+    context["all_teams"] = models.Team.objects.all().order_by('league', 'division', 'short_name')
 
     # for search
     queries_without_page = dict(request.GET)
@@ -117,12 +117,12 @@ def format_player_row(row, team, player_dict):
     
     player_dict['mls_time'] = 0.0
     player_dict['mls_year'] = None
-    player_dict['options'] = None
+    player_dict['options'] = 0
     player_dict['status'] = None
 
     if "." in row[6]:
         player_dict['mls_time'] = float(row[6])
-        player_dict['options'] = int(row[7].replace('$', ''))
+        player_dict['options'] = int(row[7].replace('$', '')) or 0
 
         if len(row) > 8:
             player_dict['status'] = row[8].lower()

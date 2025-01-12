@@ -17,7 +17,7 @@
             </a>
             <div class="navbar-dropdown">
             {% for team in all_teams %}
-            <a class="navbar-item" href="/teams/{{ team.nickname|lower }}/">{{ team.league }}&nbsp;&rarr;&nbsp;{{ team.division }}&nbsp;&rarr;&nbsp;<span style="font-weight:bold;">{{ team.name }}</span></a>
+            <a class="navbar-item" href="/teams/{{ team.short_name|lower }}/">{{ team.league }}&nbsp;&rarr;&nbsp;{{ team.division }}&nbsp;&rarr;&nbsp;<span style="font-weight:bold;">{{ team.full_name }}</span></a>
             {% endfor %}
             </div>
         </div>
