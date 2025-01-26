@@ -9,5 +9,6 @@ from npl import models, utils
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
+        pass
         # call_command('migrate')
         # call_command("collectstatic", "--noinput")
