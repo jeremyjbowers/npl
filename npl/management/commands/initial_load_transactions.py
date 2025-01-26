@@ -56,46 +56,46 @@ class Command(BaseCommand):
                 failed = True
                 failed_text = "no date"
 
-                transaction_dict['raw_team'] = t[1]
-                transaction_dict['raw_player'] = t[2]
-                transaction_dict['mlb_id'] = None
-                if len(t[4].strip()) > 5:
-                    transaction_dict['mlb_id'] = int(t[4].strip())
-                    if transaction_dict['mlb_id'] == "":
-                        transaction_dict['mlb_id'] = None
+            transaction_dict['raw_team'] = t[1]
+            transaction_dict['raw_player'] = t[2]
+            transaction_dict['mlb_id'] = None
+            if len(t[4].strip()) > 5:
+                transaction_dict['mlb_id'] = int(t[4].strip())
+                if transaction_dict['mlb_id'] == "":
+                    transaction_dict['mlb_id'] = None
 
-                transaction_dict['raw_transaction_type'] = t[5]
+            transaction_dict['raw_transaction_type'] = t[5]
 
-                try:
-                    transaction_dict['raw_acquiring_team'] = t[6]
-                except IndexError:
-                    pass
+            try:
+                transaction_dict['raw_acquiring_team'] = t[6]
+            except IndexError:
+                pass
 
-                try:
-                    transaction_dict['notes'] = t[7]
-                except IndexError:
-                    pass
+            try:
+                transaction_dict['notes'] = t[7]
+            except IndexError:
+                pass
 
-                transaction_dict['is_archive_transaction'] = True
+            transaction_dict['is_archive_transaction'] = True
 
-                try:
-                    tt_obj = models.TransactionType.objects.get(transaction_type=t[5])
+            try:
+                tt_obj = models.TransactionType.objects.get(transaction_type=t[5])
 
-                except models.TransactionType.DoesNotExist:
-                    tt_obj = models.TransactionType(transaction_type=t[5])
-                    tt_obj.save()
-                    print(f"+ {tt_obj}")
+            except models.TransactionType.DoesNotExist:
+                tt_obj = models.TransactionType(transaction_type=t[5])
+                tt_obj.save()
+                print(f"+ {tt_obj}")
 
-                if not failed:
-                    if transaction_dict['mlb_id']:
-                        try:
-                            t_obj = models.Transaction.objects.get(**transaction_dict)
+            if not failed:                
+                if transaction_dict['mlb_id']:
+                    try:
+                        t_obj = models.Transaction.objects.get(**transaction_dict)
 
-                        except models.Transaction.DoesNotExist:
-                            t_obj = models.Transaction(**transaction_dict)
-                            t_obj.transaction_type = tt_obj
-                            t_obj.save()
-                            print(f"+ {t_obj}")
-                else:
-                    print(f"failed: {failed_text}")
-            
+                    except models.Transaction.DoesNotExist:
+                        t_obj = models.Transaction(**transaction_dict)
+                        t_obj.transaction_type = tt_obj
+                        t_obj.save()
+                        print(f"+ {t_obj}")
+                
+            else:
+                print(f'failed: {failed_text}')

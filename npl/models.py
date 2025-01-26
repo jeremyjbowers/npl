@@ -159,6 +159,7 @@ class TeamSeason(BaseModel):
 
 class Player(BaseModel):
     team = models.ForeignKey(Team, on_delete=models.SET_NULL, blank=True, null=True)
+    is_owned = models.BooleanField(default=False)
 
     first_name = models.CharField(max_length=255, null=True)
     last_name = models.CharField(max_length=255, null=True)
@@ -196,6 +197,7 @@ class Player(BaseModel):
     mls_year = models.CharField(max_length=255, blank=True, null=True)
 
     # NPL statuses
+    npl_status = models.CharField(max_length=255, blank=True, null=True)
     grad_year = models.IntegerField(default=None, blank=True, null=True)
     service_time = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
     options = models.IntegerField(default=3, blank=True, null=True)
@@ -307,6 +309,22 @@ class Player(BaseModel):
         #                     if not mlb_checked:
         #                         starter = True
         # return starter
+
+    @property
+    def get_npl_status(self):
+        if self.npl_status == "is_roster_30_man":
+            return "MLB 30-man"
+
+        if self.npl_status == "is_roster_aaa_outright":
+            return "AAA Outright"
+
+        if self.npl_status == "is_roster_aaa_option":
+            return "AAA On Option"
+
+        if self.npl_status == "is_roster_7_day_il":
+            return "IL-7"
+
+        return self.npl_status
 
     @property
     def level(self):
