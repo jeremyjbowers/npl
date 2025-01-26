@@ -515,7 +515,10 @@ class Transaction(BaseModel):
 
     def set_player(self):
         if self.mlb_id and not self.player:
-            self.player = Player.objects.get(mlb_id=self.mlb_id)
+            try:
+                self.player = Player.objects.get(mlb_id=self.mlb_id)
+            except:
+                pass
 
     def set_team(self):
         if self.raw_team and not self.team:
