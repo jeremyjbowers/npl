@@ -16,4 +16,4 @@ class Command(BaseCommand):
         # Update NPL specific data
         call_command('initial_load_npl_roster_sheet')
         call_command('initial_load_contracts')
-        # call_command('initial_load_transactions')
+        call_command('initial_load_transactions')
