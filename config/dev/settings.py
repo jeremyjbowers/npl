@@ -161,7 +161,7 @@ MLB_URL_TO_ORG_NAME = {
     "guardians": "CLE",
     "indians": "CLE",
     "angels": "LAA",
-    "athletics": "OAK",
+    "athletics": "ATH",
     "yankees": "NYY",
     "tigers": "DET",
     "rays": "TB",
@@ -189,6 +189,7 @@ MLB_URL_TO_ORG_NAME = {
 
 LEVELS = [
     (16,"R"),
+    (15, "R"),
     (14,"A"),
     (13,"A+"),
     (12,'AA'),

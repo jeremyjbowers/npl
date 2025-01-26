@@ -523,7 +523,7 @@ class Transaction(BaseModel):
             if self.raw_team == "Hyperjets":
                 team = "DockHounds"
             try:
-                self.team = Team.objects.get(nickname__icontains=team)
+                self.team = Team.objects.get(short_name__icontains=team)
 
             except Team.DoesNotExist:
                 pass 
@@ -534,7 +534,7 @@ class Transaction(BaseModel):
             if self.raw_team == "Hyperjets":
                 team = "DockHounds"
             try:
-                self.acquiring_team = Team.objects.get(nickname__icontains=team)
+                self.acquiring_team = Team.objects.get(short_name__icontains=team)
 
             except Team.DoesNotExist:
                 pass

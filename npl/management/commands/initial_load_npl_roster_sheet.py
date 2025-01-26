@@ -1,3 +1,5 @@
+import time
+
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 
@@ -57,14 +59,23 @@ class Command(BaseCommand):
         #     "Di Turi, Filippo": "806995",
         # }
 
-        # for t in models.Team.objects.all():
         for t in models.Team.objects.all():
+            sheet = utils.get_sheet(settings.ROSTER_SHEET_ID, f"{t.tab_id}!A:V", value_cutoff=None)
             current_header = None
             players = []
             print(t)
-            team_players = utils.get_sheet(settings.ROSTER_SHEET_ID, f"{t.tab_id}!A:V", value_cutoff=None)
 
-            for row in team_players:
+            # Luxury cap only on team detail pages
+            lux_cap_space = int(sheet[3][11].split('$')[1].strip().replace(',', ''))
+            t.luxury_cap_space = lux_cap_space
+
+            # Team founded only on team detail pages
+            founded = int(sheet[0][10].split('f. ')[1].strip())
+            t.initial_season = founded
+
+            t.save()
+
+            for row in sheet:
                 if row == []:
                     continue
                 if row == ['', 'FINANCIALS']:

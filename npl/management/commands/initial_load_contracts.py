@@ -39,7 +39,7 @@ class Command(BaseCommand):
             "Monteverde, Carlos": "808272",
         }
 
-        year_cols = ["2024","2025","2026","2027","2028","2029","2030","2031"]
+        year_cols = ["2025","2026","2027","2028","2029","2030","2031","2032"]
 
         for t in models.Team.objects.all():
             team_players = utils.get_sheet(settings.ROSTER_SHEET_ID, f"{t.tab_id}!A:V", value_cutoff=None)
