@@ -5,8 +5,8 @@ do
     # start time
     date +"%H:%M:%S"
 
-    time django-admin reload
-    time django-admin live_update
+    # time django-admin reload
+    # time django-admin live_update
 
     # end time
     date +"%H:%M:%S"

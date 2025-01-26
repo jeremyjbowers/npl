@@ -1,0 +1,1 @@
+[{"model": "npl.league", "pk": 1, "fields": {"active": true, "created": "2025-01-12T18:25:39.465Z", "last_modified": "2025-01-12T18:25:39.465Z", "name": "AL"}}, {"model": "npl.league", "pk": 2, "fields": {"active": true, "created": "2025-01-12T18:25:39.468Z", "last_modified": "2025-01-12T18:25:39.468Z", "name": "NL"}}]
