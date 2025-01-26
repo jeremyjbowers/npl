@@ -26,6 +26,9 @@ def get_timestamp():
     stamp = f"{stamp}".split('.')[0]
     return int(stamp)
 
+def get_current_season():
+    return get_mlb_season(datetime.datetime.today())
+
 def get_mlb_season(date):
     if date.month >= 11:
         return int(date.year) + 1
@@ -181,3 +184,61 @@ def kill_curly(s):
     if isinstance(s, str):
         return s.replace("“", '"').replace("”", '"').replace("‘", "'").replace("’", "'")
     return s
+
+# covered
+def str_to_bool(possible_bool):
+    if isinstance(possible_bool, str):
+        if possible_bool.lower() in ["y", "yes", "t", "true"]:
+            return True
+        if possible_bool.lower() in ["n", "no", "f", "false"]:
+            return False
+    return None
+
+
+def int_or_none(possible_int):
+    if isinstance(possible_int, int):
+        return possible_int
+    try:
+        return to_int(possible_int)
+    except:
+        pass
+    return None
+
+
+def is_even(possible_int):
+    possible_int = int_or_none(possible_int)
+    if possible_int:
+        if possible_int == 0:
+            return True
+        if possible_int % 2 == 0:
+            return True
+    return False
+
+def to_int(might_int, default=None):
+    if type(might_int) is int:
+        return might_int
+
+    if type(might_int) is str:
+        try:
+            return int(might_int.strip().replace("\xa0", ""))
+        except:
+            pass
+
+    try:
+        return int(might_int)
+    except:
+        pass
+
+    if default:
+        return default
+
+    return None
+
+
+def to_float(might_float, default=None):
+    try:
+        return float(might_float)
+    except:
+        pass
+
+    return default

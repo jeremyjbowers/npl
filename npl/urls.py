@@ -14,5 +14,6 @@ urlpatterns = [
     path("players/search/", views.search),
     path("players/<str:playerid>/", views.player_detail),
     path("teams/<str:short_name>/", views.team_detail),
+
     path("", views.index),
 ]

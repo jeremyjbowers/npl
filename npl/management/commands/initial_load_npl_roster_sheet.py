@@ -120,7 +120,7 @@ class Command(BaseCommand):
                             if "aaa" in key:
                                 player_dict['roster_tripleA'] = True
 
-                    players.append(utils.format_player_row(row, t, player_dict))
+                        players.append(utils.format_player_row(row, t, player_dict))
 
                 
             for idx, p in enumerate(players):

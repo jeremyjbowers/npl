@@ -153,6 +153,40 @@ ROSTER_SHEET_ID = "1On6uRXLRQ3pzl2FHYRgWKCedsCdl6UNbNaSF6pwlGiw"
 LEAGUE_SHEET_ID = "1UQv_vnBBWUT8BiFRd7tAbvW4COWJ61BNkme7iyzf5po"
 
 ## LOOKUPS
+ROSTER_TEAM_IDS = [
+    ("1", "LAA", "Los Angeles Angels"),
+    ("2", "BAL", "Baltimore Orioles"),
+    ("3", "BOS", "Boston Red Sox"),
+    ("4", "CHW", "Chicago White Sox"),
+    ("5", "CLE", "Cleveland Guardians"),
+    ("6", "DET", "Detroit Tigers"),
+    ("7", "KCR", "Kansas City Royals"),
+    ("8", "MIN", "Minnesota Twins"),
+    ("9", "NYY", "New York Yankees"),
+    ("10", "OAK", "Oakland Athletics"),
+    ("11", "SEA", "Seattle Mariners"),
+    ("12", "TBR", "Tampa Bay Rays"),
+    ("13", "TEX", "Texas Rangers"),
+    ("14", "TOR", "Toronto Blue Jays"),
+    ("15", "ARI", "Arizona Diamondbacks"),
+    ("16", "ATL", "Atlanta Braves"),
+    ("17", "CHC", "Chicago Cubs"),
+    ("18", "CIN", "Cincinatti Reds"),
+    ("19", "COL", "Colorado Rockies"),
+    ("20", "MIA", "Miami Marlins"),
+    ("21", "HOU", "Houston Astros"),
+    ("22", "LAD", "Los Angeles Dodgers"),
+    ("23", "MIL", "Milwaukee Brewers"),
+    ("24", "WAS", "Washington Nationals"),
+    ("24", "WSN", "Washington Nationals"),
+    ("25", "NYM", "New York Mets"),
+    ("26", "PHI", "Philadelphia Phillies"),
+    ("27", "PIT", "Pittsburgh Pirates"),
+    ("28", "STL", "St. Louis Cardinals"),
+    ("29", "SDP", "San Diego Padres"),
+    ("30", "SFG", "San Francisco Giants"),
+]
+
 MLB_URL_TO_ORG_NAME = {
     "orioles": "BAL",
     "whitesox": "CWS",

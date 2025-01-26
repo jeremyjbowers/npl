@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero" style="padding-top: 25px;">
+    <h1>{{ team.name }}</h1>
+    <p><strong>Owner{% if team.owners.all|length > 1 %}s{% endif %}</strong>: {% for owner in team.owners.all %}{% if not forloop.first %}, {% endif %}{{ owner }}{% endfor %}</p>
+</section>
+<section>
+    <hr>
+    <nav class="level position-count">
+        <div class="level-item has-text-centered">
+            <div>
+              <p class="heading">Total</p>
+              <p class="title">{{ total_count }}</p>
+            </div>
+          </div>
+          <div class="level-item has-text-centered">
+            <div>
+              <p class="heading">40-man</p>
+              <p class="title">{{ roster_40_man_count }}</p>
+            </div>
+          </div>
+          <!-- <div class="level-item has-text-centered">
+            <div>
+              <p class="heading">MLB</p>
+              <p class="title">{{ roster_30_man_count }}</p>
+            </div>
+          </div> -->
+        {% regroup hitters by simple_position as position_players %}
+        {% for position in position_players %}
+        <div class="level-item has-text-centered">
+          <div>
+            <p class="heading">{{ position.grouper }}</p>
+            <p class="title">{{ position.list|length }}</p>
+          </div>
+        </div>
+        {% endfor %}
+        <div class="level-item has-text-centered">
+            <div>
+              <p class="heading">P</p>
+              <p class="title">{{ pitchers|length }}</p>
+            </div>
+          </div>
+      </nav>
+      <hr>
+</section>
+
+<section style="padding-top: 25px;">
+  <h1 class="title is-3" id="position-p">Active 30-Man Roster</h1>
+  <table class="table">
+  <thead>
+    <th>pos</th>
+    <th style="text-align:center;">player</th>
+    <th></th>
+    <!-- <th>npl</th> -->
+    <!-- <th style="text-align:center;">status</th> -->
+    <th style="text-align:center;">age</th>
+    <th style="text-align:center;">mlb</th>
+    <th style="text-align:center;">mls</th>
+    <th style="text-align:center;">opt</th>
+    <th style="text-align:center;">stat</th>
+    <th style="text-align:center;">2024</th>
+    <th style="text-align:center;">2025</th>
+    <th style="text-align:center;">2026</th>
+    <th style="text-align:center;">2027</th>
+    <th style="text-align:center;">2028</th>
+    <th style="text-align:center;">2029</th>
+    <th style="text-align:center;">2030</th>
+    <th style="text-align:center;">2031</th>
+  </thead>
+  <tbody>
+  {% for p in 30_man_pitch %}{% include "includes/player_row.html" %}{% endfor %}
+  {% regroup 30_man_hit by simple_position as position_players %}
+  {% for position in position_players %}{% for p in position.list %}
+    {% include "includes/player_row.html" %}
+  {% endfor %}{% endfor %}
+  </tbody>
+  </table>
+</section>
+
+{% if 56_day_il %}
+<section style="padding-top: 25px;">
+  <!-- 56-day IL -->
+  <h1 class="title is-3" id="position-p">IL-56</h1>
+  <table class="table">
+  <thead>
+    <th>pos</th>
+    <th style="text-align:center;">player</th>
+    <th></th>
+    <!-- <th>npl</th> -->
+    <!-- <th style="text-align:center;">status</th> -->
+    <th style="text-align:center;">age</th>
+    <th style="text-align:center;">mlb</th>
+    <th style="text-align:center;">mls</th>
+    <th style="text-align:center;">opt</th>
+    <th style="text-align:center;">stat</th>
+    <th style="text-align:center;">2024</th>
+    <th style="text-align:center;">2025</th>
+    <th style="text-align:center;">2026</th>
+    <th style="text-align:center;">2027</th>
+    <th style="text-align:center;">2028</th>
+    <th style="text-align:center;">2029</th>
+    <th style="text-align:center;">2030</th>
+    <th style="text-align:center;">2031</th>
+  </thead>
+  <tbody>
+    {% for p in 56_day_il %}
+    {% include "includes/player_row.html" %}
+    {% endfor %}
+    </tbody>
+  </table>
+{% endif %}
+
+{% if eos_il %}
+  <!-- END OF SEASON IL -->
+  <h1 class="title is-3" id="position-p">End of Season IL</h1>
+  <table class="table">
+  <thead>
+    <th>pos</th>
+    <th style="text-align:center;">player</th>
+    <th></th>
+    <!-- <th>npl</th> -->
+    <!-- <th style="text-align:center;">status</th> -->
+    <th style="text-align:center;">age</th>
+    <th style="text-align:center;">mlb</th>
+    <th style="text-align:center;">mls</th>
+    <th style="text-align:center;">opt</th>
+    <th style="text-align:center;">stat</th>
+    <th style="text-align:center;">2024</th>
+    <th style="text-align:center;">2025</th>
+    <th style="text-align:center;">2026</th>
+    <th style="text-align:center;">2027</th>
+    <th style="text-align:center;">2028</th>
+    <th style="text-align:center;">2029</th>
+    <th style="text-align:center;">2030</th>
+    <th style="text-align:center;">2031</th>
+  </thead>
+  <tbody>
+    {% for p in eos_il %}
+    {% include "includes/player_row.html" %}
+    {% endfor %}
+    </tbody>
+  </table> 
+{% endif %}
+
+{% if restricted %}
+  <!-- RESTRICTED LIST -->
+  <h1 class="title is-3" id="position-p">Restricted</h1>
+  <table class="table">
+  <thead>
+    <th>pos</th>
+    <th style="text-align:center;">player</th>
+    <th></th>
+    <!-- <th>npl</th> -->
+    <!-- <th style="text-align:center;">status</th> -->
+    <th style="text-align:center;">age</th>
+    <th style="text-align:center;">mlb</th>
+    <th style="text-align:center;">mls</th>
+    <th style="text-align:center;">opt</th>
+    <th style="text-align:center;">stat</th>
+    <th style="text-align:center;">2024</th>
+    <th style="text-align:center;">2025</th>
+    <th style="text-align:center;">2026</th>
+    <th style="text-align:center;">2027</th>
+    <th style="text-align:center;">2028</th>
+    <th style="text-align:center;">2029</th>
+    <th style="text-align:center;">2030</th>
+    <th style="text-align:center;">2031</th>
+  </thead>
+  <tbody>
+    {% for p in restricted %}
+    {% include "includes/player_row.html" %}
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+    {% regroup 40_man_all by get_npl_status as status_players %}
+    {% for status in status_players %}
+    <h1 class="title is-3" id="position-p">{{ status.grouper }}</h1>
+    <table class="table">
+    <thead>
+      <th>pos</th>
+      <th style="text-align:center;">player</th>
+      <th></th>
+      <!-- <th>npl</th> -->
+      <!-- <th style="text-align:center;">status</th> -->
+      <th style="text-align:center;">age</th>
+      <th style="text-align:center;">mlb</th>
+      <th style="text-align:center;">mls</th>
+      <th style="text-align:center;">opt</th>
+      <th style="text-align:center;">stat</th>
+      <th style="text-align:center;">2024</th>
+      <th style="text-align:center;">2025</th>
+      <th style="text-align:center;">2026</th>
+      <th style="text-align:center;">2027</th>
+      <th style="text-align:center;">2028</th>
+      <th style="text-align:center;">2029</th>
+      <th style="text-align:center;">2030</th>
+      <th style="text-align:center;">2031</th>
+    </thead>
+    <tbody>    
+    {% for p in status.list %}
+    {% include "includes/player_row.html" %}
+    {% endfor %}
+    </tbody>
+    </table>    
+    {% endfor %}
+</section>
+
+
+<section style="padding-top: 25px;">
+  <h1 class="title is-3" id="position-p">AA</h1>
+  <table class="table">
+  <thead>
+    <th>pos</th>
+    <th style="text-align:center;">player</th>
+    <th></th>
+    <!-- <th>npl</th> -->
+    <!-- <th style="text-align:center;">status</th> -->
+    <th style="text-align:center;">age</th>
+    <th style="text-align:center;">mlb</th>
+    <th style="text-align:center;">mls</th>
+    <th style="text-align:center;">opt</th>
+    <th style="text-align:center;">stat</th>
+    <th style="text-align:center;">2024</th>
+    <th style="text-align:center;">2025</th>
+    <th style="text-align:center;">2026</th>
+    <th style="text-align:center;">2027</th>
+    <th style="text-align:center;">2028</th>
+    <th style="text-align:center;">2029</th>
+    <th style="text-align:center;">2030</th>
+    <th style="text-align:center;">2031</th>
+  </thead>
+  <tbody>
+  {% for p in aa_pitchers %}{% include "includes/player_row.html" %}{% endfor %}
+  {% regroup aa_hitters by simple_position as position_players %}
+  {% for position in position_players %}{% for p in position.list %}
+    {% include "includes/player_row.html" %}
+  {% endfor %}{% endfor %}
+  </tbody>
+  </table>
+</section>
+
+
+<section style="padding-top: 25px;">
+  <h1 class="title is-3" id="position-p">A</h1>
+  <table class="table">
+  <thead>
+    <th>pos</th>
+    <th style="text-align:center;">player</th>
+    <th></th>
+    <!-- <th>npl</th> -->
+    <!-- <th style="text-align:center;">status</th> -->
+    <th style="text-align:center;">age</th>
+    <th style="text-align:center;">mlb</th>
+    <th style="text-align:center;">mls</th>
+    <th style="text-align:center;">opt</th>
+    <th style="text-align:center;">stat</th>
+    <th style="text-align:center;">2024</th>
+    <th style="text-align:center;">2025</th>
+    <th style="text-align:center;">2026</th>
+    <th style="text-align:center;">2027</th>
+    <th style="text-align:center;">2028</th>
+    <th style="text-align:center;">2029</th>
+    <th style="text-align:center;">2030</th>
+    <th style="text-align:center;">2031</th>
+  </thead>
+  <tbody>
+  {% for p in a_pitchers %}{% include "includes/player_row.html" %}{% endfor %}
+  {% regroup a_hitters by simple_position as position_players %}
+  {% for position in position_players %}{% for p in position.list %}
+    {% include "includes/player_row.html" %}
+  {% endfor %}{% endfor %}
+  </tbody>
+  </table>
+</section>
+
+{% endblock %}

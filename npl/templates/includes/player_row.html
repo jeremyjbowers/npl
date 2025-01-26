@@ -14,7 +14,8 @@
     {% if user.is_staff %}<small><a target="_blank" href="/admin/npl/player/{{ p.mlb_id }}/change/"><span class="icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></span></a></small>{% endif %}
     <small><a target="_blank" href="{{ p.mlb_url }}">MLB&nbsp;&rarr;</a></small>
   </td>
-  <td style="text-align:center;">{{ p.roster_status|default_if_none:"MINORS" }}</td>
+  <!-- <td>{{ p.get_npl_status }}</td> -->
+  <!-- <td style="text-align:center;">{{ p.get_roster_status }}</td> -->
   <td style="text-align:center;">{{ p.age|default_if_none:"" }}</td>
   <td style="text-align:center;">{{ p.mlb_org|default_if_none:""}}</td>
     <td style="text-align:center;">{% if p.is_roster_40_man %}{{ p.mls_time|floatformat:"3" }}{% else %}{{ p.mls_year|default_if_none:"" }}{% endif %}</td>

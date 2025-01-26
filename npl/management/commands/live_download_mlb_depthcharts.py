@@ -23,7 +23,7 @@ class Command(BaseCommand):
         "119": "LAD",
         "120": "WSH",
         "121": "NYM",
-        "133": "ATH",
+        "133": "OAK",
         "134": "PIT",
         "135": "SD",
         "136": "SEA",
@@ -54,34 +54,23 @@ class Command(BaseCommand):
         high_a_teams = [self.parse_players(t) for t in team_list if t['sport']['id'] == 13]
         a_teams = [self.parse_players(t) for t in team_list if t['sport']['id'] == 14]
         ss_a_teams =  [self.parse_players(t) for t in team_list if t['sport']['id'] == 15]
-<<<<<<< HEAD
-        rookie_teams = [self.parse_players(t) for t in team_list if t['sport']['id'] == 16]
-=======
         rookie_teams = [self.parse_players(t) for t in team_list if t['sport']['id'] == 16]            
->>>>>>> main
 
     def parse_players(self, t):
         roster_link = f"https://statsapi.mlb.com/api/v1/teams/{t['id']}/roster/40Man"
         tr = requests.get(roster_link).json()
 
-        if t['sport']['id'] != 1:
+        if tr.get('roster', None):
 
-            try:
-                mlb_team = self.mlb_lookup[str(t['parentOrgId'])]
+            if t['sport']['id'] != 1:
+                try:
+                    mlb_team = self.mlb_lookup[str(t['parentOrgId'])]
+                except:
+                    pass
+            
+            else:
+                mlb_team = t['abbreviation']
 
-            except:
-               print(t)
-
-        else:
-            mlb_team = t['abbreviation']
-
-<<<<<<< HEAD
-        if not tr.get('roster', None):
-            print(tr)
-        else:
-=======
-        if tr.get('roster'):
->>>>>>> main
             for p in tr['roster']:
                 player_dict = {}
                 player_dict['mlb_id'] = p['person']['id']
@@ -90,11 +79,8 @@ class Command(BaseCommand):
                 player_dict['mlb_org'] = mlb_team
 
                 if "injured" in p['status']['description'].lower():
-<<<<<<< HEAD
-=======
                     if "7" in p['status']['description']:
                         player_dict['roster_status'] = "IL-7"
->>>>>>> main
                     if "10" in p['status']['description']:
                         player_dict['roster_status'] = "IL-10"
                     if "15" in p['status']['description']:
@@ -116,24 +102,16 @@ class Command(BaseCommand):
                     setattr(obj, k, v)
 
                 obj.save()
-<<<<<<< HEAD
-
-    def fix_bad_player_ids(self):
-        bad_ids = models.Player.objects.filter(mlb_id__icontains="/")
-=======
                 print(obj)
 
     def fix_bad_player_ids(self):
         bad_ids = models.Player.objects.filter(mlb_id__icontains="/")
-        print(f" Bad IDs before fixing: {bad_ids.count()}")
+        print(bad_ids.count())
 
->>>>>>> main
         bad_ids.delete()
+
         bad_ids = models.Player.objects.filter(mlb_id__icontains="/")
-<<<<<<< HEAD
-=======
-        print(f"Bad IDs after fixing: {bad_ids.count()}")
->>>>>>> main
+        print(bad_ids.count())
 
     def handle(self, *args, **options):
         self.fix_bad_player_ids()
