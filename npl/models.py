@@ -198,6 +198,16 @@ class Player(BaseModel):
 
     # NPL statuses
     npl_status = models.CharField(max_length=255, blank=True, null=True)
+
+    fg_role_type = models.CharField(max_length=255, blank=True, null=True)
+    fg_role = models.CharField(max_length=255, blank=True, null=True)
+    fg_injury_description = models.CharField(max_length=255, blank=True, null=True)
+
+    fg_is_injured = models.BooleanField(default=False)
+    fg_is_starter = models.BooleanField(default=False)
+    fg_is_bench = models.BooleanField(default=False)
+    fg_is_mlb40man = models.BooleanField(default=False)
+
     grad_year = models.IntegerField(default=None, blank=True, null=True)
     service_time = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
     options = models.IntegerField(default=3, blank=True, null=True)
