@@ -159,11 +159,13 @@ class PlayerAdmin(admin.ModelAdmin):
 class OwnerAdmin(admin.ModelAdmin):
     model = Owner
     list_display = ['name']
+    search_fields = ['name']
 
 
 @admin.register(Team)
 class TeamAdmin(admin.ModelAdmin):
     model = Team
+    autocomplete_fields = ['owners']
     list_display = ['full_name', 'short_name', 'tab_id', 'abbreviation']
     list_editable = ['tab_id', 'abbreviation']
     search_fields = ['full_name']
@@ -182,11 +184,13 @@ class DivisionAdmin(admin.ModelAdmin):
 
 @admin.register(Wishlist)
 class WishlistAdmin(admin.ModelAdmin):
-    model = Division
+    model = Wishlist
+    autocomplete_fields = ['team']
 
 @admin.register(WishlistPlayer)
 class WishlistPlayerAdmin(admin.ModelAdmin):
     model = WishlistPlayer
+    autocomplete_fields = ['player']
     list_display = ['player','rank','interesting', 'player_fv', 'player_risk']
     list_filter = ['wishlist', 'interesting', 'player_fv', 'player_risk']
     search_fields = ['player', 'wishlist']
