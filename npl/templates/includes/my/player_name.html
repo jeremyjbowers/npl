@@ -1,0 +1,14 @@
+<td data-value="{{ p.player.name }}" style="text-align: left!important; width: 250px;">
+    {% if user.is_authenticated %}{% if p.player.team.owner_obj.user != user %}
+        {% if p.player %}
+            <span id="player-{{ p.player.mlb_id }}" class="icon star action-add-wishlist {% if p.interesting %}has-text-success{% else %}has-text-grey-lighter{% endif %}" data-playerid="{{ p.player.mlb_id }}"><i class="fas fa-star"></i></span>
+        {% endif %}
+
+    {% endif %}{% endif %}
+
+    {% if p.player %}
+    <a class="has-text-weight-semibold" href="/players/{{ p.player.mlb_id }}/" target="_blank">{{ p.player.name }}</a></span>
+    {% else %}
+        {{ p.player_name }}
+    {% endif %}
+</td>

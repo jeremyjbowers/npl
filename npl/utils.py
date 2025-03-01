@@ -38,7 +38,6 @@ def build_context(request):
     context = {}
 
     # to build the nav
-    context["all_teams"] = models.Team.objects.all().order_by('league', 'division', 'short_name')
 
     # for search
     queries_without_page = dict(request.GET)
@@ -51,12 +50,12 @@ def build_context(request):
     # add the owner to the page
     context["owner"] = None
     if request.user.is_authenticated:
-        try:
-            owner = models.Owner.objects.get(user=request.user)
-            context["owner"] = owner
-            context['owner_team'] = models.Team.objects.get(owners=owner)
-        except models.Owner.DoesNotExist:
-            pass
+        owner = models.Owner.objects.get(user=request.user)
+        context["owner"] = owner
+        context['owner_team'] = models.Team.objects.get(owners=owner)
+
+    print(context)
+    context["all_teams"] = models.Team.objects.all().order_by('league', 'division', 'short_name')
 
     return context
 

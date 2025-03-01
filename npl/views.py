@@ -186,3 +186,67 @@ def search(request):
     context["hitters"] = query.exclude(simple_position="P").order_by("simple_position", "last_name")
     context["pitchers"] = query.filter(simple_position="P").order_by("last_name")
     return render(request, "search.html", context)
+
+@login_required
+def my_wishlist(request):
+    context = utils.build_context(request)
+    context["wishlist"] = models.Wishlist.objects.get(team=context["owner_team"])
+
+    # context['my_open_picks'] = models.DraftPick.objects.filter(team=context['team'], year=2025, season="offseason", draft_type="open")
+    # context['all_open_picks'] = models.DraftPick.objects.filter(year=2025, season="offseason", draft_type="open").values('overall_pick_number', 'team__abbreviation')
+ 
+    context["players"] = models.WishlistPlayer.objects.filter(
+        wishlist=context["wishlist"], player__team__isnull=True
+    ).order_by("rank", "interesting")
+
+    context['my_picks'] = [59, 107, 131, 155, 179, 203, 227]
+
+    # context["tags"] = set()
+
+    # for p in context["players"].values("tags"):
+    #     if p["tags"]:
+    #         for z in p["tags"]:
+    #             context["tags"].add(z)
+
+    # context["tags"] = sorted(list(context["tags"]), key=lambda x: x)
+    # context["num_owned"] = models.Player.objects.filter(team=context["team"]).count()
+
+    return render(request, "my/wishlist.html", context)
+
+@csrf_exempt
+@login_required
+def wishlist_bulk(request):
+    context = utils.build_context(request)
+    wishlist = None
+    wl = models.Wishlist.objects.filter(team=context["owner_team"])
+    if len(wl) > 0:
+        wishlist = wl[0]
+
+    for raw_json_string, _ in request.POST.items():
+        players = json.loads(raw_json_string)
+        for p in players:
+            models.WishlistPlayer.objects.filter(wishlist=wishlist, player__mlb_id=p["playerid"]).update(
+                rank=p["rank"]
+            )
+
+    return JsonResponse({"success": True, "updated": len(players)})
+
+@csrf_exempt
+@login_required
+def interesting_action(request, playerid):
+    context = utils.build_context(request)
+    wl = models.Wishlist.objects.get(team=context["owner_team"])
+    pl = models.Player.objects.get(mlb_id=playerid)
+    w = models.WishlistPlayer.objects.get(wishlist=wl, player=pl)
+
+    action = request.GET.get("action").strip()
+
+    if action == "add":
+        w.interesting = True
+
+    elif action == "remove":
+        w.interesting = False
+
+    w.save()
+    print(w.interesting)
+    return JsonResponse({"success": True, 'player': w.player.name, 'interesting': w.interesting})

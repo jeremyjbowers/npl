@@ -6,29 +6,21 @@ from bs4 import BeautifulSoup
 
 import time
 
-with open('international_2024.json', 'r') as readfile:
-    players = json.loads(readfile.read())
-    fieldnames = players[0].keys()
-
-    with open('international_2024.csv', 'w') as writefile:
-        writer = csv.DictWriter(writefile, fieldnames=fieldnames)
-        writer.writeheader()
-        for p in players:
-            writer.writerow(p)
+for year in ['2024', '2023', '2022', '2021', '2019', '2018', '2017', '2016']
 
 
-# URL_BASE = f"https://www.spotrac.com/mlb/international/"
+# URL_BASE = f"https://www.spotrac.com/mlb/international/_year/"
 
 # payload = []
 
-# r = requests.get(f"{URL_BASE}2024")
+# r = requests.get(f"{URL_BASE}2025")
 # soup = BeautifulSoup(r.content, 'html.parser')
-# rows = soup.select('div.teams > table.datatable > tbody > tr')
+# rows = soup.select('div#table-wrapper table#table > tbody > tr')
 
 # for row in rows:
 #     cells = row.select('td')
 #     player_dict = {}
-#     player_dict['year'] = 2024
+#     player_dict['year'] = 2025
 #     player_dict['name'] = cells[0].select('a')[0].text.strip()
 #     player_dict['spotrac_url'] = cells[0].select('a')[0].attrs['href']
 #     player_dict['spotrac_id'] = player_dict['spotrac_url'].split('/player/')[1].replace('/', '').strip()
@@ -39,7 +31,7 @@ with open('international_2024.json', 'r') as readfile:
 #     player_dict['mlb_id'] = None
 #     player_dict['birthdate'] = None
     
-#     if cells[4].text.strip() != '':
+#     if cells[4].text.strip().lower() not in ['', 'n/a']:
 #         player_dict['bonus'] = int(cells[4].text.strip().replace('$', '').replace(',', ''))
 
 #     search_url = f"https://statsapi.mlb.com/api/v1/people/search?names={player_dict['name']}&sportIds=11,12,13,14,15,5442,16&active=true&hydrate=currentTeam,team"
@@ -55,7 +47,17 @@ with open('international_2024.json', 'r') as readfile:
 #         player_dict['birthdate'] = p['birthDate']
 
 #     payload.append(player_dict)
-#     time.sleep(1)
+#     time.sleep(2)
 
-# with open('international_2024.json', 'w') as writefile:
+# with open('international_2025.json', 'w') as writefile:
 #     writefile.write(json.dumps(payload))
+
+with open('international_2025.json', 'r') as readfile:
+    players = json.loads(readfile.read())
+    fieldnames = players[0].keys()
+
+    with open('international_2025.csv', 'w') as writefile:
+        writer = csv.DictWriter(writefile, fieldnames=fieldnames)
+        writer.writeheader()
+        for p in players:
+            writer.writerow(p)

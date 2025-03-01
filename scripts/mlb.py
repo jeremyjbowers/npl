@@ -8,13 +8,159 @@ import os
 
 players = []
 
-with open('data/international_with_birthdates.json', 'r') as readfile:
-    players = json.loads(readfile.read())
+# with open('data/international_with_birthdates.json', 'r') as readfile:
+#     players = json.loads(readfile.read())
 
 BASE_URL = "https://yvo49oxzy7-dsn.algolia.net/1/indexes/*/queries?x-algolia-api-key=2305f7af47eda36d30e1fa05f9986e56&x-algolia-application-id=YVO49OXZY7"
 
+players = [
+    "Luis Serna",
+    "Nathan Flewelling",
+    "Jake Mangum",
+    "Jeremy Pilon",
+    "Devereaux Harrison",
+    "Eddie Micheletti",
+    "Carson Pierce",
+    "Jackson Wentworth",
+    "Nolan Perry",
+    "Tyler Schweitzer",
+    "Casey Saucke",
+    "Ronny Hernandez",
+    "Nick McLain",
+    "Luis Reyes",
+    "Adisyn Coffey",
+    "Ryan Webb",
+    "Cameron Sullivan",
+    "Nick Enright",
+    "Trei Cruz",
+    "Thomas Bruss",
+    "Seth Stephenson",
+    "Zack Lee",
+    "Tyson Guerrero",
+    "Eric Cerantola",
+    "Hyungchan Um",
+    "Hunter Patteson",
+    "Logan Martin",
+    "Yunior Marte",
+    "Beck Way",
+    "Adrian Bohorquez",
+    "Jose Olivares",
+    "Cesar Lares",
+    "Khadim Diaw",
+    "Ty Langenberg",
+    "Carson McCusker",
+    "Noah Murdock",
+    "Blake Beers",
+    "Jackson Finley",
+    "Dylan Fien",
+    "Kyle Robinson",
+    "Sam Stuhr",
+    "Carlos Pacheco",
+    "Bryce Mayer",
+    "Ryan Verdugo",
+    "Pascanel Ferreras",
+    "Alimber Santa",
+    "Juan Bello",
+    "Dioris De La Rosa",
+    "Rio Foster",
+    "David Calabrese",
+    "David Mershon",
+    "Anthony Scull",
+    "Samy Natera",
+    "Joe Redfield",
+    "Josh Hood",
+    "Will Riley",
+    "Brock Moore",
+    "Victor Labrada",
+    "Devin Fitz-Gerald",
+    "Bryan Magdaleno",
+    "Hayden Harris",
+    "Ian Mejia",
+    "Luke Waddell",
+    "Eric Hartman",
+    "Jacob Shafer",
+    "Owen Hackman",
+    "Dale Stanavich",
+    "Ryan Ignoffo",
+    "Evan Fitterer",
+    "Eliazar Dishmey",
+    "Wilfredo Lara",
+    "Emmett Olson",
+    "Josh White",
+    "Grant Shepardson",
+    "Felipe De La Cruz",
+    "Ryan Lambert",
+    "Ethan Lanthier",
+    "Luis Moreno",
+    "Marcus Morgan",
+    "Caleb Ricketts",
+    "Keaton Anthony",
+    "Juan Amarante",
+    "Kevin Made",
+    "Marquis Grissom",
+    "Yoel Tejada",
+    "Jackson Kent",
+    "Tyler Schoff",
+    "Nick Peoples",
+    "Sam Petersen",
+    "Eli Lovich",
+    "Daniel Avitiia",
+    "JP Wheat",
+    "Frankie Scalzo",
+    "Kenyi Perez",
+    "Andy Garriola",
+    "Ariel Armas",
+    "Yerlin Confidan",
+    "Tristan Smith",
+    "Luke Hayden",
+    "Juan Ortuno",
+    "Yorman Galindez",
+    "Wande Torres",
+    "Wes Clarke",
+    "Nick Cimillo",
+    "Brandon Bidois",
+    "Sammy Siani",
+    "Shawn Ross",
+    "Jaden Woods",
+    "Braden Davis",
+    "Josh Kross",
+    "Joshua Baez",
+    "Bryan Torres",
+    "Joseph King",
+    "Jose Cabrera",
+    "Ruben Santana",
+    "Jacob Steinmetz",
+    "Kenny Castillo",
+    "Junior Ciprian",
+    "Marcos Herrera",
+    "Braylen Wimmer",
+    "Lebarron Johnson",
+    "Roynier Hernandez",
+    "Zach Agnos",
+    "Patrick Copen",
+    "Logan Wagner",
+    "Wyatt Crowell",
+    "David Morgan",
+    "Carson Montgomery",
+    "Garrett Hawkins",
+    "Cole Paplham",
+    "Jayvien Sandridge",
+    "Lamar King",
+    "Gerelmi Maldonado",
+    "Braxton Roxby",
+    "Nate Furman",
+    "Drake George",
+    "Jakob Christian",
+    "Spencer Miles",
+    "Nick Sinacola",
+    "Santiago Camacho",
+    "Justin Gonzales",
+    "Adriander Mejia",
+    "Jeury Espinal"
+]
+
 for p in players:
-    name = p['name']
+    name = p
     data = {}
 
     data["requests"] = [
@@ -38,19 +184,13 @@ for p in players:
     headers['sec-ch-ua-mobile'] = "?0"
     headers['sec-ch-ua-platform'] = '"macOS"'
 
-    filepath = f"data/mlbids/{p['spotrac_id']}.json"
+    r = requests.post(BASE_URL, headers=headers, data=json.dumps(data))
 
-    if not os.path.exists(filepath):
-        print(p['name'], p['year'])
-        r = requests.post(BASE_URL, headers=headers, data=json.dumps(data))
+    results = r.json()['results']
+    mlb_id = ""
+    if len(results[0]['hits']) > 0:
+        mlb_id = results[0]['hits'][0]['url'].split('player/')[1].replace('/', '')
 
-        results = r.json()['results']
-        if len(results[0]['hits']) > 0:
-            mlb_id = results[0]['hits'][0]['url'].split('player/')[1].replace('/', '')
+    print(f"{p},{mlb_id}")
 
-            p['mlb_id'] = mlb_id
-
-            with open(filepath, 'w') as writefile:
-                writefile.write(json.dumps(p))
-
-            time.sleep(0.5)
+    time.sleep(0.5)

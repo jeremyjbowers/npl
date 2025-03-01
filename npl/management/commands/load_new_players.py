@@ -1,0 +1,76 @@
+import time
+
+from django.core.management.base import BaseCommand, CommandError
+from django.conf import settings
+
+import requests
+import ujson as json
+
+from npl import models, utils
+
+
+class Command(BaseCommand):
+    def handle(self, *args, **options):
+
+        with open('new_player.json', 'r') as readfile:
+            new_players = json.loads(readfile.read())
+
+            for player in new_players:
+                p = models.Player(mlb_id=player['mlbid'])
+
+                url = p.mlb_api_url + "?hydrate=currentTeam,team"
+                r = requests.get(url)
+                player_json = r.json().get('people', None)
+
+                if player_json:
+                    if len(player_json) == 1:
+
+                        player_json = player_json[0]
+                        p.active = player_json['active']
+                        p.birthdate = player_json['birthDate']
+                        p.name = player_json['fullName']
+                        p.last_name = player_json['useLastName']
+                        p.first_name = player_json['useName']
+
+                        try:
+                            p.height = player_json['height']
+                        except:
+                            pass
+                        
+                        try:
+                            p.weight = player_json['weight']
+                        except:
+                            pass
+
+                        try:
+                            p.bats = player_json['batSide']['code']
+                        except:
+                            pass
+
+                        try:
+                            p.throws = player_json['pitchHand']['code']
+                        except:
+                            pass
+                        
+                        try:
+                            p.position = player_json['primaryPosition']['abbreviation']
+                        except:
+                            pass
+
+                        team_abbrev = None
+
+                        if player_json.get('currentTeam', None):
+                            if player_json['currentTeam'].get('sport', None):
+                                if player_json['currentTeam']['sport']['id'] == 1:
+                                    # MLB team, get the ID directly
+                                    team_abbrev = player_json['currentTeam']['abbreviation']
+                                else:
+                                    # MiLB team
+                                    if player_json['currentTeam'].get('parentOrgId', None):
+                                        team_abbrev = requests.get(f'https://statsapi.mlb.com/api/v1/teams/{player_json["currentTeam"]["parentOrgId"]}/').json()['teams'][0]['abbreviation']
+                        
+                        p.mlb_org = team_abbrev
+                        p.save()
+                        print(p)
+
+                time.sleep(1)

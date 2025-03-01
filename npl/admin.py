@@ -18,7 +18,9 @@ from npl.models import (
     MLBAuctionBid,
     TeamSeason,
     League,
-    Division
+    Division,
+    Wishlist,
+    WishlistPlayer
 )
 
 admin.site.site_title = "The NPL"
@@ -177,3 +179,14 @@ class LeagueAdmin(admin.ModelAdmin):
 @admin.register(Division)
 class DivisionAdmin(admin.ModelAdmin):
     model = Division
+
+@admin.register(Wishlist)
+class WishlistAdmin(admin.ModelAdmin):
+    model = Division
+
+@admin.register(WishlistPlayer)
+class WishlistPlayerAdmin(admin.ModelAdmin):
+    model = WishlistPlayer
+    list_display = ['player','rank','interesting', 'player_fv', 'player_risk']
+    list_filter = ['wishlist', 'interesting', 'player_fv', 'player_risk']
+    search_fields = ['player', 'wishlist']

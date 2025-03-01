@@ -12,10 +12,8 @@ from npl import models, utils
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        stamp = utils.get_timestamp()
-        one_week_ago_stamp = stamp - 600000
 
-        for p in models.Player.objects.filter(last_verified__lte=one_week_ago_stamp):
+        for p in models.Player.objects.filter(birthdate__isnull=True):
             url = p.mlb_api_url + "?hydrate=currentTeam,team"
             r = requests.get(url)
             player_json = r.json().get('people', None)
@@ -68,7 +66,6 @@ class Command(BaseCommand):
                                     team_abbrev = requests.get(f'https://statsapi.mlb.com/api/v1/teams/{player_json["currentTeam"]["parentOrgId"]}/').json()['teams'][0]['abbreviation']
                     
                     p.mlb_org = team_abbrev
-                    p.last_verified = stamp
                     p.save()
                     print(p)
 

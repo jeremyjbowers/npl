@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+
+{% load npl_tags %}
+
+{% block content %}
+
+<style type="text/css">
+    a.action-add-tag:hover { cursor: pointer; }
+    span.note-control { cursor: pointer }
+    tr.hide { display: none; }
+    span.filter { cursor:pointer; }
+    tbody.list-group tr td {background-color: white;}
+    tbody.list-group tr:nth-child(24n) td {border-bottom:3px solid; border-color: #555; }
+    tbody.list-group tr:nth-child(n+241) td {background-color: ccc;}
+    /*
+    tbody.list-group tr:nth-child(16) td:nth-child(1) > span.round:before { content: "Round 1"; }
+    tbody.list-group tr:nth-child(16) td:nth-child(1) > span.round { position: absolute; margin: 2px 0 0 -58px; display: block; text-align: center; padding: 3px 5px; background-color: #555; color: #fff; font-weight: bold;}
+    tbody.list-group tr:nth-child(32) td:nth-child(1) > span.round:before { content: "Round 2"; }
+    tbody.list-group tr:nth-child(32) td:nth-child(1) > span.round { position: absolute; margin: 2px 0 0 -58px; display: block; text-align: center; padding: 3px 5px; background-color: #555; color: #fff; font-weight: bold;}
+    tbody.list-group tr:nth-child(48) td:nth-child(1) > span.round:before { content: "Round 3"; }
+    tbody.list-group tr:nth-child(48) td:nth-child(1) > span.round { position: absolute; margin: 2px 0 0 -58px; display: block; text-align: center; padding: 3px 5px; background-color: #555; color: #fff; font-weight: bold;}
+    tbody.list-group tr:nth-child(64) td:nth-child(1) > span.round:before { content: "Round 4";}
+    tbody.list-group tr:nth-child(64) td:nth-child(1) > span.round { position: absolute; margin: 2px 0 0 -58px; display: block; text-align: center; padding: 3px 5px; background-color: #555; color: #fff; font-weight: bold;}
+    tbody.list-group tr:nth-child(80) td:nth-child(1) > span.round:before { content: "Round 5";}
+    tbody.list-group tr:nth-child(80) td:nth-child(1) > span.round { position: absolute; margin: 2px 0 0 -58px; display: block; text-align: center; padding: 3px 5px; background-color: #555; color: #fff; font-weight: bold;}
+    */
+
+    {% for pick in my_picks %}tbody.list-group tr:nth-child({{ pick }}) td {font-weight: bold; background-color: #ffffcc; border-bottom: none; }{% endfor %}
+</style>
+<div id="team" class="section is-desktop">
+    <div class="columns">
+        <div class="column table-container">
+            <table class="table is-hoverable is-fullwidth">
+                <thead>
+                    <tr>
+                        <th>rank</th>
+                        <th>player</th>
+                        <th>age</th>
+                        <th>pos</th>
+                        <th>team</th>
+                        <th>report</th>
+                    </tr>
+                </thead>
+                <tbody id="players" class="list-group">
+                    {% for p in players %}
+                        <tr data-playername="{{ p.player.name }}" data-playerid="{{ p.player.mlb_id }}" class="list-group-item">
+                            <td id="rank-{{ p.pk }}">
+                                <span>{% if p.rank == 0 %}-{% else %}{{ p.rank }}{% endif %}</span>
+                                <span class="pickowner"></span>
+                            </td>
+                            {% include "includes/my/player_name.html" %}
+                            <td>{{ p.player.age|default_if_none:"-" }}</td>
+                            <td>{{ p.player.position }}</td>
+                            <td>{{ p.player.mlb_org|default_if_none:"-" }}</td>
+                            <td style="width: 750px;"><span style="font-size:16px;">{{ p.note }}</span></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+        
+{% block extrascript %}
+<script src="//SortableJS.github.io/Sortable/Sortable.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/list.js/1.5.0/list.min.js"></script>
+
+{% if user.is_authenticated %}
+<script type="text/javascript">
+$(function(){
+    const players = document.getElementById('players');
+
+    /*
+    *
+    * function for handling all updates needed for the server
+    * takes in an event and a list of updates for the server
+    * server modifies wishlistplayer to update rank.
+    * idempotent; server does not create new wishlistplayers.
+    *
+    */
+    var update_server = function(evt, update_list) {
+        $.ajax({
+            method: "POST",
+            url: '/api/v1/wishlist/bulk/',
+            data: JSON.stringify(update_list),
+            success: function(response){
+                console.log(response);
+            }
+        });
+    }
+
+    /*
+    *
+    * function for handling all updates needed for the client.
+    * takes in the element of the table where the sortables live.
+    * returns a list of updates for the server.
+    * modifies the data elements on individual sortables.
+    * also modifies HTML on the sortables.
+    *
+    */
+    var update_client = function(el) {
+
+        var $el = $(el);
+
+        // set up a var for the data we'll return
+        var update_list = []
+
+        // loop over the children list items to establish index / rank
+        $el.children('tr.list-group-item').each(function(idx, ply){
+
+            // 1-based indexes, not 0
+            idx = idx+1
+
+            // need a jquery element
+            var $ply = $(ply);
+            var plyspan = $ply.find('span')[0];
+            var $plyspan = $(plyspan);
+
+            // grab playerid and name from the element's data attributes
+            var playerid = $ply.attr('data-playerid');
+            var name = $ply.attr('data-playername');
+
+            // update the element's data attribute with the new rank
+            // also update the element's rank HTML on the client
+            $ply.attr('data-rank', idx);
+            $plyspan.html(idx);
+            $('#rank-' + $ply.attr('data-playerid')).html(idx);
+
+            // push a obj to the update list with id, name and new rank
+            update_list.push({
+                'playerid': playerid,
+                'rank': idx,
+                'name': name
+            });
+        });
+    
+        // return the list of players to update
+        return update_list
+    }
+
+    var update_handler = function(evt, el) {
+        update_list = update_client(el);
+        update_server(evt, update_list);
+    }
+
+    Sortable.create(players, { onEnd: function(evt) { update_handler(evt, players); } });
+});
+</script>
+<script type="text/javascript">
+$(function(){
+
+    var toggle_classes = function($el) {
+        $el.toggleClass('action-remove-wishlist')
+        $el.toggleClass('has-text-success')
+        $el.toggleClass('action-add-wishlist')
+        $el.toggleClass('has-text-grey-lighter')
+    }
+
+    var add_wishlist_handler = function(el) {
+
+        el.preventDefault();
+        $el = $(this);
+
+        var playerid = $el.attr('data-playerid')
+
+        $.ajax({
+            type: "GET",
+            url: '/api/v1/wishlist/interesting/' + playerid + '/?action=add',
+            success: function(response){
+                toggle_classes($el)
+                console.log(response);
+            }
+        });
+    }
+
+    var remove_wishlist_handler = function(el) {
+
+        el.preventDefault();
+        $el = $(this);
+
+        var playerid = $el.attr('data-playerid')
+
+        $.ajax({
+            type: "GET",
+            url: '/api/v1/wishlist/interesting/' + playerid + '/?action=remove',
+            success: function(response){
+                toggle_classes($el);
+                console.log(response);
+            }
+        });
+    }
+
+    $('body').on('click', 'span.action-remove-wishlist', remove_wishlist_handler);
+    $('body').on('click', 'span.action-add-wishlist', add_wishlist_handler);
+});
+</script>
+{% endif %}
+
+{% endblock %}
