@@ -199,7 +199,7 @@ def my_wishlist(request):
         wishlist=context["wishlist"], player__team__isnull=True
     ).order_by("rank", "interesting")
 
-    context['my_picks'] = [59, 107, 131, 155, 179, 203, 227]
+    context['my_picks'] = [37, 59, 107, 131, 155]
 
     # context["tags"] = set()
 
