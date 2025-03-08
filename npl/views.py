@@ -196,7 +196,7 @@ def my_wishlist(request):
     # context['all_open_picks'] = models.DraftPick.objects.filter(year=2025, season="offseason", draft_type="open").values('overall_pick_number', 'team__abbreviation')
  
     context["players"] = models.WishlistPlayer.objects.filter(
-        wishlist=context["wishlist"], player__team__isnull=True
+        wishlist=context["wishlist"], player__is_owned=False
     ).order_by("rank", "interesting")
 
     context['my_picks'] = [37, 59, 107, 131, 155]

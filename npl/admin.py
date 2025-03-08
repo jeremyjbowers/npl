@@ -192,5 +192,5 @@ class WishlistPlayerAdmin(admin.ModelAdmin):
     model = WishlistPlayer
     autocomplete_fields = ['player']
     list_display = ['player','rank','interesting', 'player_fv', 'player_risk']
-    list_filter = ['wishlist', 'interesting', 'player_fv', 'player_risk']
+    list_filter = ['wishlist', 'interesting', 'player_fv', 'player_risk', 'player__is_owned']
     search_fields = ['player', 'wishlist']
