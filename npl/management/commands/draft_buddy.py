@@ -9,7 +9,7 @@ from npl import models, utils
 
 class Command(BaseCommand):
     drafted_path = "data/2025_r4_already_drafted.json"
-    webhook_url = 'https://hooks.slack.com/services/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'
+    webhook_url = os.environ.get('SLACK_WEBHOOK_URL')
     message = ""
     already_drafted = {}
     new_draftees = {}
