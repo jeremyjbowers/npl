@@ -27,13 +27,12 @@ class Command(BaseCommand):
                 player = p[11].strip()
                 mlb_id = p[13].strip()
 
-                t_obj = models.Team.objects.get(full_name=team)
-                p_obj = models.Player.objects.get(mlb_id=mlb_id)
-                p_obj.team = t_obj
-                p_obj.save()
-
                 if len(mlb_id) >0:
                     if not self.already_drafted.get(mlb_id, None):
+                        t_obj = models.Team.objects.get(full_name=team)
+                        p_obj = models.Player.objects.get(mlb_id=mlb_id)
+                        p_obj.team = t_obj
+                        p_obj.save()
                         self.new_draftees[mlb_id] = f"With pick #{pick}, *{team}* takes *{player}* ({mlb_id})"
 
     def generate_message(self):
