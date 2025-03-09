@@ -9,7 +9,7 @@ from npl import models, utils
 
 class Command(BaseCommand):
     drafted_path = "data/2025_r4_already_drafted.json"
-    webhook_url = 'https://hooks.slack.com/services/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'
+    webhook_url = 'https://hooks.slack.com/services/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'
     message = ""
     already_drafted = {}
     new_draftees = {}
@@ -41,10 +41,10 @@ class Command(BaseCommand):
             self.message += f"{message}\n"
 
     def send_slack_message(self, webhook_url, message):
-        # r = requests.post(
-        #     webhook_url, data=json.dumps({"text": message}),
-        #     headers={'Content-Type': 'application/json'}
-        # )
+        r = requests.post(
+            webhook_url, data=json.dumps({"text": message}),
+            headers={'Content-Type': 'application/json'}
+        )
         print(self.message)
 
     def post_message(self, quiet=False):
