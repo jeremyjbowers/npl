@@ -35,6 +35,7 @@
                     <tr>
                         <th>rank</th>
                         <th>player</th>
+                        <th>mlbid</th>
                         <th>age</th>
                         <th>pos</th>
                         <th>team</th>
@@ -49,6 +50,7 @@
                                 <span class="pickowner"></span>
                             </td>
                             {% include "includes/my/player_name.html" %}
+                            <td><strong>{{ p.player.mlb_id }}</strong></td>
                             <td>{{ p.player.age|default_if_none:"-" }}</td>
                             <td>{{ p.player.position }}</td>
                             <td>{{ p.player.mlb_org|default_if_none:"-" }}</td>
