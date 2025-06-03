@@ -55,6 +55,33 @@ def build_context(request):
         context['owner_team'] = models.Team.objects.get(owners=owner)
 
     context["all_teams"] = models.Team.objects.all().order_by('league', 'division', 'short_name')
+    
+    # Calculate financial percentiles for team graphics
+    teams_list = list(context["all_teams"])
+    
+    # Get valid financial data (non-null values)
+    cap_spaces = [team.cap_space for team in teams_list if team.cap_space is not None]
+    cash_amounts = [team.cash for team in teams_list if team.cash is not None]
+    
+    # Sort for percentile calculation
+    cap_spaces.sort()
+    cash_amounts.sort()
+    
+    # Add percentile data to each team
+    for team in teams_list:
+        # Calculate cap space percentile
+        if team.cap_space is not None and cap_spaces:
+            cap_rank = sum(1 for x in cap_spaces if x <= team.cap_space)
+            team.cap_space_percentile = (cap_rank / len(cap_spaces)) * 100
+        else:
+            team.cap_space_percentile = 0
+            
+        # Calculate cash percentile
+        if team.cash is not None and cash_amounts:
+            cash_rank = sum(1 for x in cash_amounts if x <= team.cash)
+            team.cash_percentile = (cash_rank / len(cash_amounts)) * 100
+        else:
+            team.cash_percentile = 0
 
     return context
 

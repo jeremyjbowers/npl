@@ -1,61 +1,64 @@
-<div class="section">
-    <form action="/players/search/">
-        <div class="field">
+<form action="/players/search/" class="box">
+    <div class="field">
+        <div class="field has-addons">
+            <div class="control is-expanded">
+                <input name="name" class="input" type="text" placeholder="Search player name (or leave blank for all)" {% if name %}value="{{ name }}"{% endif %}>
+            </div>
             <div class="control">
-                <input style="width: 60%;" name="name" class="input is-large" type="text" placeholder="Search name; blank for all" {% if name %}value="{{ name }}"{% endif %}>
-                <input type="submit" class="button is-large is-dark"></button>
+                <button type="submit" class="button is-primary">
+                    <span class="icon">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <span>Search</span>
+                </button>
             </div>
         </div>
-        <div class="field">
-            <div class="control">
-                <div style=""class="columns">
-                    <div class="column">
-                        <p class="has-text-weight-bold">Roster</p>
-                        <div class="select">
-                            <select name="roster_status">
-                                <option></option>
-                                <option value="mlb"{% if roster_status == "mlb" %} selected{% endif %}>MLB</option>
-                                <option value="minors"{% if roster_status == "minors" %} selected{% endif %}>Minors</option>
-                            </select>
-                        </div>
+    </div>
+    
+    <div class="field">
+        <div class="columns is-mobile">
+            <div class="column">
+                <label class="label is-small">Roster</label>
+                <div class="control">
+                    <div class="select is-small is-fullwidth">
+                        <select name="roster_status">
+                            <option value="">All</option>
+                            <option value="mlb"{% if roster_status == "mlb" %} selected{% endif %}>MLB</option>
+                            <option value="minors"{% if roster_status == "minors" %} selected{% endif %}>Minors</option>
+                        </select>
                     </div>
-                    <div class="column">
-                        <p class="has-text-weight-bold">Owned</p>
-                        <div class="select">
-                            <select name="owned">
-                                <option></option>
-                                <option value="yes"{% if owned == "yes" %} selected{% endif %}>yes</option>
-                                <option value="no"{% if owned == "no" %} selected{% endif %}>no</option>
-                            </select>
-                        </div>
+                </div>
+            </div>
+            <div class="column">
+                <label class="label is-small">Owned</label>
+                <div class="control">
+                    <div class="select is-small is-fullwidth">
+                        <select name="owned">
+                            <option value="">All</option>
+                            <option value="yes"{% if owned == "yes" %} selected{% endif %}>Yes</option>
+                            <option value="no"{% if owned == "no" %} selected{% endif %}>No</option>
+                        </select>
                     </div>
-                    <div class="column">
-                        <p class="has-text-weight-bold">Position</p>
-                        <div class="select">
-                            <select name="position">
-                                <option></option>
-                                <option value="P"{% if position == "P" %} selected{% endif %}>P</option>
-                                <option value="H"{% if position == "H" %} selected{% endif %}>HITTERS</option>
-                                <option value="C"{% if position == "C" %} selected{% endif %}>C</option>
-                                <option value="DH"{% if position == "DH" %} selected{% endif %}>DH</option>
-                                <option value="IF"{% if position == "IF" %} selected{% endif %}>IF</option>
-                                <option value="UT"{% if position == "UT" %} selected{% endif %}>UT</option>
-                                <option value="OF"{% if position == "OF" %} selected{% endif %}>OF</option>
-                            </select>
-                        </div>
+                </div>
+            </div>
+            <div class="column">
+                <label class="label is-small">Position</label>
+                <div class="control">
+                    <div class="select is-small is-fullwidth">
+                        <select name="position">
+                            <option value="">All</option>
+                            <option value="P"{% if position == "P" %} selected{% endif %}>P</option>
+                            <option value="H"{% if position == "H" %} selected{% endif %}>Hitters</option>
+                            <option value="C"{% if position == "C" %} selected{% endif %}>C</option>
+                            <option value="DH"{% if position == "DH" %} selected{% endif %}>DH</option>
+                            <option value="IF"{% if position == "IF" %} selected{% endif %}>IF</option>
+                            <option value="UT"{% if position == "UT" %} selected{% endif %}>UT</option>
+                            <option value="OF"{% if position == "OF" %} selected{% endif %}>OF</option>
+                        </select>
                     </div>
-                    <div class="column"></div>
-                    <div class="column"></div>
-                    <div class="column"></div>
-                    <div class="column"></div>
-                    <div class="column"></div>
-                    <div class="column"></div>
-                    <div class="column"></div>
-                    <div class="column"></div>
-                    <div class="column"></div>
                 </div>
             </div>
         </div>
-        {% if value %}<input name="value" type="text" value="true" hidden="true">{% endif %}
-    </form>
-</div>
+    </div>
+    {% if value %}<input name="value" type="hidden" value="true">{% endif %}
+</form>
