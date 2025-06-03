@@ -26,6 +26,9 @@ INSTALLED_APPS = [
     "django.contrib.sites",
     "django_quill",
     "reversion",
+    "allauth",
+    "allauth.account",
+    "sesame",
     "npl",
     "users",
 ]
@@ -36,8 +39,10 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "sesame.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
 ROOT_URLCONF = "npl.urls"
@@ -101,6 +106,30 @@ AUTH_USER_MODEL = 'users.User'
 LOGIN_REDIRECT_URL = "/"
 LOGIN_URL = "/accounts/login/"
 LOGOUT_REDIRECT_URL = "/"
+
+# AUTHENTICATION BACKENDS
+AUTHENTICATION_BACKENDS = [
+    'sesame.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+# DJANGO-ALLAUTH SETTINGS
+ACCOUNT_LOGIN_METHODS = {'email'}
+ACCOUNT_SIGNUP_FIELDS = ['email*']
+ACCOUNT_EMAIL_VERIFICATION = 'none'
+ACCOUNT_RATE_LIMITS = {
+    'login_failed': None,
+}
+ACCOUNT_LOGOUT_ON_GET = True
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_PASSWORD_MIN_LENGTH = None
+
+# DJANGO-SESAME SETTINGS (Magic Links)
+SESAME_MAX_AGE = 60 * 60 * 24 * 30
+SESAME_ONE_TIME = False
+SESAME_INVALIDATE_ON_PASSWORD_CHANGE = False
 
 EMAIL_BACKEND = 'django_mailgun_mime.backends.MailgunMIMEBackend'
 MAILGUN_API_KEY = os.environ.get("MAILGUN_API_KEY", None)

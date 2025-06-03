@@ -241,9 +241,9 @@ class Player(BaseModel):
     # STATS
     # Here's the schema for a stats dictionary
     # required keys: year, level, type, timestamp
-    # YEAR — the season these stats accrued in, or "career"
+    # YEAR — the season these stats accrued in, or "career"
     # LEVEL - the levels these stats cover, e.g., A/AA or AA/AAA or MLB
-    # TYPE — the type of stats, e.g., majors, minors
+    # TYPE — the type of stats, e.g., majors, minors
     # note: we combine all minor league stats in a single record
     # but we do not combine major leage WITH minor league.
     # this is because major league stats are used for the game
@@ -745,6 +745,10 @@ class Event(BaseModel):
 class Auction(BaseModel):
     player = models.ForeignKey(Player, null=True, on_delete=models.SET_NULL)
     closes = models.DateTimeField()
+    # Track whether this is a nomination or a binding auction
+    is_nomination = models.BooleanField(default=False, help_text="Nominations are non-binding; bids are required to win")
+    # Auction-specific settings
+    min_bid = models.IntegerField(default=1, help_text="Minimum bid amount in dollars")
 
     class Meta:
         ordering = ['-closes']
@@ -758,33 +762,106 @@ class Auction(BaseModel):
     def __unicode__(self):
         return f"{self.player.name} @ {self.closes}"
 
+    def is_expired(self):
+        """Check if auction has expired"""
+        now = datetime.datetime.now(pytz.timezone('US/Eastern'))
+        return self.closes < now
+
+    def has_bids(self):
+        """Check if auction has any valid bids"""
+        return MLBAuctionBid.objects.filter(auction=self).exists()
 
     def max_bid(self):
+        """Get the highest bid - for internal use only (blind auction)"""
         bids = MLBAuctionBid.objects.filter(auction=self).order_by('-max_bid')
         if len(bids) > 0:
-            return {"team_id": bids[0].team.pk,"bid": bids[0].max_bid}
-        return {"team_id": None,"bid": 0}
+            return {"team_id": bids[0].team.pk, "bid": bids[0].max_bid}
+        return {"team_id": None, "bid": 0}
+
+    def winning_bid(self):
+        """Calculate the winning bid amount (second highest + $1, or max if only one bid)"""
+        bids = MLBAuctionBid.objects.filter(auction=self).order_by('-max_bid')
+        if len(bids) == 0:
+            return {"team_id": None, "bid": 0, "winning_amount": 0}
+        elif len(bids) == 1:
+            # Only one bid - they win at their bid amount
+            return {
+                "team_id": bids[0].team.pk, 
+                "bid": bids[0].max_bid,
+                "winning_amount": bids[0].max_bid
+            }
+        else:
+            # Multiple bids - winner pays second highest + $1
+            return {
+                "team_id": bids[0].team.pk, 
+                "bid": bids[0].max_bid,
+                "winning_amount": bids[1].max_bid + 1
+            }
 
     def leading_bid(self):
-        bids = MLBAuctionBid.objects.filter(auction=self).order_by('-max_bid')
-        if len(bids) > 0:
-            if len(bids) == 1:
-                return {"team_id": bids[0].team.pk,"bid": bids[0].max_bid}
+        """
+        For display purposes during live auction.
+        In blind auctions, this should return minimal info.
+        """
+        if self.is_expired():
+            # After expiration, show winning bid
+            return self.winning_bid()
+        else:
+            # During live auction, only show if there are bids (blind auction)
+            if self.has_bids():
+                return {"team_id": "Hidden", "bid": "Hidden", "winning_amount": "Hidden"}
             else:
-                return {"team_id": bids[0].team.pk,"bid": bids[1].max_bid + 1}
-        return {"team_id": None,"bid": 0}
+                return {"team_id": None, "bid": self.min_bid, "winning_amount": self.min_bid}
+
+
+class PlayerNomination(BaseModel):
+    """
+    Track player nominations for auctions.
+    Links to the nomination auction and stores who nominated and why.
+    """
+    auction = models.OneToOneField(Auction, on_delete=models.CASCADE, related_name='nomination_details')
+    nominating_team = models.ForeignKey(Team, on_delete=models.CASCADE)
+    reason = models.TextField(blank=True, null=True, help_text="Reason for nomination (optional)")
+    
+    class Meta:
+        ordering = ['-created']
+    
+    def __unicode__(self):
+        return f"{self.nominating_team.short_name} nominated {self.auction.player.name}"
 
 
 class MLBAuctionBid(BaseModel):
     team = models.ForeignKey(Team, on_delete=models.CASCADE)
     auction = models.ForeignKey(Auction, on_delete=models.CASCADE)
-    max_bid = models.IntegerField()
+    max_bid = models.IntegerField(help_text="Bid amount in dollars")
 
     class Meta:
         unique_together = ['team', 'auction']
 
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        
+        # Validate bid amount is positive and meets minimum
+        if self.max_bid <= 0:
+            raise ValidationError("Bid must be a positive dollar amount")
+        
+        if self.auction and self.max_bid < self.auction.min_bid:
+            raise ValidationError(f"Bid must be at least ${self.auction.min_bid}")
+        
+        # Validate auction is still active
+        if self.auction and self.auction.is_expired():
+            raise ValidationError("Cannot bid on expired auction")
+        
+        # Validate this is not a nomination-only auction
+        if self.auction and self.auction.is_nomination:
+            raise ValidationError("This is a nomination only - no bidding allowed")
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
     def __unicode__(self):
-        return f"{self.auction} > {self.team.nickname} ({self.max_bid})"
+        return f"{self.auction} > {self.team.nickname} (${self.max_bid})"
 
 class DraftPick(BaseModel):
     AA_TYPE = "aa"

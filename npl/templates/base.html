@@ -1,101 +1,208 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
     <head>
-        <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>{% block title %}The NPL{% endblock %}</title>
+        
+        <!-- Bulma CSS - Latest version -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
+        
+        <!-- Font Awesome -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+        
+        <!-- Google Fonts -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@100;200;300;400;500;600;700;800;900&family=Barlow:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+        
         <style type="text/css">
-            /* tr.red td {
-                background-color: pink;
-            } */
-            tr.minors td {
-                background-color: #F4FEEF;
+            /* Utility-focused design for data display */
+            :root {
+                --npl-primary: #1976d2;
+                --npl-success: #388e3c;
+                --npl-info: #0288d1;
+                --npl-warning: #f57c00;
+                --npl-danger: #d32f2f;
+                --npl-light: #fafafa;
+                --npl-dark: #212529;
+                --npl-text: #2c3e50;
+                --npl-text-light: #6c757d;
             }
-            tr.il-60 td {
-                background-color: #F4E2FA;
+            
+            html, body {
+                height: 100%;
+                min-height: 100vh;
             }
-            tr.il-15 td {
-                background-color: #FDDEDD;
-            }
-            tr.il-10 td {
-                background-color: #FDDEDD;
-            }
-            tr.il-7 td {
-                background-color: #FDDEDD;
-            }
-            .hidden {
-                display:none;
-            }
-            tr.auction-nonmlb td {
-                background-color: #eee;
-            }
-            tr.owned td {
-                background-color: aliceblue;
-            }
-            table.table tr td {
-                font-family: 'Barlow Condensed', sans-serif;
-                font-weight:300;
-            }
-            table.table tr td strong {
-                font-family: 'Barlow', sans-serif;
-                font-weight:700;
-            }
-            table.table tr th {
-                font-family: 'Barlow Condensed', sans-serif;
-                font-weight:700;
-            }
+            
             body {
-                font-family: 'Barlow', sans-serif;
-                font-weight:400;
+                font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                font-size: 14px;
+                line-height: 1.5;
+                color: var(--npl-text);
+                background-color: #ffffff;
+                display: flex;
+                flex-direction: column;
             }
-            .content h1, .title {
-                font-family: 'Barlow', sans-serif;
-                font-size:42px;
-                font-weight: 900;
+            
+            main.section {
+                flex: 1;
+                background-color: #f8f9fa;
             }
-            .content h1 small, .title small {
+            
+            /* Compact typography */
+            .title { 
+                font-weight: 600; 
+                margin-bottom: 1rem;
+                color: var(--npl-dark);
+            }
+            .title.is-4 { font-size: 1.5rem; }
+            .title.is-5 { font-size: 1.25rem; }
+            .subtitle { 
+                font-weight: 400; 
+                color: var(--npl-text-light);
+                margin-bottom: 0.5rem;
+            }
+            
+            /* Compact tables for data display */
+            .table {
+                font-size: 13px;
+                background-color: white;
+                border: 1px solid #e9ecef;
+                border-radius: 8px;
+                overflow: hidden;
+            }
+            .table thead th {
+                background-color: var(--npl-light);
                 font-weight: 600;
-                font-size: 15px;
+                font-size: 12px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                padding: 0.75rem 0.5rem;
+                border-bottom: 2px solid #dee2e6;
+                color: var(--npl-text);
             }
-            .navbar-brand a strong {
-                font-family: 'Barlow', sans-serif;
-                font-size: 26px;
-                font-weight: 900;
+            .table tbody td {
+                padding: 0.5rem;
+                vertical-align: middle;
+                border-bottom: 1px solid #f1f3f4;
             }
-            nav.position-count p.title {
-                font-weight:700;
-                font-size: 38px;
+            .table tbody tr:hover {
+                background-color: #f8f9fa;
             }
-            nav.position-count p.heading {
-                font-size:16px;
-                margin-bottom:0px;
+            
+            /* Status indicators for roster data */
+            .table tbody tr.minors td { background-color: #e8f5e8; }
+            .table tbody tr.il-60 td { background-color: #f3e5f5; }
+            .table tbody tr.il-15 td, 
+            .table tbody tr.il-10 td, 
+            .table tbody tr.il-7 td { background-color: #fff3e0; }
+            .table tbody tr.auction-nonmlb td { background-color: #f5f5f5; }
+            .table tbody tr.owned td { background-color: #e3f2fd; }
+            
+            /* Compact navigation */
+            .navbar {
+                box-shadow: 0 2px 0 0 #f1f3f4;
+                border-bottom: 1px solid #e9ecef;
+                background-color: #ffffff;
             }
-            table.stat-table tr td {
-                background-color: #eee;
-                font-style: italic;
+            .navbar-brand .navbar-item {
+                font-weight: 700;
+                font-size: 1.5rem;
+                color: var(--npl-primary) !important;
             }
-            table.stat-table tr.majors td {
-                background-color: #fff;
-                font-style: normal;
+            .navbar-item {
+                font-size: 14px;
+                padding: 0.5rem 0.75rem;
+            }
+            .navbar-dropdown {
+                font-size: 13px;
+                box-shadow: 0 8px 16px rgba(10,10,10,0.1);
+                border: 1px solid #e9ecef;
+            }
+            
+            /* Compact containers */
+            .container {
+                max-width: 1200px;
+            }
+            .section {
+                padding: 1.5rem 1.5rem;
+            }
+            .block {
+                margin-bottom: 1.5rem;
+            }
+            
+            /* Compact form elements */
+            .field {
+                margin-bottom: 1rem;
+            }
+            .input, .textarea, .select select {
+                font-size: 14px;
+                border: 1px solid #dee2e6;
+                border-radius: 6px;
+            }
+            .input:focus, .textarea:focus, .select select:focus {
+                border-color: var(--npl-primary);
+                box-shadow: 0 0 0 0.125em rgba(25, 118, 210, 0.25);
+            }
+            
+            /* Compact buttons */
+            .button {
+                font-size: 13px;
+                border-radius: 6px;
+                font-weight: 500;
+            }
+            .button.is-small {
+                font-size: 12px;
+                padding: 0.25rem 0.5rem;
+            }
+            
+            /* Compact notifications */
+            .notification {
+                padding: 1rem;
+                border-radius: 6px;
+                margin-bottom: 1rem;
+                font-size: 14px;
+            }
+            
+            /* Utility classes */
+            .is-size-7 { font-size: 12px; }
+            .has-text-weight-medium { font-weight: 500; }
+            .has-background-light { background-color: var(--npl-light); }
+            
+            /* Position count navigation styling */
+            .position-count .level-item {
+                text-align: center;
+            }
+            .position-count .title {
+                font-size: 2rem;
+                font-weight: 700;
+                margin-bottom: 0;
+            }
+            .position-count .heading {
+                font-size: 0.875rem;
+                font-weight: 500;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                color: var(--npl-text-light);
             }
         </style>
+        
+        {% block extra_head %}{% endblock %}
     </head>
     <body>
         {% include "includes/nav.html" %}
-        <div class="container">
-            <div class="content">
-                <div class="columns">
-                    <div class="column">
-                        {% block topscript %}{% endblock %}
-                        <script src="//code.jquery.com/jquery-2.2.4.min.js" crossorigin="anonymous"></script>
-                        <main>{% block content %}{% endblock %}</main>
-                    </div>
-                </div>
+        
+        <main class="section">
+            <div class="container">
+                {% block content %}{% endblock %}
             </div>
-        </div>
-        <script src="//cdnjs.cloudflare.com/ajax/libs/sortable/0.8.0/js/sortable.min.js" crossorigin="anonymous"></script>
-        <script src="//cdn.jsdelivr.net/npm/lodash@4.17.11/lodash.min.js" crossorigin="anonymous"></script>
-        <script src="//kit.fontawesome.com/f569decd4a.js" crossorigin="anonymous"></script>
+        </main>
+        
+        <!-- Scripts -->
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
+        
         {% block extrascript %}{% endblock %}
         {% block modal %}{% endblock %}
     </body>

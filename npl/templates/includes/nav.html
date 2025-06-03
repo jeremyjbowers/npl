@@ -1,50 +1,109 @@
-<nav class="navbar is-link" role="navigation" aria-label="main navigation">
-<div class="navbar-brand">
-    <a class="navbar-item" href="/"><strong>NPL</strong></a>
+<nav class="navbar is-light" role="navigation" aria-label="main navigation">
+    <div class="navbar-brand">
+        <a class="navbar-item" href="/">
+            <strong>NPL</strong>
+        </a>
 
-    <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
-    <span aria-hidden="true"></span>
-    <span aria-hidden="true"></span>
-    <span aria-hidden="true"></span>
-    </a>
-</div>
+        <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarMain">
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+        </a>
+    </div>
 
-<div id="" class="navbar-menu">
-    <div class="navbar-start">
-        <div class="navbar-item has-dropdown is-hoverable">
-            <a class="navbar-link">
-            Teams
+    <div id="navbarMain" class="navbar-menu">
+        <div class="navbar-start">
+            <div class="navbar-item has-dropdown is-hoverable">
+                <a class="navbar-link">Teams</a>
+                <div class="navbar-dropdown">
+                    {% for team in all_teams %}
+                    <a class="navbar-item" href="/teams/{{ team.short_name|lower }}/">
+                        <div class="is-flex is-align-items-center">
+                            <span class="tag is-light is-small mr-2">{{ team.league.name|default:team.league }}</span>
+                            <span class="has-text-weight-medium">{{ team.full_name }}</span>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <a class="navbar-item" href="https://tbb.quarto.pub/npl-rules/" target="_blank">
+                Rules
+                <span class="icon ml-1">
+                    <i class="fas fa-external-link-alt is-size-7"></i>
+                </span>
             </a>
-            <div class="navbar-dropdown">
-            {% for team in all_teams %}
-            <a class="navbar-item" href="/teams/{{ team.short_name|lower }}/">{{ team.league }}&nbsp;&rarr;&nbsp;{{ team.division }}&nbsp;&rarr;&nbsp;<span style="font-weight:bold;">{{ team.full_name }}</span></a>
-            {% endfor %}
-            </div>
+            
+            <a class="navbar-item" href="https://docs.google.com/spreadsheets/d/1M9oFg6jL5cJudu44AlUBkepooy3Ww6WVjqnXeSJf1a8/edit?gid=0#gid=0" target="_blank">
+                Auctions
+                <span class="icon ml-1">
+                    <i class="fas fa-external-link-alt is-size-7"></i>
+                </span>
+            </a>
+            
+            <a class="navbar-item" href="https://docs.google.com/forms/d/e/1FAIpQLSfuGt8dFIEhAnR-Ciy2TZ-OeIq7-QtYRZIjUlXD0KsXrB2ILg/viewform" target="_blank">
+                Make Transaction
+                <span class="icon ml-1">
+                    <i class="fas fa-external-link-alt is-size-7"></i>
+                </span>
+            </a>
+            
+            <a class="navbar-item" href="https://docs.google.com/spreadsheets/d/1On6uRXLRQ3pzl2FHYRgWKCedsCdl6UNbNaSF6pwlGiw/" target="_blank">
+                Rosters
+                <span class="icon ml-1">
+                    <i class="fas fa-external-link-alt is-size-7"></i>
+                </span>
+            </a>
+            
+            <a class="navbar-item" href="https://docs.google.com/spreadsheets/d/1UQv_vnBBWUT8BiFRd7tAbvW4COWJ61BNkme7iyzf5po/" target="_blank">
+                Transactions
+                <span class="icon ml-1">
+                    <i class="fas fa-external-link-alt is-size-7"></i>
+                </span>
+            </a>
         </div>
-        <!-- <a class="navbar-item" href="/transactions/">Transactions</a> -->
-        <a class="navbar-item" href="https://tbb.quarto.pub/npl-rules/">Rules &nearr;</a>
-        <!-- <a class="navbar-item" href="/auctions/">Auctions</a> -->
-        <a class="navbar-item" target="_blank" href="https://docs.google.com/spreadsheets/d/1M9oFg6jL5cJudu44AlUBkepooy3Ww6WVjqnXeSJf1a8/edit?gid=0#gid=0"><strong>Auctions</strong> &nearr;</a>
-        <a class="navbar-item" target="_blank" href="https://docs.google.com/forms/d/e/1FAIpQLSfuGt8dFIEhAnR-Ciy2TZ-OeIq7-QtYRZIjUlXD0KsXrB2ILg/viewform"><strong>Make a transaction</strong> &nearr;</a>
-        <a class="navbar-item" target="_blank" href="https://docs.google.com/spreadsheets/d/1On6uRXLRQ3pzl2FHYRgWKCedsCdl6UNbNaSF6pwlGiw/">Roster doc &nearr;</a>
-        <a class="navbar-item" target="_blank" href="https://docs.google.com/spreadsheets/d/1UQv_vnBBWUT8BiFRd7tAbvW4COWJ61BNkme7iyzf5po/">Transactions &nearr;</a>
-    </div>
 
-    <div class="navbar-end">
-        <div class="navbar-item">
-        {% if user.is_authenticated %}
-            <div class="buttons">
-                <button class="button is-small is-outlined is-static">{{ user }}</button>
-                {% if user.is_staff %}
-                <a class="button is-small is-info" href="/admin/">Admin</a>
+        <div class="navbar-end">
+            <div class="navbar-item">
+                {% if user.is_authenticated %}
+                    <div class="buttons">
+                        <span class="button is-static is-small">
+                            {{ user.email|truncatechars:20 }}
+                        </span>
+                        {% if user.is_staff %}
+                        <a class="button is-info is-small" href="/admin/">
+                            Admin
+                        </a>
+                        {% endif %}
+                        <a class="button is-light is-small" href="/accounts/logout/">
+                            Log out
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="buttons">
+                        <a class="button is-primary is-small" href="/accounts/login/">
+                            Log in
+                        </a>
+                    </div>
                 {% endif %}
-                <!-- <a class="button is-success is-outlined is-small" href="/my/team/">My Team</a> -->
-                <a class="button is-danger is-small" href="/accounts/logout/">Log out</a>
             </div>
-        {% else %}
-            <div class="buttons"><a class="button is-success is-small" href="/accounts/login/">Log in</a></div>
-        {% endif %}
         </div>
     </div>
-</div>
 </nav>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Mobile menu toggle
+    const $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
+    if ($navbarBurgers.length > 0) {
+        $navbarBurgers.forEach(el => {
+            el.addEventListener('click', () => {
+                const target = el.dataset.target;
+                const $target = document.getElementById(target);
+                el.classList.toggle('is-active');
+                $target.classList.toggle('is-active');
+            });
+        });
+    }
+});
+</script>

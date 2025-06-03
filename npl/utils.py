@@ -54,7 +54,6 @@ def build_context(request):
         context["owner"] = owner
         context['owner_team'] = models.Team.objects.get(owners=owner)
 
-    print(context)
     context["all_teams"] = models.Team.objects.all().order_by('league', 'division', 'short_name')
 
     return context

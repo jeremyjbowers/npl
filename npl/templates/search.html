@@ -1,25 +1,31 @@
 {% extends "base.html" %}
 
+{% block title %}Player Search - The NPL{% endblock %}
+
 {% block content %}
-<section class="hero" style="padding-top: 25px;">
+<div class="block">
     {% include "includes/search_bar.html" %}
 
     {% if hitters or pitchers %}
-    <nav class="level position-count">
+    <nav class="level position-count has-background-light p-4 mb-4" style="border-radius: 8px;">
         <div class="level-item has-text-centered">
             <div>
-              <p class="heading">Total</p>
-              <p class="title">{{ total_count }}</p>
+                <p class="heading">Total</p>
+                <p class="title">{{ total_count }}</p>
             </div>
-          </div>
+        </div>
         {% if hitters %}
         {% regroup hitters by simple_position as position_players %}
         {% for position in position_players %}
         <div class="level-item has-text-centered">
-          <div>
-            <p class="heading">{{ position.grouper }}</p>
-            <p class="title"><a href="#position-{{ position.grouper }}">{{ position.list|length }}</a></p>
-          </div>
+            <div>
+                <p class="heading">{{ position.grouper }}</p>
+                <p class="title">
+                    <a href="#position-{{ position.grouper }}" class="has-text-dark">
+                        {{ position.list|length }}
+                    </a>
+                </p>
+            </div>
         </div>
         {% endfor %}
         {% endif %}
@@ -27,56 +33,248 @@
         {% if pitchers %}
         <div class="level-item has-text-centered">
             <div>
-              <p class="heading">P</p>
-              <p class="title"><a href="#position-p">{{ pitchers|length }}</a></p>
+                <p class="heading">P</p>
+                <p class="title">
+                    <a href="#position-p" class="has-text-dark">{{ pitchers|length }}</a>
+                </p>
             </div>
-          </div>
-          {% endif %}
-      </nav>
-      <hr>
-      {% endif %}
-</section>
-<section>
-    {% if hitters %}
-    {% regroup hitters by simple_position as position_players %}
-    {% for position in position_players %}
-    <h1 class="title is-3" id="position-{{ position.grouper }}">{{ position.grouper }} ({{ position.list|length }}) <small><a href="#top">top &uarr;</a></small></h1>
-    <table class="table">
-        <thead>
-            <th style="text-align:center;">eligible?</th>
-            <th style="text-align:center;">player</th>
-            <th style="text-align:center;">roster</th>
-            <th style="text-align:center;">position</th>
-            <th style="text-align:center;">age</th>
-            <th style="text-align:center;">mlb</th>
-            <th style="text-align:center;">mls</th>
-            <th style="text-align:center;">opt</th>
-            <th style="text-align:center;">stat</th>
-        </thead>
-        <tbody>
-        {% for p in position.list %}{% include "includes/player_row.html" %}{% endfor %}
-        </tbody>
-    </table>
-    {% endfor %}
+        </div>
+        {% endif %}
+    </nav>
     {% endif %}
-    {% if pitchers %}
-    <h1 class="title is-3" id="position-p">Pitchers ({{ pitchers|length }})  <small><a href="#top">top &uarr;</a></small></h1>
-    <table class="table">
-        <thead>
-            <th style="text-align:center;">eligible?</th>
-            <th style="text-align:center;">player</th>
-            <th style="text-align:center;">roster</th>
-            <th style="text-align:center;">position</th>
-            <th style="text-align:center;">age</th>
-            <th style="text-align:center;">mlb</th>
-            <th style="text-align:center;">mls</th>
-            <th style="text-align:center;">opt</th>
-            <th style="text-align:center;">stat</th>
-        </thead>
-        <tbody>
-        {% for p in pitchers %}{% include "includes/player_row.html" %}{% endfor %}
-        </tbody>
-    </table>
-    {% endif %}
-</section>
+</div>
+
+{% if hitters %}
+{% regroup hitters by simple_position as position_players %}
+{% for position in position_players %}
+<div class="block">
+    <h2 class="title is-5" id="position-{{ position.grouper }}">
+        {{ position.grouper }} ({{ position.list|length }})
+        <a href="#top" class="button is-small is-light ml-2">
+            <span class="icon">
+                <i class="fas fa-arrow-up"></i>
+            </span>
+            <span>top</span>
+        </a>
+    </h2>
+    
+    <div class="table-container">
+        <table class="table is-fullwidth is-striped is-hoverable">
+            <thead>
+                <tr>
+                    <th>Eligible</th>
+                    <th>Player</th>
+                    <th>Roster</th>
+                    <th>Position</th>
+                    <th>Age</th>
+                    <th>MLB</th>
+                    <th>MLS</th>
+                    <th>Opt</th>
+                    <th>Status</th>
+                    {% if user.is_authenticated %}<th>Nominate</th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in position.list %}{% include "includes/player_row.html" %}{% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endfor %}
+{% endif %}
+
+{% if pitchers %}
+<div class="block">
+    <h2 class="title is-5" id="position-p">
+        Pitchers ({{ pitchers|length }})
+        <a href="#top" class="button is-small is-light ml-2">
+            <span class="icon">
+                <i class="fas fa-arrow-up"></i>
+            </span>
+            <span>top</span>
+        </a>
+    </h2>
+    
+    <div class="table-container">
+        <table class="table is-fullwidth is-striped is-hoverable">
+            <thead>
+                <tr>
+                    <th>Eligible</th>
+                    <th>Player</th>
+                    <th>Roster</th>
+                    <th>Position</th>
+                    <th>Age</th>
+                    <th>MLB</th>
+                    <th>MLS</th>
+                    <th>Opt</th>
+                    <th>Status</th>
+                    {% if user.is_authenticated %}<th>Nominate</th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in pitchers %}{% include "includes/player_row.html" %}{% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- Nomination Modal -->
+{% if user.is_authenticated %}
+<div id="nomination-modal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+        <header class="modal-card-head">
+            <p class="modal-card-title">
+                <span class="icon-text">
+                    <span class="icon">
+                        <i class="fas fa-gavel"></i>
+                    </span>
+                    <span>Nominate Player for Auction</span>
+                </span>
+            </p>
+            <button class="delete" aria-label="close" onclick="closeNominationModal()"></button>
+        </header>
+        <section class="modal-card-body">
+            <div class="content">
+                <p>You are nominating <strong id="nominee-name"></strong> for auction.</p>
+                <div class="notification is-info is-light">
+                    <span class="icon">
+                        <i class="fas fa-info-circle"></i>
+                    </span>
+                    This will create a nomination that administrators can review and choose to activate as an auction.
+                </div>
+                
+                <div class="field">
+                    <label class="label">Reason for Nomination (Optional)</label>
+                    <div class="control">
+                        <textarea id="nomination-reason" class="textarea" placeholder="Why do you think this player should be auctioned? (e.g., recently called up, interesting prospect, etc.)" maxlength="500"></textarea>
+                    </div>
+                    <p class="help">Help admins understand why this player would be a good auction candidate.</p>
+                </div>
+            </div>
+        </section>
+        <footer class="modal-card-foot">
+            <button id="confirm-nomination" class="button is-success">
+                <span class="icon">
+                    <i class="fas fa-check"></i>
+                </span>
+                <span>Submit Nomination</span>
+            </button>
+            <button class="button" onclick="closeNominationModal()">Cancel</button>
+        </footer>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extrascript %}
+<script type="text/javascript">
+let currentNominationPlayerId = null;
+
+function openNominationModal(playerId, playerName) {
+    currentNominationPlayerId = playerId;
+    document.getElementById('nominee-name').textContent = playerName;
+    document.getElementById('nomination-reason').value = '';
+    document.getElementById('nomination-modal').classList.add('is-active');
+}
+
+function closeNominationModal() {
+    document.getElementById('nomination-modal').classList.remove('is-active');
+    currentNominationPlayerId = null;
+}
+
+function submitNomination() {
+    if (!currentNominationPlayerId) return;
+    
+    const reason = document.getElementById('nomination-reason').value.trim();
+    const button = document.getElementById('confirm-nomination');
+    
+    button.classList.add('is-loading');
+    button.disabled = true;
+    
+    const url = `/api/v1/players/${currentNominationPlayerId}/nominate/?reason=${encodeURIComponent(reason)}`;
+    
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success notification
+            const notification = document.createElement('div');
+            notification.className = 'notification is-success is-light';
+            notification.innerHTML = `
+                <span class="icon">
+                    <i class="fas fa-check-circle"></i>
+                </span>
+                ${data.message}
+            `;
+            document.querySelector('.container').insertBefore(notification, document.querySelector('.container').firstChild);
+            
+            closeNominationModal();
+            
+            // Disable nomination button
+            const nominateBtn = document.querySelector(`[data-player-id="${currentNominationPlayerId}"]`);
+            if (nominateBtn) {
+                nominateBtn.disabled = true;
+                nominateBtn.innerHTML = '<span class="icon"><i class="fas fa-check"></i></span><span>Nominated</span>';
+                nominateBtn.classList.remove('is-primary');
+                nominateBtn.classList.add('is-light');
+            }
+            
+            // Auto-hide notification after 5 seconds
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('Error submitting nomination. Please try again.');
+        console.error('Error:', error);
+    })
+    .finally(() => {
+        button.classList.remove('is-loading');
+        button.disabled = false;
+    });
+}
+
+// Helper function to get CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('confirm-nomination').addEventListener('click', submitNomination);
+    
+    // Close modal when clicking background
+    document.querySelector('.modal-background').addEventListener('click', closeNominationModal);
+    
+    // Close modal on escape key
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            closeNominationModal();
+        }
+    });
+});
+</script>
 {% endblock %}

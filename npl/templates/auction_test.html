@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% load npl_tags %}
+{% load humanize %}
+
+{% block content %}
+
+<section class="block" style="padding-top:25px;">
+    <h1>Auction System Test Page</h1>
+    <div class="notification is-warning">
+        <strong>For Staff/Testing Only:</strong> This page helps verify that the blind auction system is working correctly.
+    </div>
+    
+    <div class="columns">
+        <div class="column">
+            <div class="box">
+                <h3 class="title is-4">Test Blind Auction Behavior</h3>
+                <button class="button is-primary" onclick="runBlindAuctionTest()">Run Test</button>
+                <div id="test-results" style="margin-top: 20px;"></div>
+            </div>
+        </div>
+        
+        <div class="column">
+            <div class="box">
+                <h3 class="title is-4">Weekly Auction Creation</h3>
+                <p>Create auctions that expire on Fridays at 3 PM EST:</p>
+                <div class="field">
+                    <label class="label">Max Players:</label>
+                    <input class="input" type="number" id="max-players" value="5" min="1" max="20">
+                </div>
+                <div class="field">
+                    <label class="label">Min Bid ($):</label>
+                    <input class="input" type="number" id="min-bid" value="1" min="1">
+                </div>
+                <div class="field">
+                    <label class="checkbox">
+                        <input type="checkbox" id="dry-run" checked>
+                        Dry run (preview only)
+                    </label>
+                </div>
+                <button class="button is-success" onclick="createWeeklyAuctions()">Create Auctions</button>
+                <div id="creation-results" style="margin-top: 20px;"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="box">
+        <h3 class="title is-4">Debug Specific Auction</h3>
+        <div class="field has-addons">
+            <div class="control">
+                <input class="input" type="number" id="auction-id" placeholder="Auction ID">
+            </div>
+            <div class="control">
+                <button class="button is-info" onclick="debugAuction()">Debug Auction</button>
+            </div>
+        </div>
+        <div id="debug-results" style="margin-top: 20px;"></div>
+    </div>
+    
+    <div class="box">
+        <h3 class="title is-4">Expected Behavior Checklist</h3>
+        <div class="content">
+            <ul>
+                <li><strong>Active Auctions:</strong> Should show "Hidden" for competitive info (max bid, leading team)</li>
+                <li><strong>Expired Auctions:</strong> Should show actual winning team and amounts</li>
+                <li><strong>Nominations:</strong> Should not accept bids (is_nomination=True)</li>
+                <li><strong>One Bid Rule:</strong> Second bid attempt should fail</li>
+                <li><strong>Validation:</strong> Negative/zero bids should fail</li>
+                <li><strong>Minimum Bid:</strong> Bids below minimum should fail</li>
+                <li><strong>Friday 3 PM EST:</strong> New auctions should be created for correct time</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block extrascript %}
+<script type="text/javascript">
+function runBlindAuctionTest() {
+    document.getElementById('test-results').innerHTML = '<div class="notification is-info">Running tests...</div>';
+    
+    fetch('/api/v1/auctions/test/')
+        .then(response => response.json())
+        .then(data => {
+            let html = '<div class="notification is-success">Test completed!</div>';
+            html += '<pre style="background: #f5f5f5; padding: 15px; border-radius: 5px; overflow-x: auto;">';
+            html += JSON.stringify(data, null, 2);
+            html += '</pre>';
+            document.getElementById('test-results').innerHTML = html;
+        })
+        .catch(error => {
+            document.getElementById('test-results').innerHTML = 
+                '<div class="notification is-danger">Error: ' + error + '</div>';
+        });
+}
+
+function debugAuction() {
+    const auctionId = document.getElementById('auction-id').value;
+    if (!auctionId) {
+        alert('Please enter an auction ID');
+        return;
+    }
+    
+    document.getElementById('debug-results').innerHTML = '<div class="notification is-info">Loading auction data...</div>';
+    
+    fetch(`/api/v1/auctions/debug/${auctionId}/`)
+        .then(response => response.json())
+        .then(data => {
+            let html = '<div class="notification is-success">Auction debug info:</div>';
+            html += '<pre style="background: #f5f5f5; padding: 15px; border-radius: 5px; overflow-x: auto;">';
+            html += JSON.stringify(data, null, 2);
+            html += '</pre>';
+            document.getElementById('debug-results').innerHTML = html;
+        })
+        .catch(error => {
+            document.getElementById('debug-results').innerHTML = 
+                '<div class="notification is-danger">Error: ' + error + '</div>';
+        });
+}
+
+function createWeeklyAuctions() {
+    const maxPlayers = document.getElementById('max-players').value;
+    const minBid = document.getElementById('min-bid').value;
+    const dryRun = document.getElementById('dry-run').checked;
+    
+    document.getElementById('creation-results').innerHTML = 
+        '<div class="notification is-info">This would run the management command...</div>' +
+        '<div class="box">' +
+        '<h4>Command to run:</h4>' +
+        '<code>python manage.py create_weekly_auctions' +
+        (dryRun ? ' --dry-run' : '') +
+        ' --max-players ' + maxPlayers +
+        ' --min-bid ' + minBid +
+        '</code>' +
+        '</div>';
+}
+</script>
+{% endblock %} 

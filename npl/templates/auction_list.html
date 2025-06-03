@@ -5,36 +5,112 @@
 {% block content %}
 
 <section class="block" style="padding-top:25px;">
-    <h1>Auctions</h1>
+    <h1>Active Auctions</h1>
+    <div class="notification is-info">
+        <strong>Auction Rules:</strong>
+        <ul>
+            <li>You are allowed to make only <strong>one bid</strong> per auction</li>
+            <li>Nominations are NON-BINDING; you MUST bid to win an auction</li>
+            <li>FA auction time does NOT extend; auctions are <strong>blind</strong> and expire at 3 PM ET on Friday each week</li>
+            <li>Bids must be in <strong>dollars</strong></li>
+            <li>The winning amount will be <strong>$1 greater than the second highest bid</strong></li>
+            <li>All times are <strong>EST</strong></li>
+        </ul>
+    </div>
+    
     {% if auctions %}
     <table class="table">
         <thead>
-            <th>player</th>
-            <th>remaining</th>
-            <th>leading</th>
-            <th>max</th>
-            <th></th>
+            <th>Player</th>
+            <th>Time Remaining</th>
+            <th>Min Bid</th>
+            <th>Total Bids</th>
+            <th>Your Bid</th>
+            <th>Action</th>
         </thead>
         <tbody>
             {% for a in auctions %}
             <tr>
                 <td>
-                    <strong><a href="/players/{{ a.player.mlb_id }}/">{{ a.player.name }}</a></strong></br>
+                    <strong><a href="/players/{{ a.player.mlb_id }}/">{{ a.player.name }}</a></strong><br>
                     {% if user.is_staff %}<small><a target="_blank" href="/admin/npl/player/{{ a.player.mlb_id }}/change/"><span class="icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></span></a></small>{% endif %}
                     <small><a target="_blank" href="{{ a.player.mlb_url }}">MLB&nbsp;&rarr;</a></small>
                 </td>
                 <td>
                     {{ a.time_left|smooth_timedelta }}
                 </td>
-                <td>${{ a.leading_bid.bid|intcomma }}, {{ a.leading_bid.team_id }}</td>
-                <td>${{ a.max_bid.bid|intcomma }}, {{ a.max_bid.team_id }}</td>
-                <td>{% if a.can_bid %}{% include "includes/bidding_buttons.html" %}{% else %}You have already bid in this auction.{% endif %}</td>
+                <td>${{ a.minimum_bid_price|intcomma }}</td>
+                <td>{{ a.total_bids }}</td>
+                <td>
+                    {% if a.your_bid %}
+                        <strong>${{ a.your_bid|intcomma }}</strong>
+                    {% else %}
+                        <em>No bid</em>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if a.can_bid %}
+                        {% include "includes/bidding_buttons.html" %}
+                    {% else %}
+                        {% if a.your_bid %}
+                            You have already bid in this auction.
+                        {% else %}
+                            <em>Login required</em>
+                        {% endif %}
+                    {% endif %}
+                </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
     {% else %}
-    <p>There are no auctions at the moment.</p>
+    <p>There are no active auctions at the moment.</p>
+    {% endif %}
+    
+    {% if recent_expired %}
+    <h2>Recent Auction Results</h2>
+    <table class="table">
+        <thead>
+            <th>Player</th>
+            <th>Closed</th>
+            <th>Winning Team</th>
+            <th>Winning Bid</th>
+            <th>Max Bid</th>
+        </thead>
+        <tbody>
+            {% for a in recent_expired %}
+            <tr>
+                <td>
+                    <strong><a href="/players/{{ a.player.mlb_id }}/">{{ a.player.name }}</a></strong>
+                </td>
+                <td>
+                    {{ a.closes|date:"M j, Y g:i A" }}
+                </td>
+                <td>
+                    {% if a.winning_info.team_id %}
+                        Team {{ a.winning_info.team_id }}
+                    {% else %}
+                        <em>No bids</em>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if a.winning_info.winning_amount > 0 %}
+                        ${{ a.winning_info.winning_amount|intcomma }}
+                    {% else %}
+                        <em>No bids</em>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if a.winning_info.bid > 0 %}
+                        ${{ a.winning_info.bid|intcomma }}
+                    {% else %}
+                        <em>No bids</em>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
     {% endif %}
 </section>
 {% endblock %}
@@ -43,19 +119,31 @@
 <script type="text/javascript">
   $(function(){
     var bid_handler = function(el) {
-
         el.preventDefault();
         $el = $(this);
 
         var auctionid = $el.attr('data-auctionid');
         var bid = $('#input-auction-' + auctionid).val();
 
+        // Validate bid is a positive number
+        if (!bid || isNaN(bid) || parseInt(bid) <= 0) {
+            alert('Please enter a valid bid amount in dollars.');
+            return;
+        }
+
         $.ajax({
             type: "GET",
             url: '/api/v1/auctions/bid/' +  auctionid + '/?bid=' + bid,
             success: function(response){
-                alert(response.message);
-                window.location.reload();
+                if (response.success) {
+                    alert(response.message);
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + response.message);
+                }
+            },
+            error: function() {
+                alert('Error submitting bid. Please try again.');
             }
         });
     }

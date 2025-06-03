@@ -4,12 +4,14 @@
         <a target="_blank" class="button is-info" href="/admin/npl/auction/{{ a.id }}/change/"><span class="icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></span></a>
     </div>{% endif %}
     <div class="control">
-      <input style="width: 300px;" class="input" type="text" placeholder="${{ a.minimum_bid_price|intcomma }} or more" id="input-auction-{{ a.id }}">
+      <input style="width: 300px;" class="input" type="number" min="{{ a.minimum_bid_price }}" placeholder="Min: ${{ a.minimum_bid_price|intcomma }}" id="input-auction-{{ a.id }}">
     </div>
     <div class="control">
       <a class="button is-success bid-button" data-auctionid="{{ a.id }}">
-        <strong>Make bid</strong>
+        <strong>Submit Bid</strong>
       </a>
     </div>
-  </div>
+    <div class="control">
+        <span class="help">Blind auction - one bid only</span>
+    </div>
 </div>

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero" style="padding-top: 25px;">
+    <div class="hero-body">
+        <div class="container">
+            <div class="columns is-centered">
+                <div class="column is-half">
+                    <div class="box">
+                        <h1 class="title">Sign in to The NPL</h1>
+                        
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="notification {% if message.tags == 'error' %}is-danger{% elif message.tags == 'success' %}is-success{% else %}is-info{% endif %}">
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+
+                        <form method="post">
+                            {% csrf_token %}
+                            
+                            <div class="field">
+                                <label class="label">Email</label>
+                                <div class="control">
+                                    <input class="input" type="email" name="email" placeholder="Enter your email address" required>
+                                </div>
+                            </div>
+
+                            <div class="field">
+                                <label class="label">Password <small>(optional)</small></label>
+                                <div class="control">
+                                    <input class="input" type="password" name="password" placeholder="Enter password or leave blank for magic link">
+                                </div>
+                                <p class="help">Leave password blank to receive a magic link via email</p>
+                            </div>
+
+                            <div class="field">
+                                <div class="control">
+                                    <button class="button is-primary is-fullwidth" type="submit">
+                                        Sign In
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+
+                        <hr>
+
+                        <div class="has-text-centered">
+                            <p class="has-text-grey">
+                                <strong>Magic Link Authentication:</strong><br>
+                                Enter your email and leave the password blank to receive a secure login link that's valid for 30 days.
+                            </p>
+                        </div>
+
+                        <div class="has-text-centered" style="margin-top: 1rem;">
+                            <p class="has-text-grey">
+                                Don't have an account? Contact your league administrator.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %} 

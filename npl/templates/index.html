@@ -1,50 +1,271 @@
 {% extends "base.html" %}
 {% load humanize %}
 
-{% block content %}
-<section class="block" style="padding-top:25px;">
-<div class="tile is-ancestor">
-  <div class="tile is-vertical is-8">
-    <div class="tile is-parent">
-      <article class="tile is-child notification is-light">
-        <p class="title">Player search</p>
-        <p class="subtitle">Tracking {{ total_count|intcomma }} players in our database</p>
-        <div class="content">
-          {% include "includes/search_bar.html" %}
-        </div>
-      </article>
-    </div>
-    <div class="tile">
-      <div class="tile is-parent is-vertical">
-        <article class="tile is-child notification is-light is-warning">
-        </article>
-      </div>
-      <div class="tile is-parent">
-        <article class="tile is-child notification is-light is-info">
-          <p class="title">Events</p>
-          <p>
-            <ul>
-              {% for e in events %}<li><strong>{{ e.date }}</strong>: {{ e.title }}</li>{% endfor %}
-            </ul>
-          </p>
-        </article>
-      </div>
-    </div>
-  </div>
+{% block title %}The NPL - Fantasy Baseball League{% endblock %}
 
-  <div class="tile is-parent">
-    <article class="tile is-child notification is-light is-success">
-      <div class="content">
-        <p class="title"><a href="/transactions/">Transactions</a></p>
-          {% for t in transactions %}
-          <p>
-          {{ t.date }}: <strong>{{ t.transaction_type }}</strong><br/><a href="/transactions/#transaction-{{ t.id }}">{{ t.calculated_team }} &larr; {{ t.calculated_player }}{% if t.calculated_acquiring_team %} &larr; {{ t.calculated_acquiring_team }}{% endif %}
-          </a></p>
-          {% endfor %}
-      </div>
-    </article>
-  </div>
-  
+{% block content %}
+<div class="block">
+    <div class="box has-background-primary-light">
+        <div class="level">
+            <div class="level-left">
+                <div class="level-item">
+                    <div class="media">
+                        <div class="media-left">
+                            <span class="icon is-large has-text-primary">
+                                <i class="fas fa-baseball-ball fa-2x"></i>
+                            </span>
+                        </div>
+                        <div class="media-content">
+                            <h1 class="title is-2 has-text-primary">The NPL</h1>
+                            <p class="subtitle has-text-primary-dark">Fantasy Baseball League Management</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="level-right">
+                <div class="level-item">
+                    <div class="has-text-centered">
+                        <p class="title is-4 has-text-primary">{{ total_count|intcomma }}</p>
+                        <p class="heading has-text-primary-dark">Players Tracked</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
-</section>
+
+<div class="columns">
+    <div class="column is-8">
+        <!-- Player Search Section -->
+        <div class="block">
+            <div class="box">
+                <h2 class="title is-4">Player Search</h2>
+                <p class="subtitle">Find players across all teams and levels</p>
+                <div class="content">
+                    {% include "includes/search_bar.html" %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats Section -->
+        <div class="block">
+            <div class="box">
+                <h2 class="title is-4">League Overview</h2>
+                <div class="columns is-mobile">
+                    <div class="column has-text-centered">
+                        <div class="box has-background-info-light">
+                            <p class="title is-5 has-text-info">{{ teams_count|default:"12" }}</p>
+                            <p class="heading">Teams</p>
+                        </div>
+                    </div>
+                    <div class="column has-text-centered">
+                        <div class="box has-background-success-light">
+                            <p class="title is-5 has-text-success">{{ active_players|default:"480" }}</p>
+                            <p class="heading">Active Players</p>
+                        </div>
+                    </div>
+                    <div class="column has-text-centered">
+                        <div class="box has-background-warning-light">
+                            <p class="title is-5 has-text-warning">{{ mlb_players|default:"240" }}</p>
+                            <p class="heading">MLB Roster</p>
+                        </div>
+                    </div>
+                    <div class="column has-text-centered">
+                        <div class="box has-background-primary-light">
+                            <p class="title is-5 has-text-primary">{{ prospects|default:"240" }}</p>
+                            <p class="heading">Prospects</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions Section -->
+        <div class="block">
+            <div class="box">
+                <h2 class="title is-4">Quick Actions</h2>
+                <div class="field is-grouped is-grouped-multiline">
+                    <div class="control">
+                        <a href="https://docs.google.com/forms/d/e/1FAIpQLSfuGt8dFIEhAnR-Ciy2TZ-OeIq7-QtYRZIjUlXD0KsXrB2ILg/viewform" 
+                           target="_blank" class="button is-success">
+                            <span class="icon">
+                                <i class="fas fa-plus"></i>
+                            </span>
+                            <span>Make Transaction</span>
+                        </a>
+                    </div>
+                    <div class="control">
+                        <a href="https://docs.google.com/spreadsheets/d/1M9oFg6jL5cJudu44AlUBkepooy3Ww6WVjqnXeSJf1a8/edit?gid=0#gid=0" 
+                           target="_blank" class="button is-info">
+                            <span class="icon">
+                                <i class="fas fa-gavel"></i>
+                            </span>
+                            <span>View Auctions</span>
+                        </a>
+                    </div>
+                    <div class="control">
+                        <a href="https://docs.google.com/spreadsheets/d/1On6uRXLRQ3pzl2FHYRgWKCedsCdl6UNbNaSF6pwlGiw/" 
+                           target="_blank" class="button is-primary">
+                            <span class="icon">
+                                <i class="fas fa-list-alt"></i>
+                            </span>
+                            <span>Rosters</span>
+                        </a>
+                    </div>
+                    <div class="control">
+                        <a href="https://tbb.quarto.pub/npl-rules/" 
+                           target="_blank" class="button is-light">
+                            <span class="icon">
+                                <i class="fas fa-book"></i>
+                            </span>
+                            <span>Rules</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="column is-4">
+        <!-- Recent Transactions -->
+        <div class="block">
+            <div class="box">
+                <h2 class="title is-5">
+                    <a href="/transactions/" class="has-text-success">Recent Transactions</a>
+                </h2>
+                {% if transactions %}
+                    <div class="content">
+                        {% for t in transactions %}
+                        <div class="box is-small has-background-light mb-3">
+                            <div class="is-size-7 has-text-grey">{{ t.date }}</div>
+                            <div class="has-text-weight-medium">{{ t.transaction_type }}</div>
+                            <div class="is-size-7">
+                                <a href="/transactions/#transaction-{{ t.id }}" class="has-text-dark">
+                                    {{ t.calculated_team }} ← {{ t.calculated_player }}
+                                    {% if t.calculated_acquiring_team %} ← {{ t.calculated_acquiring_team }}{% endif %}
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="has-text-centered">
+                        <a href="/transactions/" class="button is-small is-outlined">
+                            <span class="icon">
+                                <i class="fas fa-arrow-right"></i>
+                            </span>
+                            <span>View All Transactions</span>
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="notification is-info is-light">
+                        <span class="icon">
+                            <i class="fas fa-info-circle"></i>
+                        </span>
+                        No recent transactions.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Events & Calendar -->
+        <div class="block">
+            <div class="box">
+                <h2 class="title is-5">Upcoming Events</h2>
+                {% if events %}
+                    <div class="content">
+                        {% for e in events %}
+                        <div class="media">
+                            <div class="media-left">
+                                <span class="icon has-text-info">
+                                    <i class="fas fa-calendar-day"></i>
+                                </span>
+                            </div>
+                            <div class="media-content">
+                                <div class="is-size-7 has-text-grey">{{ e.date }}</div>
+                                <div class="has-text-weight-medium">{{ e.title }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="notification is-info is-light">
+                        <span class="icon">
+                            <i class="fas fa-info-circle"></i>
+                        </span>
+                        No upcoming events.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Resources & Links -->
+        <div class="block">
+            <div class="box">
+                <h2 class="title is-5">Resources</h2>
+                <div class="content">
+                    <div class="buttons are-small">
+                        <a href="https://docs.google.com/spreadsheets/d/1UQv_vnBBWUT8BiFRd7tAbvW4COWJ61BNkme7iyzf5po/" 
+                           target="_blank" class="button is-light is-fullwidth is-justify-content-flex-start">
+                            <span class="icon">
+                                <i class="fas fa-history"></i>
+                            </span>
+                            <span>Transaction History</span>
+                            <span class="icon is-small ml-auto">
+                                <i class="fas fa-external-link-alt"></i>
+                            </span>
+                        </a>
+                        <a href="https://www.fangraphs.com/" 
+                           target="_blank" class="button is-light is-fullwidth is-justify-content-flex-start">
+                            <span class="icon">
+                                <i class="fas fa-chart-line"></i>
+                            </span>
+                            <span>FanGraphs</span>
+                            <span class="icon is-small ml-auto">
+                                <i class="fas fa-external-link-alt"></i>
+                            </span>
+                        </a>
+                        <a href="https://www.baseball-reference.com/" 
+                           target="_blank" class="button is-light is-fullwidth is-justify-content-flex-start">
+                            <span class="icon">
+                                <i class="fas fa-database"></i>
+                            </span>
+                            <span>Baseball Reference</span>
+                            <span class="icon is-small ml-auto">
+                                <i class="fas fa-external-link-alt"></i>
+                            </span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Welcome Message for Anonymous Users -->
+{% if not user.is_authenticated %}
+<div class="block">
+    <div class="notification is-primary">
+        <div class="level">
+            <div class="level-left">
+                <div class="level-item">
+                    <div>
+                        <p class="has-text-weight-medium">Welcome to The NPL!</p>
+                        <p>Sign in to access advanced features like player nominations and detailed team information.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="level-right">
+                <div class="level-item">
+                    <a href="/accounts/login/" class="button is-light">
+                        <span class="icon">
+                            <i class="fas fa-sign-in-alt"></i>
+                        </span>
+                        <span>Sign In</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 {% endblock %}

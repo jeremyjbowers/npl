@@ -21,6 +21,22 @@
     <td style="text-align:center;">{% if p.is_roster_40_man %}{{ p.mls_time|floatformat:"3" }}{% else %}{{ p.mls_year|default_if_none:"" }}{% endif %}</td>
     <td style="text-align:center;">{{ p.options|default_if_none:"" }}</td>
     <td style="text-align:center;">{{ p.status|default_if_none:""|upper }}</td>
+    {% if user.is_authenticated %}
+    <td style="text-align:center;">
+        {% if p.is_owned %}
+            <span class="tag is-light">Owned</span>
+        {% else %}
+            <button class="button is-small is-primary" 
+                    data-player-id="{{ p.mlb_id }}"
+                    onclick="openNominationModal('{{ p.mlb_id }}', '{{ p.name|escapejs }}')">
+                <span class="icon is-small">
+                    <i class="fa fa-gavel"></i>
+                </span>
+                <span>Nominate</span>
+            </button>
+        {% endif %}
+    </td>
+    {% endif %}
     {% if team %}
     <!-- contract stuff -->
     {% if p.contract %}

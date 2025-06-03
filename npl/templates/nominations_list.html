@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% load npl_tags %}
+{% load humanize %}
+
+{% block content %}
+
+<section class="block" style="padding-top:25px;">
+    <h1>Player Nominations</h1>
+    <div class="notification is-info">
+        <strong>About Nominations:</strong>
+        <ul>
+            <li>Any team owner can nominate players for auction</li>
+            <li>Nominations are reviewed by administrators</li>
+            <li>Approved nominations become active auctions</li>
+            <li>Players can only be nominated once per week</li>
+        </ul>
+    </div>
+    
+    <div class="tabs">
+        <ul>
+            <li class="is-active"><a href="#pending" onclick="showTab('pending')">Pending Review ({{ pending_nominations.count }})</a></li>
+            <li><a href="#approved" onclick="showTab('approved')">Recently Approved ({{ approved_nominations.count }})</a></li>
+        </ul>
+    </div>
+    
+    <div id="pending-tab" class="tab-content">
+        <h2 class="title is-4">Pending Nominations</h2>
+        {% if pending_nominations %}
+        <div class="notification is-warning">
+            <strong>⏳ These nominations are awaiting administrator review.</strong>
+        </div>
+        <table class="table is-fullwidth">
+            <thead>
+                <th>Player</th>
+                <th>Position</th>
+                <th>Nominated By</th>
+                <th>Date</th>
+                <th>Reason</th>
+            </thead>
+            <tbody>
+                {% for auction in pending_nominations %}
+                <tr>
+                    <td>
+                        <strong><a href="/players/{{ auction.player.mlb_id }}/">{{ auction.player.name }}</a></strong><br>
+                        <small>{{ auction.player.mlb_org|default:"Free Agent" }}</small>
+                    </td>
+                    <td>{{ auction.player.position }}</td>
+                    <td>
+                        {% if auction.nomination_info %}
+                            <strong>{{ auction.nomination_info.nominating_team.short_name }}</strong>
+                        {% else %}
+                            <em>Unknown</em>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {{ auction.created|date:"M j, Y" }}<br>
+                        <small>{{ auction.created|timesince }} ago</small>
+                    </td>
+                    <td>
+                        {% if auction.nomination_info.reason %}
+                            {{ auction.nomination_info.reason|truncatewords:20 }}
+                        {% else %}
+                            <em>No reason provided</em>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="notification">
+            No pending nominations at this time.
+        </div>
+        {% endif %}
+    </div>
+    
+    <div id="approved-tab" class="tab-content" style="display: none;">
+        <h2 class="title is-4">Recently Approved Nominations</h2>
+        {% if approved_nominations %}
+        <div class="notification is-success">
+            <strong>✓ These nominations have been approved and are now active auctions.</strong>
+        </div>
+        <table class="table is-fullwidth">
+            <thead>
+                <th>Player</th>
+                <th>Position</th>
+                <th>Originally Nominated By</th>
+                <th>Auction Status</th>
+                <th>Closes</th>
+                <th>Action</th>
+            </thead>
+            <tbody>
+                {% for auction in approved_nominations %}
+                <tr>
+                    <td>
+                        <strong><a href="/players/{{ auction.player.mlb_id }}/">{{ auction.player.name }}</a></strong><br>
+                        <small>{{ auction.player.mlb_org|default:"Free Agent" }}</small>
+                    </td>
+                    <td>{{ auction.player.position }}</td>
+                    <td>
+                        {% if auction.nomination_info %}
+                            <strong>{{ auction.nomination_info.nominating_team.short_name }}</strong>
+                        {% else %}
+                            <em>Unknown</em>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if auction.is_expired %}
+                            <span class="tag is-light">Expired</span>
+                        {% else %}
+                            <span class="tag is-success">Active</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {{ auction.closes|date:"M j, Y g:i A" }}<br>
+                        {% if not auction.is_expired %}
+                            <small>{{ auction.time_left|smooth_timedelta }} remaining</small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if not auction.is_expired %}
+                            <a href="/auctions/" class="button is-small is-primary">View Auction</a>
+                        {% else %}
+                            <span class="tag is-light">Ended</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="notification">
+            No recently approved nominations.
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="box" style="margin-top: 2rem;">
+        <h3 class="title is-5">Want to nominate a player?</h3>
+        <p>Use the <a href="/players/search/">player search</a> to find players and nominate them for auction.</p>
+        <div class="buttons">
+            <a href="/players/search/" class="button is-primary">
+                <span class="icon">
+                    <i class="fa fa-search"></i>
+                </span>
+                <span>Search Players</span>
+            </a>
+        </div>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block extrascript %}
+<script type="text/javascript">
+function showTab(tabName) {
+    // Hide all tabs
+    document.getElementById('pending-tab').style.display = 'none';
+    document.getElementById('approved-tab').style.display = 'none';
+    
+    // Remove active class from all tab links
+    const tabLinks = document.querySelectorAll('.tabs li');
+    tabLinks.forEach(link => link.classList.remove('is-active'));
+    
+    // Show selected tab
+    document.getElementById(tabName + '-tab').style.display = 'block';
+    
+    // Add active class to selected tab link
+    event.target.closest('li').classList.add('is-active');
+}
+</script>
+{% endblock %} 

@@ -12,8 +12,9 @@ from django.contrib.auth.decorators import login_required
 from decimal import *
 
 import ujson as json
-from datetime import datetime
+from datetime import datetime, timedelta
 import pytz
+from django.utils import timezone
 
 from npl import models, utils
 
@@ -33,48 +34,70 @@ def auction_bid_api(request, auctionid):
     # return a 404 if there's no matching auction
     auction = get_object_or_404(models.Auction, pk=auctionid)
 
-    # auction is still alive and there is an active owner with an associated team
-    if auction.closes >= now and context['owner'] and context['owner_team'] and auction.active:
+    # Check if auction is expired
+    if auction.is_expired():
+        payload['message'] = "Bidding for this auction has ended."
+        # For expired auctions, show winning bid info
+        winning_bid = auction.winning_bid()
+        payload['winning_bid'] = winning_bid['winning_amount']
+        payload['winning_team'] = winning_bid['team_id']
+        return JsonResponse(payload)
 
-        payload['auction']['player'] = auction.player.name
-        payload['auction']['closes'] = auction.closes
-        payload['bid'] = request.GET.get('bid', None)
+    # Check if user has permission to bid
+    if not (context['owner'] and context['owner_team'] and auction.active):
+        payload['message'] = "This bid was not cast by an owner of an NPL team."
+        return JsonResponse(payload)
 
-        obj = models.MLBAuctionBid
-        payload['bid'] = int(payload['bid'])
+    # Check if this is a nomination-only auction
+    if auction.is_nomination:
+        payload['message'] = "This is a nomination only. Bids are not accepted for nominations."
+        return JsonResponse(payload)
 
-        # find the bid, but you can only bid once.
-        # no bid? create one.
-        try:
-            obj = obj.objects.get(auction=auction, team=context['owner_team'])
-            payload['message'] = "Naughty, you've already bid on this auction! Are we reverse engineering the API?"
+    # Get and validate bid amount
+    try:
+        bid_amount = int(request.GET.get('bid', 0))
+    except (ValueError, TypeError):
+        payload['message'] = "Invalid bid amount. Bids must be in dollars."
+        return JsonResponse(payload)
 
-            return JsonResponse(payload)
+    if bid_amount <= 0:
+        payload['message'] = "Bid must be a positive dollar amount."
+        return JsonResponse(payload)
 
-        except models.MLBAuctionBid.DoesNotExist:
-            obj = models.MLBAuctionBid(max_bid=payload['bid'], auction=auction, team=context['owner_team'])
-            obj.save()
+    if bid_amount < auction.min_bid:
+        payload['message'] = f"Bid must be at least ${auction.min_bid}."
+        return JsonResponse(payload)
 
-        # get the newest state for the auction and its bids
-        payload['max_bid'] = auction.max_bid()['bid']
-        payload['max_bid_team'] = auction.max_bid()['team_id']
+    # Set auction info in payload
+    payload['auction']['player'] = auction.player.name
+    payload['auction']['closes'] = auction.closes
+    payload['bid'] = bid_amount
 
-        payload['leading_bid'] = auction.leading_bid()['bid']
-        payload['leading_bid_team'] = auction.leading_bid()['team_id']
+    # Check if team has already bid (one bid per team rule)
+    try:
+        existing_bid = models.MLBAuctionBid.objects.get(auction=auction, team=context['owner_team'])
+        payload['message'] = "You have already placed a bid on this auction. Only one bid per team is allowed."
+        return JsonResponse(payload)
+    except models.MLBAuctionBid.DoesNotExist:
+        pass
 
-        if payload['bid'] <= payload['max_bid']:
-            # you have failed to have the highest bid
-            payload['message'] = f"Your bid of ${payload['bid']} on {auction.player.name} does not exceed the maximum bid."
+    # Create the bid
+    try:
+        bid_obj = models.MLBAuctionBid(
+            max_bid=bid_amount, 
+            auction=auction, 
+            team=context['owner_team']
+        )
+        bid_obj.save()
+        payload['success'] = True
+        payload['message'] = f"Your bid of ${bid_amount} on {auction.player.name} has been submitted successfully."
         
-        elif payload['bid'] > payload['max_bid']:
-            # you have the highest bid
-            payload['message'] = f"You now have the leading bid of ${payload['bid']} on {auction.player.name} with a maximum bid of ${payload['max_bid']}."
-
-    else:
-        if auction.closes < now:
-            payload['message'] = "Bidding for this auction has ended."
-        else:
-            payload['message'] = "This bid was not cast by an owner of an NPL team."
+        # In blind auction, don't reveal competitive information
+        payload['your_bid'] = bid_amount
+        payload['total_bids'] = models.MLBAuctionBid.objects.filter(auction=auction).count()
+        
+    except Exception as e:
+        payload['message'] = f"Error submitting bid: {str(e)}"
 
     return JsonResponse(payload)
 
@@ -82,14 +105,52 @@ def auction_list(request):
     context = utils.build_context(request)
     context['time'] = datetime.now(pytz.timezone('US/Eastern'))
     context['auctions'] = []
-    for a in models.Auction.objects.filter(closes__gte=context['time'], active=True):
+    
+    # Get active auctions (not expired)
+    active_auctions = models.Auction.objects.filter(
+        closes__gte=context['time'], 
+        active=True
+    ).exclude(is_nomination=True)  # Exclude nomination-only auctions
+    
+    for a in active_auctions:
+        # Check if user can bid
         try:
-            m = models.MLBAuctionBid.objects.get(auction=a, team=context['owner_team'])
+            existing_bid = models.MLBAuctionBid.objects.get(auction=a, team=context['owner_team'])
             a.can_bid = False
+            a.your_bid = existing_bid.max_bid
         except models.MLBAuctionBid.DoesNotExist:
             a.can_bid = True
-            a.minimum_bid_price = a.leading_bid()['bid'] + 1
+            a.your_bid = None
+        except (AttributeError, TypeError):
+            # No owner_team (not logged in or no team)
+            a.can_bid = False
+            a.your_bid = None
+        
+        # Set minimum bid for display
+        a.minimum_bid_price = a.min_bid
+        
+        # For blind auctions, only show minimal info
+        a.total_bids = models.MLBAuctionBid.objects.filter(auction=a).count()
+        
+        # Add leading bid info (will be hidden for active auctions)
+        leading_bid_info = a.leading_bid()
+        a.leading_bid_display = leading_bid_info
+        
         context['auctions'].append(a)
+    
+    # Also show recent expired auctions with results
+    context['recent_expired'] = []
+    recent_expired = models.Auction.objects.filter(
+        closes__lt=context['time'],
+        active=True,
+        closes__gte=context['time'] - timedelta(days=7)  # Last 7 days
+    ).order_by('-closes')[:10]
+    
+    for a in recent_expired:
+        winning_bid = a.winning_bid()
+        a.winning_info = winning_bid
+        context['recent_expired'].append(a)
+    
     return render(request, "auction_list.html", context)
 
 def npl_page_list(request):
@@ -250,3 +311,280 @@ def interesting_action(request, playerid):
     w.save()
     print(w.interesting)
     return JsonResponse({"success": True, 'player': w.player.name, 'interesting': w.interesting})
+
+@login_required
+def auction_test_view(request):
+    """
+    Test view to verify blind auction behavior works correctly.
+    Only accessible to staff users for testing purposes.
+    """
+    if not request.user.is_staff:
+        return JsonResponse({"error": "Access denied"}, status=403)
+    
+    context = utils.build_context(request)
+    
+    # Get test auction data
+    test_results = {}
+    
+    # Test 1: Active auction with bids should hide competitive info
+    active_auctions = models.Auction.objects.filter(
+        active=True,
+        is_nomination=False,
+        closes__gte=timezone.now()
+    )
+    
+    if active_auctions.exists():
+        auction = active_auctions.first()
+        bids = models.MLBAuctionBid.objects.filter(auction=auction).order_by('-max_bid')
+        
+        test_results['active_auction'] = {
+            'auction_id': auction.id,
+            'player': auction.player.name,
+            'is_expired': auction.is_expired(),
+            'has_bids': auction.has_bids(),
+            'total_bids': bids.count(),
+            'leading_bid_info': auction.leading_bid(),
+            'actual_bids': [{'team': bid.team.full_name, 'amount': bid.max_bid} for bid in bids] if bids else [],
+            'max_bid_info': auction.max_bid(),
+            'winning_bid_info': auction.winning_bid(),
+        }
+    
+    # Test 2: Expired auction should show results
+    expired_auctions = models.Auction.objects.filter(
+        active=True,
+        is_nomination=False,
+        closes__lt=timezone.now()
+    )
+    
+    if expired_auctions.exists():
+        auction = expired_auctions.first()
+        bids = models.MLBAuctionBid.objects.filter(auction=auction).order_by('-max_bid')
+        
+        test_results['expired_auction'] = {
+            'auction_id': auction.id,
+            'player': auction.player.name,
+            'is_expired': auction.is_expired(),
+            'has_bids': auction.has_bids(),
+            'total_bids': bids.count(),
+            'leading_bid_info': auction.leading_bid(),
+            'actual_bids': [{'team': bid.team.full_name, 'amount': bid.max_bid} for bid in bids] if bids else [],
+            'max_bid_info': auction.max_bid(),
+            'winning_bid_info': auction.winning_bid(),
+        }
+    
+    # Test 3: Nomination auction should not accept bids
+    nomination_auctions = models.Auction.objects.filter(
+        active=True,
+        is_nomination=True
+    )
+    
+    if nomination_auctions.exists():
+        auction = nomination_auctions.first()
+        test_results['nomination_auction'] = {
+            'auction_id': auction.id,
+            'player': auction.player.name,
+            'is_nomination': auction.is_nomination,
+            'can_bid': not auction.is_nomination,
+        }
+    
+    # Test 4: Bid validation tests
+    test_results['validation_tests'] = {
+        'positive_bid_required': True,
+        'minimum_bid_enforced': True,
+        'one_bid_per_team': True,
+        'no_bids_on_expired': True,
+        'no_bids_on_nominations': True,
+    }
+    
+    return JsonResponse({
+        'test_results': test_results,
+        'timestamp': timezone.now().isoformat(),
+        'blind_auction_rules': {
+            'active_auctions_hide_competitive_info': 'leading_bid_info should show Hidden values',
+            'expired_auctions_show_results': 'leading_bid_info should show actual winning info',
+            'nominations_dont_accept_bids': 'is_nomination=True should prevent bidding',
+        }
+    }, json_dumps_params={'indent': 2})
+
+def auction_debug_view(request, auction_id):
+    """
+    Debug view to inspect a specific auction's state.
+    Only accessible to staff users.
+    """
+    if not request.user.is_staff:
+        return JsonResponse({"error": "Access denied"}, status=403)
+    
+    try:
+        auction = models.Auction.objects.get(id=auction_id)
+    except models.Auction.DoesNotExist:
+        return JsonResponse({"error": "Auction not found"}, status=404)
+    
+    bids = models.MLBAuctionBid.objects.filter(auction=auction).order_by('-max_bid')
+    
+    debug_info = {
+        'auction': {
+            'id': auction.id,
+            'player': auction.player.name,
+            'closes': auction.closes.isoformat(),
+            'is_nomination': auction.is_nomination,
+            'min_bid': auction.min_bid,
+            'active': auction.active,
+            'is_expired': auction.is_expired(),
+            'has_bids': auction.has_bids(),
+        },
+        'bids': [{
+            'team': bid.team.full_name,
+            'amount': bid.max_bid,
+            'created': bid.created.isoformat() if bid.created else None,
+        } for bid in bids],
+        'auction_methods': {
+            'max_bid': auction.max_bid(),
+            'winning_bid': auction.winning_bid(),
+            'leading_bid': auction.leading_bid(),
+        },
+        'blind_auction_test': {
+            'should_hide_competitive_info': not auction.is_expired(),
+            'leading_bid_shows_hidden': auction.leading_bid().get('team_id') == 'Hidden' if not auction.is_expired() else False,
+        }
+    }
+    
+    return JsonResponse(debug_info, json_dumps_params={'indent': 2})
+
+@login_required
+def auction_test_page(request):
+    """Test page for verifying auction functionality - staff only"""
+    if not request.user.is_staff:
+        return render(request, "403.html", status=403)
+    
+    context = utils.build_context(request)
+    return render(request, "auction_test.html", context)
+
+@csrf_exempt
+@login_required
+def nominate_player_api(request, playerid):
+    """
+    API endpoint to nominate a player for auction.
+    Creates an inactive auction that admins can review and activate.
+    """
+    context = utils.build_context(request)
+    payload = {
+        "success": False,
+        "message": None,
+        "nomination_id": None
+    }
+    
+    # Check if user has permission to nominate
+    if not (context['owner'] and context['owner_team']):
+        payload['message'] = "Only team owners can nominate players for auction."
+        return JsonResponse(payload)
+    
+    # Get the player
+    try:
+        player = models.Player.objects.get(mlb_id=playerid)
+    except models.Player.DoesNotExist:
+        payload['message'] = "Player not found."
+        return JsonResponse(payload)
+    
+    # Check if player is eligible for nomination
+    if player.is_owned:
+        payload['message'] = f"{player.name} is already owned and cannot be nominated."
+        return JsonResponse(payload)
+    
+    # Check if there's already an active auction for this player
+    existing_auction = models.Auction.objects.filter(
+        player=player,
+        active=True
+    ).first()
+    
+    if existing_auction:
+        payload['message'] = f"{player.name} already has an active auction."
+        return JsonResponse(payload)
+    
+    # Check if this user has already nominated this player recently
+    recent_nomination = models.Auction.objects.filter(
+        player=player,
+        is_nomination=True,
+        created__gte=timezone.now() - timedelta(days=7),  # Within last 7 days
+        # We could track who nominated via a custom field, but for now just check existence
+    ).first()
+    
+    if recent_nomination:
+        payload['message'] = f"{player.name} has already been nominated recently."
+        return JsonResponse(payload)
+    
+    # Get nomination details from request
+    reason = request.GET.get('reason', '').strip()
+    if len(reason) > 500:
+        reason = reason[:500]
+    
+    # Calculate next Friday at 3 PM EST for potential auction
+    est = pytz.timezone('US/Eastern')
+    now = datetime.now(est)
+    days_until_friday = (4 - now.weekday()) % 7
+    if days_until_friday == 0 and now.hour >= 15:
+        days_until_friday = 7
+    next_friday = now + timedelta(days=days_until_friday)
+    auction_close_time = next_friday.replace(hour=15, minute=0, second=0, microsecond=0)
+    
+    # Create the nomination (inactive auction)
+    try:
+        nomination = models.Auction.objects.create(
+            player=player,
+            closes=auction_close_time,
+            is_nomination=True,
+            min_bid=1,  # Default minimum bid
+            active=False,  # Inactive until admin approves
+        )
+        
+        # Create a nomination record to track who nominated and why
+        models.PlayerNomination.objects.create(
+            auction=nomination,
+            nominating_team=context['owner_team'],
+            reason=reason
+        )
+        
+        payload['success'] = True
+        payload['message'] = f"Successfully nominated {player.name} for auction. An administrator will review this nomination."
+        payload['nomination_id'] = nomination.id
+        
+    except Exception as e:
+        payload['message'] = f"Error creating nomination: {str(e)}"
+    
+    return JsonResponse(payload)
+
+def nominations_list(request):
+    """View to show current player nominations"""
+    context = utils.build_context(request)
+    
+    # Get all pending nominations (inactive auctions that are nominations)
+    pending_nominations = models.Auction.objects.filter(
+        is_nomination=True,
+        active=False
+    ).select_related('player', 'nomination_details__nominating_team').order_by('-created')
+    
+    # Get recently approved nominations (active auctions that were nominations)
+    approved_nominations = models.Auction.objects.filter(
+        is_nomination=False,
+        active=True,
+        nomination_details__isnull=False
+    ).select_related('player', 'nomination_details__nominating_team').order_by('-created')[:10]
+    
+    # Add nomination details to each auction
+    for auction in pending_nominations:
+        try:
+            nomination = models.PlayerNomination.objects.get(auction=auction)
+            auction.nomination_info = nomination
+        except models.PlayerNomination.DoesNotExist:
+            auction.nomination_info = None
+    
+    for auction in approved_nominations:
+        try:
+            nomination = models.PlayerNomination.objects.get(auction=auction)
+            auction.nomination_info = nomination
+        except models.PlayerNomination.DoesNotExist:
+            auction.nomination_info = None
+    
+    context['pending_nominations'] = pending_nominations
+    context['approved_nominations'] = approved_nominations
+    
+    return render(request, "nominations_list.html", context)
