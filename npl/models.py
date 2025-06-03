@@ -764,6 +764,8 @@ class Auction(BaseModel):
 
     def is_expired(self):
         """Check if auction has expired"""
+        if self.closes is None:
+            return False
         now = datetime.datetime.now(pytz.timezone('US/Eastern'))
         return self.closes < now
 
@@ -812,6 +814,99 @@ class Auction(BaseModel):
                 return {"team_id": "Hidden", "bid": "Hidden", "winning_amount": "Hidden"}
             else:
                 return {"team_id": None, "bid": self.min_bid, "winning_amount": self.min_bid}
+
+    def bid_count(self):
+        """Get total number of bids on this auction"""
+        return MLBAuctionBid.objects.filter(auction=self).count()
+
+    def winning_team(self):
+        """Get the winning team object if auction is expired and has bids"""
+        if self.is_expired() and self.has_bids():
+            winning_info = self.winning_bid()
+            if winning_info['team_id']:
+                try:
+                    return Team.objects.get(pk=winning_info['team_id'])
+                except Team.DoesNotExist:
+                    pass
+        return None
+
+    def current_min_bid(self):
+        """Get the current minimum bid (either base min_bid or second highest + 1)"""
+        if not self.has_bids():
+            return self.min_bid
+        
+        # During live auction, min bid remains the same
+        # After expiration, show what the winning amount would be
+        if self.is_expired():
+            return self.winning_bid()['winning_amount']
+        return self.min_bid
+
+    def status_display(self):
+        """Get display status for the auction"""
+        if self.is_expired():
+            if self.has_bids():
+                winning_team = self.winning_team()
+                return winning_team.short_name if winning_team else "Unknown"
+            else:
+                return "Unsigned"
+        else:
+            return "-"  # Active auction
+
+    def time_remaining_display(self):
+        """Get formatted time remaining with negative values for expired auctions"""
+        now = datetime.datetime.now(pytz.timezone('US/Eastern'))
+        
+        if self.closes:
+            delta = self.closes - now
+            total_seconds = int(delta.total_seconds())
+            
+            # Calculate hours, minutes, seconds
+            hours = abs(total_seconds) // 3600
+            minutes = (abs(total_seconds) % 3600) // 60
+            seconds = abs(total_seconds) % 60
+            
+            time_str = f"{hours}:{minutes:02d}:{seconds:02d}"
+            
+            if total_seconds < 0:
+                return f"-{time_str}"
+            else:
+                return time_str
+        return "Unknown"
+
+    def user_has_bid(self, user):
+        """Check if user has already placed a bid on this auction"""
+        if not user.is_authenticated:
+            return False
+        
+        try:
+            owner = Owner.objects.get(user=user)
+            team = Team.objects.get(owners=owner)
+            return MLBAuctionBid.objects.filter(auction=self, team=team).exists()
+        except (Owner.DoesNotExist, Team.DoesNotExist):
+            pass
+        return False
+
+    def user_bid_amount(self, user):
+        """Get the bid amount for a specific user's team"""
+        if not user.is_authenticated:
+            return None
+        
+        try:
+            owner = Owner.objects.get(user=user)
+            team = Team.objects.get(owners=owner)
+            bid = MLBAuctionBid.objects.get(auction=self, team=team)
+            return bid.max_bid
+        except (Owner.DoesNotExist, Team.DoesNotExist, MLBAuctionBid.DoesNotExist):
+            pass
+        return None
+
+    def user_can_bid(self, user):
+        """Check if user can place a bid on this auction"""
+        if not user.is_authenticated or self.is_expired():
+            return False
+        
+        # Can't bid if already have a bid
+        return not self.user_has_bid(user)
 
 
 class PlayerNomination(BaseModel):

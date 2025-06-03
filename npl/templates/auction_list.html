@@ -2,10 +2,85 @@
 {% load npl_tags %}
 {% load humanize %}
 
-{% block content %}
+{% block extra_head %}
+<style>
+.auction-table {
+    font-size: 0.875rem;
+}
 
-<section class="block" style="padding-top:25px;">
-    <h1>Active Auctions</h1>
+.auction-table th {
+    background-color: #6b7280;
+    color: white;
+    font-weight: 600;
+    padding: 0.5rem 0.25rem;
+    text-align: center;
+    border: 1px solid #4b5563;
+}
+
+.auction-table td {
+    padding: 0.375rem 0.25rem;
+    border: 1px solid #d1d5db;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.expired-time {
+    color: #dc2626;
+    font-weight: 600;
+}
+
+.bid-form {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+    justify-content: center;
+}
+
+.bid-input {
+    width: 80px;
+    padding: 0.25rem;
+    font-size: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 3px;
+}
+
+.bid-button {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    background-color: #22c55e;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.bid-button:hover {
+    background-color: #16a34a;
+}
+
+.player-name {
+    text-align: left;
+    font-weight: 500;
+}
+
+.your-bid {
+    font-weight: 600;
+    color: #059669;
+}
+
+.already-bid {
+    color: #6b7280;
+    font-style: italic;
+    font-size: 0.75rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="block" style="padding-top: 25px;">
+    <h1 class="title is-3">NPL In-Season FA Bidding</h1>
+    
     <div class="notification is-info">
         <strong>Auction Rules:</strong>
         <ul>
@@ -19,135 +94,117 @@
     </div>
     
     {% if auctions %}
-    <table class="table">
-        <thead>
-            <th>Player</th>
-            <th>Time Remaining</th>
-            <th>Min Bid</th>
-            <th>Total Bids</th>
-            <th>Your Bid</th>
-            <th>Action</th>
-        </thead>
-        <tbody>
-            {% for a in auctions %}
-            <tr>
-                <td>
-                    <strong><a href="/players/{{ a.player.mlb_id }}/">{{ a.player.name }}</a></strong><br>
-                    {% if user.is_staff %}<small><a target="_blank" href="/admin/npl/player/{{ a.player.mlb_id }}/change/"><span class="icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></span></a></small>{% endif %}
-                    <small><a target="_blank" href="{{ a.player.mlb_url }}">MLB&nbsp;&rarr;</a></small>
-                </td>
-                <td>
-                    {{ a.time_left|smooth_timedelta }}
-                </td>
-                <td>${{ a.minimum_bid_price|intcomma }}</td>
-                <td>{{ a.total_bids }}</td>
-                <td>
-                    {% if a.your_bid %}
-                        <strong>${{ a.your_bid|intcomma }}</strong>
-                    {% else %}
-                        <em>No bid</em>
-                    {% endif %}
-                </td>
-                <td>
-                    {% if a.can_bid %}
-                        {% include "includes/bidding_buttons.html" %}
-                    {% else %}
-                        {% if a.your_bid %}
-                            You have already bid in this auction.
+    <div class="table-container">
+        <table class="table is-fullwidth is-striped auction-table">
+            <thead>
+                <tr>
+                    <th>Player</th>
+                    <th>SS#</th>
+                    <th>MLB#</th>
+                    <th>POS</th>
+                    <th>Team</th>
+                    <th>MLS</th>
+                    <th>OPT</th>
+                    <th>STA</th>
+                    <th>Winner</th>
+                    <th>Current<br>Min. Bid</th>
+                    <th>Expires At (EST)</th>
+                    <th>Time<br>Remaining</th>
+                    <th>Bid<br>Count</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for auction in auctions %}
+                <tr>
+                    <td class="player-name">
+                        <strong><a href="/players/{{ auction.player.mlb_id }}/">{{ auction.player.name }}</a></strong>
+                    </td>
+                    <td>{{ auction.player.scoresheet_id|default:"-" }}</td>
+                    <td>{{ auction.player.mlb_id|default:"-" }}</td>
+                    <td>{{ auction.player.position|default:"-" }}</td>
+                    <td>{{ auction.player.mlb_org|default:"-" }}</td>
+                    <td>{{ auction.player.service_time|default:"0.000" }}</td>
+                    <td>{{ auction.player.options|default:"3" }}</td>
+                    <td>{{ auction.player.get_npl_status|default:"-" }}</td>
+                    <td>{{ auction.status_display }}</td>
+                    <td>${{ auction.current_min_bid|intcomma }}</td>
+                    <td>{{ auction.closes|date:"n/j/Y G:i:s" }}</td>
+                    <td class="{% if auction.is_expired %}expired-time{% endif %}">
+                        {{ auction.time_remaining_display }}
+                    </td>
+                    <td>{{ auction.bid_count }}</td>
+                    <td>
+                        {% if auction.your_bid %}
+                            <div style="color: #059669; font-weight: 600;">
+                                Your bid: ${{ auction.your_bid|intcomma }}
+                            </div>
+                        {% elif auction.can_bid %}
+                            <div class="bid-form">
+                                <input type="number" 
+                                       class="bid-input" 
+                                       min="{{ auction.min_bid }}" 
+                                       placeholder="${{ auction.min_bid }}"
+                                       id="bid-{{ auction.id }}">
+                                <button class="bid-button" 
+                                        onclick="submitBid({{ auction.id }}, {{ auction.min_bid }})">
+                                    Bid
+                                </button>
+                            </div>
+                        {% elif auction.is_expired %}
+                            <span class="already-bid">Expired</span>
                         {% else %}
-                            <em>Login required</em>
+                            <span class="already-bid">Login required</span>
                         {% endif %}
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
     {% else %}
     <p>There are no active auctions at the moment.</p>
-    {% endif %}
-    
-    {% if recent_expired %}
-    <h2>Recent Auction Results</h2>
-    <table class="table">
-        <thead>
-            <th>Player</th>
-            <th>Closed</th>
-            <th>Winning Team</th>
-            <th>Winning Bid</th>
-            <th>Max Bid</th>
-        </thead>
-        <tbody>
-            {% for a in recent_expired %}
-            <tr>
-                <td>
-                    <strong><a href="/players/{{ a.player.mlb_id }}/">{{ a.player.name }}</a></strong>
-                </td>
-                <td>
-                    {{ a.closes|date:"M j, Y g:i A" }}
-                </td>
-                <td>
-                    {% if a.winning_info.team_id %}
-                        Team {{ a.winning_info.team_id }}
-                    {% else %}
-                        <em>No bids</em>
-                    {% endif %}
-                </td>
-                <td>
-                    {% if a.winning_info.winning_amount > 0 %}
-                        ${{ a.winning_info.winning_amount|intcomma }}
-                    {% else %}
-                        <em>No bids</em>
-                    {% endif %}
-                </td>
-                <td>
-                    {% if a.winning_info.bid > 0 %}
-                        ${{ a.winning_info.bid|intcomma }}
-                    {% else %}
-                        <em>No bids</em>
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
     {% endif %}
 </section>
 {% endblock %}
 
 {% block extrascript %}
 <script type="text/javascript">
-  $(function(){
-    var bid_handler = function(el) {
-        el.preventDefault();
-        $el = $(this);
-
-        var auctionid = $el.attr('data-auctionid');
-        var bid = $('#input-auction-' + auctionid).val();
-
-        // Validate bid is a positive number
-        if (!bid || isNaN(bid) || parseInt(bid) <= 0) {
-            alert('Please enter a valid bid amount in dollars.');
-            return;
-        }
-
-        $.ajax({
-            type: "GET",
-            url: '/api/v1/auctions/bid/' +  auctionid + '/?bid=' + bid,
-            success: function(response){
-                if (response.success) {
-                    alert(response.message);
-                    window.location.reload();
-                } else {
-                    alert('Error: ' + response.message);
-                }
-            },
-            error: function() {
-                alert('Error submitting bid. Please try again.');
-            }
-        });
+function submitBid(auctionId, minBid) {
+    const bidInput = document.getElementById('bid-' + auctionId);
+    const bidAmount = parseInt(bidInput.value);
+    
+    // Validate bid
+    if (!bidAmount || bidAmount < minBid) {
+        alert('Please enter a valid bid amount of at least $' + minBid.toLocaleString());
+        return;
     }
-    $('body').on('click', 'a.bid-button', bid_handler);
-})
+    
+    // Confirm bid
+    if (!confirm('Confirm bid of $' + bidAmount.toLocaleString() + ' on this player? This is your ONLY bid allowed.')) {
+        return;
+    }
+    
+    // Submit bid
+    fetch('/api/v1/auctions/bid/' + auctionId + '/?bid=' + bidAmount)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                window.location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('Error submitting bid. Please try again.');
+            console.error('Error:', error);
+        });
+}
+
+// Auto-refresh every 30 seconds for live updates
+setInterval(function() {
+    window.location.reload();
+}, 30000);
 </script>
 {% endblock %}

@@ -14,7 +14,6 @@
     {% if user.is_staff %}<small><a target="_blank" href="/admin/npl/player/{{ p.mlb_id }}/change/"><span class="icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></span></a></small>{% endif %}
     <small><a target="_blank" href="{{ p.mlb_url }}">MLB&nbsp;&rarr;</a></small>
   </td>
-  <!-- <td>{{ p.get_npl_status }}</td> -->
     <!-- roster_status --><td style="text-align:center;">{{ p.get_roster_status }}</td>
     <!-- position --><td class="hidden-on-team" style="text-align:center;">{{ p.position|default_if_none:"" }}</td>
     <!-- age --><td style="text-align:center;">{{ p.age|default_if_none:"" }}</td>

@@ -1,17 +1,26 @@
 {% load humanize %}
-<div class="field has-addons">
-    {% if user.is_staff %}<div class="control">
-        <a target="_blank" class="button is-info" href="/admin/npl/auction/{{ a.id }}/change/"><span class="icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></span></a>
-    </div>{% endif %}
-    <div class="control">
-      <input style="width: 300px;" class="input" type="number" min="{{ a.minimum_bid_price }}" placeholder="Min: ${{ a.minimum_bid_price|intcomma }}" id="input-auction-{{ a.id }}">
+<div class="field">
+    <div class="field has-addons">
+        {% if user.is_staff %}
+        <div class="control">
+            <a target="_blank" class="button is-info is-small" href="/admin/npl/auction/{{ a.id }}/change/" title="Edit Auction">
+                <span class="icon is-small">
+                    <i class="fas fa-edit"></i>
+                </span>
+            </a>
+        </div>
+        {% endif %}
+        <div class="control is-expanded">
+            <input class="input is-small" type="number" min="{{ a.minimum_bid_price }}" placeholder="Min: ${{ a.minimum_bid_price|intcomma }}" id="input-auction-{{ a.id }}">
+        </div>
+        <div class="control">
+            <button class="button is-success is-small bid-button" data-auctionid="{{ a.id }}">
+                <span class="icon is-small">
+                    <i class="fas fa-dollar-sign"></i>
+                </span>
+                <span>Submit Bid</span>
+            </button>
+        </div>
     </div>
-    <div class="control">
-      <a class="button is-success bid-button" data-auctionid="{{ a.id }}">
-        <strong>Submit Bid</strong>
-      </a>
-    </div>
-    <div class="control">
-        <span class="help">Blind auction - one bid only</span>
-    </div>
+    <p class="help is-size-7 mt-1">Blind auction - one bid only</p>
 </div>
