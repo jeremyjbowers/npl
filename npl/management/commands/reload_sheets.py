@@ -13,6 +13,7 @@ class Command(BaseCommand):
         call_command('load_mlb_rosters')
 
         # Update NPL specific data
+        call_command('initial_load_npl_teams')
         call_command('initial_load_npl_roster_sheet')
         call_command('initial_load_contracts')
         call_command('initial_load_transactions')
