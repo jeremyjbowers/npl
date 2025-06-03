@@ -128,6 +128,12 @@ SESAME_MAX_AGE = 60 * 60 * 24 * 30
 SESAME_ONE_TIME = False
 SESAME_INVALIDATE_ON_PASSWORD_CHANGE = False
 
+# SESSION SETTINGS (Database-backed for persistence across deployments)
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 30  # 30 days
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+SESSION_SAVE_EVERY_REQUEST = True
+
 EMAIL_BACKEND = 'django_mailgun_mime.backends.MailgunMIMEBackend'
 MAILGUN_API_KEY = os.environ.get("MAILGUN_API_KEY", None)
 MAILGUN_DOMAIN_NAME = 'mail.theulmg.com'

@@ -5,70 +5,43 @@
 
 {% block content %}
 <div class="block">
-    <div class="card">
-        <div class="card-content">
-            <div class="media">
-                <div class="media-left">
-                    <figure class="image is-96x96">
-                        <img src="{{ p.mlb_image_url }}" alt="{{ p.name }}" class="is-rounded">
-                    </figure>
-                </div>
+    <div class="card" style="border-radius: 0; overflow: hidden;">
+        <div class="card-content" style="padding: 0; display: flex;">
+            <div style="flex-shrink: 0; display: flex;">
+                <figure class="image" style="width: 120px; height: auto; margin: 0; align-self: stretch;">
+                    <img src="{{ p.mlb_image_url }}" alt="{{ p.name }}" style="width: 100%; height: 100%; object-fit: cover;">
+                </figure>
+            </div>
+            <div style="flex: 1; padding: 1.5rem;">
                 <div class="media-content">
                     <h1 class="title is-3">{{ p.position|default_if_none:"" }} {{ p.name }}</h1>
                     <div class="subtitle">
                         {% if p.team %}
-                            <span class="tag is-primary">
-                                <span class="icon">
-                                    <i class="fas fa-users"></i>
-                                </span>
-                                <span>{{ p.team.name }}</span>
-                            </span>
+                            <span class="has-text-weight-semibold has-text-success">{{ p.team.name }}</span>
                         {% else %}
-                            <span class="tag is-light">
-                                <span class="icon">
-                                    <i class="fas fa-user-slash"></i>
-                                </span>
-                                <span>Unowned</span>
-                            </span>
+                            <span class="has-text-grey">Unowned</span>
                         {% endif %}
                         
                         {% if p.age %}
-                            <span class="tag is-light">
-                                <span class="icon">
-                                    <i class="fas fa-calendar-alt"></i>
-                                </span>
-                                <span>Age {{ p.age }}</span>
-                            </span>
+                            <span class="has-text-grey-dark">• Age {{ p.age }}</span>
                         {% endif %}
                         
                         {% if p.mlb_org %}
-                            <span class="tag is-info">
-                                <span class="icon">
-                                    <i class="fas fa-baseball-ball"></i>
-                                </span>
-                                <span>{{ p.mlb_org }}</span>
-                            </span>
+                            <span class="has-text-success">• {{ p.mlb_org }}</span>
                         {% endif %}
                     </div>
                     
-                    <div class="field is-grouped">
-                        <div class="control">
-                            <a href="{{ p.mlb_url }}" target="_blank" class="button is-small is-outlined is-info">
-                                <span class="icon">
-                                    <i class="fas fa-external-link-alt"></i>
-                                </span>
-                                <span>MLB.com</span>
-                            </a>
-                        </div>
+                    <div class="content is-small" style="margin-top: 0.75rem;">
+                        <a href="{{ p.mlb_url }}" target="_blank" class="button is-small is-outlined is-link" style="margin-right: 0.5rem;">
+                            MLB.com
+                            <span class="icon ml-1">
+                                <i class="fas fa-external-link-alt is-size-7"></i>
+                            </span>
+                        </a>
                         {% if user.is_staff %}
-                        <div class="control">
-                            <a href="/admin/npl/player/{{ p.mlb_id }}/change/" target="_blank" class="button is-small is-info">
-                                <span class="icon">
-                                    <i class="fas fa-edit"></i>
-                                </span>
-                                <span>Edit</span>
-                            </a>
-                        </div>
+                        <a href="/admin/npl/player/{{ p.mlb_id }}/change/" target="_blank" class="button is-small is-warning">
+                            Edit
+                        </a>
                         {% endif %}
                     </div>
                 </div>
