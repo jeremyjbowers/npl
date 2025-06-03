@@ -5,19 +5,104 @@
 
 {% block extra_head %}
 <style>
-/* AL Division Colors (Red Shades) */
-.division-al { border-left: 4px solid #dc2626; background-color: #fef2f2; }
-.division-american { border-left: 4px solid #dc2626; background-color: #fef2f2; }
+/* Force dark theme for this page */
+body {
+    background-color: var(--npl-bg-primary) !important;
+    color: var(--npl-text-primary) !important;
+}
+
+/* Dark theme search form */
+form.box {
+    background-color: var(--npl-bg-secondary) !important;
+    color: var(--npl-text-primary) !important;
+    border: 1px solid var(--npl-border) !important;
+}
+
+form.box .label {
+    color: var(--npl-text-primary) !important;
+}
+
+form.box .input,
+form.box .select select {
+    background-color: var(--npl-bg-tertiary) !important;
+    color: var(--npl-text-primary) !important;
+    border-color: var(--npl-border) !important;
+}
+
+form.box .input:focus,
+form.box .select select:focus {
+    border-color: var(--npl-primary) !important;
+    box-shadow: 0 0 0 0.125em rgba(79, 195, 247, 0.25) !important;
+}
+
+form.box .button.is-info {
+    background-color: var(--npl-info) !important;
+    color: var(--npl-bg-primary) !important;
+}
+
+/* Dark theme division colors */
+.division-al { 
+    border-left: 4px solid #ef5350; 
+    background-color: #2d1f1f; 
+    color: #ffffff;
+}
+.division-american { 
+    border-left: 4px solid #ef5350; 
+    background-color: #2d1f1f; 
+    color: #ffffff;
+}
 
 /* NL Division Colors (Blue Shades) */
-.division-nl { border-left: 4px solid #1d4ed8; background-color: #eff6ff; }
-.division-national { border-left: 4px solid #1d4ed8; background-color: #eff6ff; }
+.division-nl { 
+    border-left: 4px solid #42a5f5; 
+    background-color: #1f2d3d; 
+    color: #ffffff;
+}
+.division-national { 
+    border-left: 4px solid #42a5f5; 
+    background-color: #1f2d3d; 
+    color: #ffffff;
+}
 
 /* Division header styling */
 .division-header {
     padding: 0.75rem 1rem;
     border-radius: 6px;
     margin-bottom: 1rem;
+    background-color: var(--npl-bg-secondary);
+    border: 1px solid var(--npl-border);
+}
+
+.division-header .title {
+    color: #ffffff !important;
+}
+
+/* Dark theme team cards */
+.team-card {
+    background-color: var(--npl-bg-secondary) !important;
+    color: var(--npl-text-primary) !important;
+    border: 1px solid var(--npl-border) !important;
+    text-decoration: none !important;
+}
+
+.team-card:hover {
+    background-color: var(--npl-bg-tertiary) !important;
+    color: var(--npl-text-primary) !important;
+}
+
+.team-card .has-text-weight-medium,
+.team-card .has-text-dark {
+    color: var(--npl-text-primary) !important;
+}
+
+.team-card .has-text-grey,
+.team-card .is-size-7 {
+    color: var(--npl-text-secondary) !important;
+}
+
+/* Ensure all text elements are white */
+h1.title, h2.title, h3.title {
+    color: var(--npl-text-primary) !important;
 }
 
 /* Financial percentile graphics */
@@ -36,13 +121,13 @@
     width: 65px;
     text-align: left;
     font-weight: 500;
-    color: #374151;
+    color: var(--npl-text-secondary);
 }
 
 .percentile-bar {
     flex: 1;
     height: 8px;
-    background-color: #f3f4f6;
+    background-color: var(--npl-bg-tertiary);
     overflow: hidden;
     margin: 0 0.5rem;
     position: relative;
@@ -54,22 +139,24 @@
 }
 
 .cap-space-fill {
-    background-color: #86efac;
+    background-color: #66bb6a;
 }
 
 .cash-fill {
-    background-color: #86efac;
+    background-color: #66bb6a;
 }
 
 .percentile-value {
     width: 30px;
     text-align: right;
-    color: #6b7280;
+    color: var(--npl-text-secondary);
     font-size: 0.7rem;
 }
 
 /* Percentile markers */
-.marker-25, .marker-50, .marker-75 {
+.marker-25,
+.marker-50,
+.marker-75 {
     position: absolute;
     top: 0;
     bottom: 0;
@@ -79,17 +166,48 @@
 
 .marker-25 {
     left: 25%;
-    background-color: #9ca3af;
+    background-color: var(--npl-text-secondary);
 }
 
 .marker-50 {
     left: 50%;
-    background-color: #374151;
+    background-color: var(--npl-text-secondary);
 }
 
 .marker-75 {
     left: 75%;
-    background-color: #9ca3af;
+    background-color: var(--npl-text-secondary);
+}
+
+/* Search addon styling for dark theme */
+.search-addon {
+    align-items: stretch !important;
+}
+
+.search-addon .control {
+    margin: 0 !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: stretch !important;
+}
+
+.search-addon .input,
+.search-addon .button {
+    height: 2.5em !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.search-addon .control:first-child .input {
+    border-top-left-radius: 4px !important;
+    border-bottom-left-radius: 4px !important;
+}
+
+.search-addon .control:last-child .button {
+    border-top-right-radius: 4px !important;
+    border-bottom-right-radius: 4px !important;
 }
 </style>
 {% endblock %}
@@ -117,9 +235,9 @@
         <div class="columns is-multiline">
             {% for team in division.list %}
             <div class="column is-half-mobile is-half-tablet is-one-quarter-desktop is-one-quarter-widescreen">
-                <a href="/teams/{{ team.short_name|lower }}/" class="box has-text-centered has-text-dark">
+                <a href="/teams/{{ team.short_name|lower }}/" class="box has-text-centered team-card" style="text-decoration: none; color: inherit;">
                     <div class="content">
-                        <p class="has-text-weight-medium">{{ team.full_name }}</p>
+                        <p class="has-text-weight-medium has-text-dark">{{ team.full_name }}</p>
                         <div class="is-size-7 has-text-grey">
                             <div>Cap Space: ${{ team.cap_space|default:0|floatformat:0|intcomma }}M</div>
                             <div>Cash: ${{ team.cash|default:0|floatformat:0|intcomma }}M</div>

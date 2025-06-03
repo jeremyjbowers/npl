@@ -17,17 +17,19 @@
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
         
         <style type="text/css">
-            /* Utility-focused design for data display */
+            /* Dark mode design for data display */
             :root {
-                --npl-primary: #1976d2;
-                --npl-success: #388e3c;
-                --npl-info: #0288d1;
-                --npl-warning: #f57c00;
-                --npl-danger: #d32f2f;
-                --npl-light: #fafafa;
-                --npl-dark: #212529;
-                --npl-text: #2c3e50;
-                --npl-text-light: #6c757d;
+                --npl-primary: #4fc3f7;
+                --npl-success: #66bb6a;
+                --npl-info: #42a5f5;
+                --npl-warning: #ffb74d;
+                --npl-danger: #ef5350;
+                --npl-bg-primary: #1a1a1a;
+                --npl-bg-secondary: #2d2d2d;
+                --npl-bg-tertiary: #3a3a3a;
+                --npl-text-primary: #ffffff;
+                --npl-text-secondary: #b3b3b3;
+                --npl-border: #404040;
             }
             
             html, body {
@@ -39,28 +41,79 @@
                 font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
                 font-size: 14px;
                 line-height: 1.5;
-                color: var(--npl-text);
-                background-color: #ffffff;
+                color: var(--npl-text-primary);
+                background-color: var(--npl-bg-primary);
                 display: flex;
                 flex-direction: column;
             }
             
             main.section {
                 flex: 1;
-                background-color: #f8f9fa;
+                background-color: var(--npl-bg-primary);
+            }
+            
+            /* Dark mode typography */
+            .title { 
+                font-weight: 600; 
+                margin-bottom: 1rem;
+                color: var(--npl-text-primary);
+            }
+            .title.is-4 { font-size: 1.5rem; }
+            .title.is-5 { font-size: 1.25rem; }
+            .subtitle { 
+                font-weight: 400; 
+                color: var(--npl-text-secondary);
+                margin-bottom: 0.5rem;
+            }
+            
+            /* Dark mode containers */
+            .box, .card, .card-content {
+                background-color: var(--npl-bg-secondary) !important;
+                color: var(--npl-text-primary) !important;
+                border: 1px solid var(--npl-border);
+            }
+            
+            /* Dark mode tables */
+            .table {
+                font-size: 13px;
+                background-color: var(--npl-bg-secondary);
+                border: 1px solid var(--npl-border);
+                border-radius: 8px;
+                overflow: hidden;
+                color: var(--npl-text-primary);
+            }
+            .table thead th {
+                background-color: var(--npl-bg-tertiary);
+                font-weight: 600;
+                font-size: 12px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                padding: 0.75rem 0.5rem;
+                border-bottom: 2px solid var(--npl-border);
+                color: var(--npl-text-primary);
+            }
+            .table tbody td {
+                padding: 0.5rem;
+                vertical-align: middle;
+                border-bottom: 1px solid var(--npl-border);
+                background-color: var(--npl-bg-secondary);
+                color: var(--npl-text-primary);
+            }
+            .table tbody tr:hover td {
+                background-color: var(--npl-bg-tertiary);
             }
             
             /* Compact typography */
             .title { 
                 font-weight: 600; 
                 margin-bottom: 1rem;
-                color: var(--npl-dark);
+                color: var(--npl-text-primary);
             }
             .title.is-4 { font-size: 1.5rem; }
             .title.is-5 { font-size: 1.25rem; }
             .subtitle { 
                 font-weight: 400; 
-                color: var(--npl-text-light);
+                color: var(--npl-text-secondary);
                 margin-bottom: 0.5rem;
             }
             
@@ -73,14 +126,14 @@
                 overflow: hidden;
             }
             .table thead th {
-                background-color: var(--npl-light);
+                background-color: var(--npl-text-primary);
                 font-weight: 600;
                 font-size: 12px;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
                 padding: 0.75rem 0.5rem;
                 border-bottom: 2px solid #dee2e6;
-                color: var(--npl-text);
+                color: var(--npl-text-primary);
             }
             .table tbody td {
                 padding: 0.5rem;
@@ -91,20 +144,45 @@
                 background-color: #f8f9fa;
             }
             
-            /* Status indicators for roster data */
-            .table tbody tr.minors td { background-color: #e8f5e8; }
-            .table tbody tr.il-60 td { background-color: #f3e5f5; }
+            /* Status indicators for roster data with dark theme colors */
+            .table tbody tr.minors td { 
+                background-color: #2d3d2d !important; 
+                color: var(--npl-text-primary) !important;
+            }
+            .table tbody tr.il-60 td { 
+                background-color: #3d2d3d !important; 
+                color: var(--npl-text-primary) !important;
+            }
             .table tbody tr.il-15 td, 
             .table tbody tr.il-10 td, 
-            .table tbody tr.il-7 td { background-color: #fff3e0; }
-            .table tbody tr.auction-nonmlb td { background-color: #f5f5f5; }
-            .table tbody tr.owned td { background-color: #e3f2fd; }
+            .table tbody tr.il-7 td { 
+                background-color: #3d3d2d !important; 
+                color: var(--npl-text-primary) !important;
+            }
+            .table tbody tr.auction-nonmlb td { 
+                background-color: #333333 !important; 
+                color: var(--npl-text-primary) !important;
+            }
+            .table tbody tr.owned td { 
+                background-color: #2d3d3d !important; 
+                color: var(--npl-text-primary) !important;
+            }
+            .table tbody tr.majors td {
+                background-color: var(--npl-bg-secondary) !important;
+                color: var(--npl-text-primary) !important;
+                font-weight: bold !important;
+            }
             
-            /* Compact navigation */
+            /* Ensure all table rows have proper text color */
+            .table tbody tr, .table tbody tr td {
+                color: var(--npl-text-primary) !important;
+            }
+            
+            /* Dark mode navigation */
             .navbar {
-                box-shadow: 0 2px 0 0 #f1f3f4;
-                border-bottom: 1px solid #e9ecef;
-                background-color: #ffffff;
+                box-shadow: 0 2px 0 0 var(--npl-border);
+                border-bottom: 1px solid var(--npl-border);
+                background-color: var(--npl-bg-secondary) !important;
             }
             .navbar-brand .navbar-item {
                 font-weight: 700;
@@ -114,11 +192,90 @@
             .navbar-item {
                 font-size: 14px;
                 padding: 0.5rem 0.75rem;
+                color: var(--npl-text-primary) !important;
+                background-color: transparent !important;
+            }
+            .navbar-item:hover {
+                background-color: var(--npl-bg-tertiary) !important;
+                color: var(--npl-text-primary) !important;
             }
             .navbar-dropdown {
                 font-size: 13px;
-                box-shadow: 0 8px 16px rgba(10,10,10,0.1);
-                border: 1px solid #e9ecef;
+                box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+                border: 1px solid var(--npl-border);
+                background-color: var(--npl-bg-secondary) !important;
+            }
+            .navbar-dropdown .navbar-item {
+                color: var(--npl-text-primary) !important;
+                background-color: var(--npl-bg-secondary) !important;
+            }
+            .navbar-dropdown .navbar-item:hover {
+                background-color: var(--npl-bg-tertiary) !important;
+            }
+            
+            /* Dark mode buttons */
+            .button {
+                background-color: var(--npl-bg-tertiary) !important;
+                color: var(--npl-text-primary) !important;
+                border-color: var(--npl-border) !important;
+            }
+            .button.is-primary {
+                background-color: var(--npl-primary) !important;
+                color: var(--npl-bg-primary) !important;
+            }
+            .button.is-info {
+                background-color: var(--npl-info) !important;
+                color: var(--npl-bg-primary) !important;
+            }
+            .button.is-warning {
+                background-color: var(--npl-warning) !important;
+                color: var(--npl-bg-primary) !important;
+            }
+            .button.is-static {
+                background-color: var(--npl-bg-tertiary) !important;
+                color: var(--npl-text-secondary) !important;
+            }
+            
+            /* Dark mode tags */
+            .tag {
+                background-color: var(--npl-bg-tertiary) !important;
+                color: var(--npl-text-primary) !important;
+            }
+            .tag.is-info {
+                background-color: var(--npl-info) !important;
+                color: var(--npl-bg-primary) !important;
+            }
+            .tag.is-light {
+                background-color: var(--npl-bg-tertiary) !important;
+                color: var(--npl-text-primary) !important;
+            }
+            
+            /* Dark mode forms */
+            .input, .textarea, .select select {
+                background-color: var(--npl-bg-secondary) !important;
+                color: var(--npl-text-primary) !important;
+                border-color: var(--npl-border) !important;
+            }
+            .input:focus, .textarea:focus, .select select:focus {
+                border-color: var(--npl-primary) !important;
+                box-shadow: 0 0 0 0.125em rgba(79, 195, 247, 0.25) !important;
+            }
+            
+            /* Dark mode notifications */
+            .notification {
+                background-color: var(--npl-bg-secondary) !important;
+                color: var(--npl-text-primary) !important;
+                border: 1px solid var(--npl-border);
+            }
+            .notification.is-info {
+                background-color: rgba(66, 165, 245, 0.2) !important;
+                border-color: var(--npl-info) !important;
+            }
+            
+            /* Remove old light mode overrides */
+            .position-count {
+                background-color: var(--npl-bg-secondary) !important;
+                color: var(--npl-text-primary) !important;
             }
             
             /* Compact containers */
@@ -168,7 +325,7 @@
             /* Utility classes */
             .is-size-7 { font-size: 12px; }
             .has-text-weight-medium { font-weight: 500; }
-            .has-background-light { background-color: var(--npl-light); }
+            .has-background-light { background-color: var(--npl-text-primary); }
             
             /* Position count navigation styling */
             .position-count .level-item {
@@ -184,13 +341,61 @@
                 font-weight: 500;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
-                color: var(--npl-text-light);
+                color: var(--npl-text-secondary);
             }
             table.team-table td.hidden-on-team {
                 display: none;
             }
             tr.majors td {
                 font-weight: bold;
+            }
+            
+            /* Targeted fixes for dark mode issues - preserve designed colors */
+            * {
+                color-scheme: light !important;
+            }
+            
+            /* Fix specific dark elements without destroying visual hierarchy */
+            .box, .card, .card-content, .hero, .hero-body {
+                background-color: #ffffff !important;
+            }
+            
+            /* Fix light grey subtitle text in hero sections */
+            .box .subtitle, .card .subtitle, .hero .subtitle {
+                color: var(--npl-text-primary) !important;
+            }
+            
+            /* Force light navbar dropdown */
+            .navbar-dropdown, .navbar-dropdown .navbar-item {
+                background-color: #ffffff !important;
+                color: #2c3e50 !important;
+            }
+            
+            /* Fix navbar buttons and user display */
+            .navbar .button.is-static {
+                background-color: #f8f9fa !important;
+                color: #2c3e50 !important;
+                border-color: #dee2e6 !important;
+            }
+            
+            /* Ensure table rows that appear dark are light */
+            .table tbody tr {
+                background-color: #ffffff !important;
+                color: #2c3e50 !important;
+            }
+            
+            /* Force light backgrounds on ALL table elements */
+            .table, .table tbody, .table thead, .table tr, .table td, .table th {
+                background-color: #ffffff !important;
+                color: #2c3e50 !important;
+            }
+            
+            /* Disable dark mode media queries */
+            @media (prefers-color-scheme: dark) {
+                .box, .card, .card-content, .hero, .hero-body {
+                    background-color: #ffffff !important;
+                    color: #2c3e50 !important;
+                }
             }
         </style>
         

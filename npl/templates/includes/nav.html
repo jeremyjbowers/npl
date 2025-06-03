@@ -1,10 +1,10 @@
-<nav class="navbar is-light" role="navigation" aria-label="main navigation" style="position: sticky; top: 0; z-index: 30;">
+<nav class="navbar" role="navigation" aria-label="main navigation" style="position: sticky; top: 0; z-index: 30; background-color: var(--npl-bg-secondary); border-bottom: 1px solid var(--npl-border);">
     <div class="navbar-brand">
-        <a class="navbar-item" href="/">
+        <a class="navbar-item" href="/" style="color: var(--npl-primary) !important;">
             <strong>NPL</strong>
         </a>
 
-        <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarMain">
+        <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarMain" style="color: var(--npl-text-primary);">
             <span aria-hidden="true"></span>
             <span aria-hidden="true"></span>
             <span aria-hidden="true"></span>
@@ -14,8 +14,8 @@
     <div id="navbarMain" class="navbar-menu">
         <div class="navbar-start">
             <div class="navbar-item has-dropdown is-hoverable">
-                <a class="navbar-link">Teams</a>
-                <div class="navbar-dropdown" style="width: 600px; max-width: 90vw;">
+                <a class="navbar-link" style="color: var(--npl-text-primary) !important;">Teams</a>
+                <div class="navbar-dropdown" style="width: 600px; max-width: 90vw; background-color: var(--npl-bg-secondary) !important; border: 1px solid var(--npl-border); box-shadow: 0 8px 16px rgba(0,0,0,0.3);">
                     <div style="display: flex; gap: 2rem; padding: 0.5rem;">
                         <!-- AL Column -->
                         <div style="flex: 1;">
@@ -24,7 +24,7 @@
                                 {% if division.list.0.league.name and 'AL' in division.list.0.league.name or 'American' in division.list.0.league.name %}
                                 <div style="margin-bottom: 1rem;">
                                     <div style="margin-bottom: 0.5rem;">
-                                        <span class="has-text-weight-bold is-size-6 has-text-danger">
+                                        <span class="has-text-weight-bold is-size-6" style="color: #ef5350;">
                                             AL - {{ division.grouper }}
                                         </span>
                                     </div>
@@ -32,9 +32,9 @@
                                         {% for team in division.list %}
                                         <div style="margin-bottom: 0.25rem;">
                                             <a href="/teams/{{ team.short_name|lower }}/" 
-                                               style="color: #363636; text-decoration: none; font-size: 0.875rem; display: block;"
-                                               onmouseover="this.style.color='#3273dc';"
-                                               onmouseout="this.style.color='#363636';">
+                                               style="color: var(--npl-text-primary); text-decoration: none; font-size: 0.875rem; display: block;"
+                                               onmouseover="this.style.color='var(--npl-primary)';"
+                                               onmouseout="this.style.color='var(--npl-text-primary)';">
                                                 {{ team.full_name }}
                                             </a>
                                         </div>
@@ -52,7 +52,7 @@
                                 {% if division.list.0.league.name and 'NL' in division.list.0.league.name or 'National' in division.list.0.league.name %}
                                 <div style="margin-bottom: 1rem;">
                                     <div style="margin-bottom: 0.5rem;">
-                                        <span class="has-text-weight-bold is-size-6" style="color: #1d4ed8;">
+                                        <span class="has-text-weight-bold is-size-6" style="color: #42a5f5;">
                                             NL - {{ division.grouper }}
                                         </span>
                                     </div>
@@ -60,9 +60,9 @@
                                         {% for team in division.list %}
                                         <div style="margin-bottom: 0.25rem;">
                                             <a href="/teams/{{ team.short_name|lower }}/" 
-                                               style="color: #363636; text-decoration: none; font-size: 0.875rem; display: block;"
-                                               onmouseover="this.style.color='#3273dc';"
-                                               onmouseout="this.style.color='#363636';">
+                                               style="color: var(--npl-text-primary); text-decoration: none; font-size: 0.875rem; display: block;"
+                                               onmouseover="this.style.color='var(--npl-primary)';"
+                                               onmouseout="this.style.color='var(--npl-text-primary)';">
                                                 {{ team.full_name }}
                                             </a>
                                         </div>
@@ -76,41 +76,41 @@
                 </div>
             </div>
             
-            <a class="navbar-item" href="https://tbb.quarto.pub/npl-rules/" target="_blank">
+            <a class="navbar-item" href="https://tbb.quarto.pub/npl-rules/" target="_blank" style="color: var(--npl-text-primary) !important;">
                 Rules
                 <span class="icon ml-1">
                     <i class="fas fa-external-link-alt is-size-7"></i>
                 </span>
             </a>
             
-            <a class="navbar-item" href="https://docs.google.com/spreadsheets/d/1M9oFg6jL5cJudu44AlUBkepooy3Ww6WVjqnXeSJf1a8/edit?gid=0#gid=0" target="_blank">
+            <a class="navbar-item" href="https://docs.google.com/spreadsheets/d/1M9oFg6jL5cJudu44AlUBkepooy3Ww6WVjqnXeSJf1a8/edit?gid=0#gid=0" target="_blank" style="color: var(--npl-text-primary) !important;">
                 Auctions
                 <span class="icon ml-1">
                     <i class="fas fa-external-link-alt is-size-7"></i>
                 </span>
             </a>
             
-            <a class="navbar-item" href="https://docs.google.com/forms/d/e/1FAIpQLSfuGt8dFIEhAnR-Ciy2TZ-OeIq7-QtYRZIjUlXD0KsXrB2ILg/viewform" target="_blank">
+            <a class="navbar-item" href="https://docs.google.com/forms/d/e/1FAIpQLSfuGt8dFIEhAnR-Ciy2TZ-OeIq7-QtYRZIjUlXD0KsXrB2ILg/viewform" target="_blank" style="color: var(--npl-text-primary) !important;">
                 Make Transaction
                 <span class="icon ml-1">
                     <i class="fas fa-external-link-alt is-size-7"></i>
                 </span>
             </a>
             
-            <a class="navbar-item" href="https://docs.google.com/spreadsheets/d/1On6uRXLRQ3pzl2FHYRgWKCedsCdl6UNbNaSF6pwlGiw/" target="_blank">
+            <a class="navbar-item" href="https://docs.google.com/spreadsheets/d/1On6uRXLRQ3pzl2FHYRgWKCedsCdl6UNbNaSF6pwlGiw/" target="_blank" style="color: var(--npl-text-primary) !important;">
                 Rosters
                 <span class="icon ml-1">
                     <i class="fas fa-external-link-alt is-size-7"></i>
                 </span>
             </a>
             
-            <a class="navbar-item" href="https://docs.google.com/spreadsheets/d/1UQv_vnBBWUT8BiFRd7tAbvW4COWJ61BNkme7iyzf5po/" target="_blank">
+            <a class="navbar-item" href="https://docs.google.com/spreadsheets/d/1UQv_vnBBWUT8BiFRd7tAbvW4COWJ61BNkme7iyzf5po/" target="_blank" style="color: var(--npl-text-primary) !important;">
                 Transactions
                 <span class="icon ml-1">
                     <i class="fas fa-external-link-alt is-size-7"></i>
                 </span>
             </a>
-            <a class="navbar-item" href="https://npldash.onrender.com/" target="_blank">
+            <a class="navbar-item" href="https://npldash.onrender.com/" target="_blank" style="color: var(--npl-text-primary) !important;">
                 Season Stats
                 <span class="icon ml-1">
                     <i class="fas fa-external-link-alt is-size-7"></i>
@@ -122,21 +122,21 @@
             <div class="navbar-item">
                 {% if user.is_authenticated %}
                     <div class="buttons">
-                        <span class="button is-static is-small">
+                        <span class="button is-static is-small" style="background-color: var(--npl-bg-tertiary) !important; color: var(--npl-text-secondary) !important; border-color: var(--npl-border) !important;">
                             {{ user.email|truncatechars:20 }}
                         </span>
                         {% if user.is_staff %}
-                        <a class="button is-info is-small" href="/admin/">
+                        <a class="button is-info is-small" href="/admin/" style="background-color: var(--npl-info) !important; color: var(--npl-bg-primary) !important;">
                             Admin
                         </a>
                         {% endif %}
-                        <a class="button is-light is-small" href="/accounts/logout/">
+                        <a class="button is-light is-small" href="/accounts/logout/" style="background-color: var(--npl-bg-tertiary) !important; color: var(--npl-text-primary) !important; border-color: var(--npl-border) !important;">
                             Log out
                         </a>
                     </div>
                 {% else %}
                     <div class="buttons">
-                        <a class="button is-primary is-small" href="/accounts/login/">
+                        <a class="button is-primary is-small" href="/accounts/login/" style="background-color: var(--npl-primary) !important; color: var(--npl-bg-primary) !important;">
                             Log in
                         </a>
                     </div>

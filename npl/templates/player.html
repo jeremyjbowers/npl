@@ -3,10 +3,125 @@
 
 {% block title %}{{ p.name }} - The NPL{% endblock %}
 
+{% block extra_head %}
+<style>
+/* Force dark theme for player pages */
+body {
+    background-color: var(--npl-bg-primary) !important;
+    color: var(--npl-text-primary) !important;
+}
+
+/* Dark theme player card */
+.card {
+    background-color: var(--npl-bg-secondary) !important;
+    color: var(--npl-text-primary) !important;
+    border: 1px solid var(--npl-border) !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+}
+
+.card-content {
+    background-color: var(--npl-bg-secondary) !important;
+    color: var(--npl-text-primary) !important;
+    padding: 0 !important;
+}
+
+/* Ensure image container has no border radius */
+.card .image {
+    border-radius: 0 !important;
+}
+
+.card .image img {
+    border-radius: 0 !important;
+}
+
+/* Dark theme titles and subtitles */
+.title {
+    color: var(--npl-text-primary) !important;
+}
+
+.subtitle {
+    color: var(--npl-text-secondary) !important;
+}
+
+.subtitle .has-text-success {
+    color: var(--npl-success) !important;
+}
+
+.subtitle .has-text-grey,
+.subtitle .has-text-grey-dark {
+    color: var(--npl-text-secondary) !important;
+}
+
+/* Dark theme buttons */
+.button.is-outlined.is-link {
+    background-color: transparent !important;
+    color: var(--npl-info) !important;
+    border-color: var(--npl-info) !important;
+}
+
+.button.is-outlined.is-link:hover {
+    background-color: var(--npl-info) !important;
+    color: var(--npl-bg-primary) !important;
+}
+
+.button.is-warning {
+    background-color: var(--npl-warning) !important;
+    color: var(--npl-bg-primary) !important;
+}
+
+/* Dark theme tables */
+.table.stat-table {
+    background-color: var(--npl-bg-secondary) !important;
+    border: 1px solid var(--npl-border) !important;
+    color: var(--npl-text-primary) !important;
+}
+
+.table.stat-table thead th {
+    background-color: var(--npl-bg-tertiary) !important;
+    color: var(--npl-text-primary) !important;
+    border-bottom: 2px solid var(--npl-border) !important;
+}
+
+.table.stat-table tbody td {
+    background-color: var(--npl-bg-secondary) !important;
+    color: var(--npl-text-primary) !important;
+    border-bottom: 1px solid var(--npl-border) !important;
+}
+
+.table.stat-table tbody tr:hover td {
+    background-color: var(--npl-bg-tertiary) !important;
+}
+
+.table.stat-table tbody tr.majors td {
+    background-color: var(--npl-bg-secondary) !important;
+    color: var(--npl-text-primary) !important;
+    font-weight: bold !important;
+}
+
+/* Dark theme notifications */
+.notification.is-info {
+    background-color: rgba(66, 165, 245, 0.2) !important;
+    border: 1px solid var(--npl-info) !important;
+    color: var(--npl-text-primary) !important;
+}
+
+/* Dark theme text colors in tables */
+.table .has-text-grey {
+    color: var(--npl-text-secondary) !important;
+}
+
+/* Section titles */
+h2.title {
+    color: var(--npl-text-primary) !important;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="block">
-    <div class="card" style="border-radius: 0; overflow: hidden;">
-        <div class="card-content" style="padding: 0; display: flex;">
+    <div class="card">
+        <div class="card-content" style="display: flex;">
             <div style="flex-shrink: 0; display: flex;">
                 <figure class="image" style="width: 120px; height: auto; margin: 0; align-self: stretch;">
                     <img src="{{ p.mlb_image_url }}" alt="{{ p.name }}" style="width: 100%; height: 100%; object-fit: cover;">
