@@ -15,14 +15,30 @@
         <div class="navbar-start">
             <div class="navbar-item has-dropdown is-hoverable">
                 <a class="navbar-link">Teams</a>
-                <div class="navbar-dropdown">
-                    {% for team in all_teams %}
-                    <a class="navbar-item" href="/teams/{{ team.short_name|lower }}/">
-                        <div class="is-flex is-align-items-center">
-                            <span class="tag is-light is-small mr-2">{{ team.league.name|default:team.league }}</span>
-                            <span class="has-text-weight-medium">{{ team.full_name }}</span>
+                <div class="navbar-dropdown" style="width: 600px; max-width: 90vw;">
+                    {% regroup all_teams by division.name as division_groups %}
+                    {% for division in division_groups %}
+                    <div class="navbar-item" style="padding: 0.75rem 1rem;">
+                        <div style="margin-bottom: 0.75rem;">
+                            <span class="has-text-weight-bold is-size-6 {% if division.list.0.league.name and 'AL' in division.list.0.league.name or 'American' in division.list.0.league.name %}has-text-danger{% elif division.list.0.league.name and 'NL' in division.list.0.league.name or 'National' in division.list.0.league.name %}{% endif %}" {% if division.list.0.league.name and 'NL' in division.list.0.league.name or 'National' in division.list.0.league.name %}style="color: #1d4ed8;"{% endif %}>
+                                {% if division.list.0.league.name %}
+                                    {% if 'American' in division.list.0.league.name %}AL{% elif 'National' in division.list.0.league.name %}NL{% else %}{{ division.list.0.league.name }}{% endif %} - {{ division.grouper }}
+                                {% else %}
+                                    {{ division.grouper }}
+                                {% endif %}
+                            </span>
                         </div>
-                    </a>
+                        <div class="tags">
+                            {% for team in division.list %}
+                            <a class="tag is-light is-medium" href="/teams/{{ team.short_name|lower }}/" style="margin-bottom: 0.25rem;">
+                                {{ team.short_name }}
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% if not forloop.last %}
+                    <hr class="navbar-divider" style="margin: 0.25rem 0;">
+                    {% endif %}
                     {% endfor %}
                 </div>
             </div>

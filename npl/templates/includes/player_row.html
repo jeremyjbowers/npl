@@ -15,23 +15,19 @@
     <small><a target="_blank" href="{{ p.mlb_url }}">MLB&nbsp;&rarr;</a></small>
   </td>
   <!-- <td>{{ p.get_npl_status }}</td> -->
-  <!-- <td style="text-align:center;">{{ p.get_roster_status }}</td> -->
-  <td style="text-align:center;">{{ p.age|default_if_none:"" }}</td>
-  <td style="text-align:center;">{{ p.mlb_org|default_if_none:""}}</td>
-    <td style="text-align:center;">{% if p.is_roster_40_man %}{{ p.mls_time|floatformat:"3" }}{% else %}{{ p.mls_year|default_if_none:"" }}{% endif %}</td>
-    <td style="text-align:center;">{{ p.options|default_if_none:"" }}</td>
-    <td style="text-align:center;">{{ p.status|default_if_none:""|upper }}</td>
+    <!-- roster_status --><td style="text-align:center;">{{ p.get_roster_status }}</td>
+    <!-- position --><td class="hidden-on-team" style="text-align:center;">{{ p.position|default_if_none:"" }}</td>
+    <!-- age --><td style="text-align:center;">{{ p.age|default_if_none:"" }}</td>
+    <!-- mlb_org --><td style="text-align:center;">{{ p.mlb_org|default_if_none:""}}</td>
+    <!-- mls --><td style="text-align:center;">{% if p.is_roster_40_man %}{{ p.mls_time|floatformat:"3" }}{% else %}{{ p.mls_year|default_if_none:"" }}{% endif %}</td>
+    <!-- opt --><td style="text-align:center;">{{ p.options|default_if_none:"-" }}</td>
+    <!-- status --><td style="text-align:center;">{{ p.status|default_if_none:"-"|upper }}</td>
     {% if user.is_authenticated %}
-    <td style="text-align:center;">
-        {% if p.is_owned %}
-            <span class="tag is-light">Owned</span>
-        {% else %}
-            <button class="button is-small is-primary" 
+    <!-- nominate --><td class="hidden-on-team" style="text-align:center;">
+        {% if not team and not p.is_owned %}
+            <button class="button is-small is-info" 
                     data-player-id="{{ p.mlb_id }}"
                     onclick="openNominationModal('{{ p.mlb_id }}', '{{ p.name|escapejs }}')">
-                <span class="icon is-small">
-                    <i class="fa fa-gavel"></i>
-                </span>
                 <span>Nominate</span>
             </button>
         {% endif %}
@@ -41,17 +37,17 @@
     <!-- contract stuff -->
     {% if p.contract %}
       {% for year in p.contract.years %}
-        <td style="text-align:center;">{% if year.amount != "-" %}${% endif %}{{ year.amount|intcomma }}</td>
+        <!-- contracts --><td style="text-align:center;">{% if year.amount != "-" %}${% endif %}{{ year.amount|intcomma }}</td>
       {% endfor %}
     {% else %}
-    <td style="text-align:center;">-</td>
-    <td style="text-align:center;">-</td>
-    <td style="text-align:center;">-</td>
-    <td style="text-align:center;">-</td>
-    <td style="text-align:center;">-</td>
-    <td style="text-align:center;">-</td>
-    <td style="text-align:center;">-</td>
-    <td style="text-align:center;">-</td>
+<!-- contracts --><td style="text-align:center;">-</td>
+<!-- contracts --><td style="text-align:center;">-</td>
+<!-- contracts --><td style="text-align:center;">-</td>
+<!-- contracts --><td style="text-align:center;">-</td>
+<!-- contracts --><td style="text-align:center;">-</td>
+<!-- contracts --><td style="text-align:center;">-</td>
+<!-- contracts --><td style="text-align:center;">-</td>
+<!-- contracts --><td style="text-align:center;">-</td>
     {% endif %}
   {% endif %}
 </tr>
