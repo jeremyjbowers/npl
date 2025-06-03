@@ -2,6 +2,133 @@
 
 {% block title %}Sign in - The NPL{% endblock %}
 
+{% block extra_head %}
+<style>
+/* Force dark theme for login page */
+body {
+    background-color: var(--npl-bg-primary) !important;
+    color: var(--npl-text-primary) !important;
+}
+
+/* Dark theme login box */
+.box {
+    background-color: var(--npl-bg-secondary) !important;
+    color: var(--npl-text-primary) !important;
+    border: 1px solid var(--npl-border) !important;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* Dark theme titles */
+.title {
+    color: var(--npl-text-primary) !important;
+}
+
+/* Dark theme form elements */
+.label {
+    color: var(--npl-text-primary) !important;
+}
+
+.input {
+    background-color: var(--npl-bg-tertiary) !important;
+    color: var(--npl-text-primary) !important;
+    border-color: var(--npl-border) !important;
+}
+
+.input:focus {
+    border-color: var(--npl-primary) !important;
+    box-shadow: 0 0 0 0.125em rgba(79, 195, 247, 0.25) !important;
+}
+
+.input::placeholder {
+    color: var(--npl-text-secondary) !important;
+}
+
+/* Dark theme icons */
+.icon {
+    color: var(--npl-text-secondary) !important;
+}
+
+/* Dark theme buttons */
+.button.is-primary {
+    background-color: var(--npl-primary) !important;
+    color: var(--npl-bg-primary) !important;
+    border-color: var(--npl-primary) !important;
+}
+
+.button.is-primary:hover {
+    background-color: #42a5f5 !important;
+    border-color: #42a5f5 !important;
+}
+
+/* Dark theme notifications */
+.notification.is-danger {
+    background-color: rgba(239, 83, 80, 0.2) !important;
+    border: 1px solid var(--npl-danger) !important;
+    color: var(--npl-text-primary) !important;
+}
+
+.notification.is-success {
+    background-color: rgba(102, 187, 106, 0.2) !important;
+    border: 1px solid var(--npl-success) !important;
+    color: var(--npl-text-primary) !important;
+}
+
+.notification.is-info {
+    background-color: rgba(66, 165, 245, 0.2) !important;
+    border: 1px solid var(--npl-info) !important;
+    color: var(--npl-text-primary) !important;
+}
+
+.notification.is-warning {
+    background-color: rgba(255, 183, 77, 0.2) !important;
+    border: 1px solid var(--npl-warning) !important;
+    color: var(--npl-text-primary) !important;
+}
+
+/* Remove light modifiers for dark theme */
+.notification.is-light {
+    background-color: transparent !important;
+}
+
+/* Dark theme help text */
+.help {
+    color: var(--npl-text-secondary) !important;
+}
+
+/* Dark theme text elements */
+.has-text-grey {
+    color: var(--npl-text-secondary) !important;
+}
+
+.content.is-small {
+    color: var(--npl-text-secondary) !important;
+}
+
+/* Dark theme hr */
+hr {
+    background-color: var(--npl-border) !important;
+    border: none;
+    height: 1px;
+}
+
+/* Mobile responsiveness */
+@media screen and (max-width: 768px) {
+    .column.is-4 {
+        padding: 1rem;
+    }
+    
+    .box {
+        margin: 0 1rem;
+    }
+    
+    .title.is-4 {
+        font-size: 1.25rem;
+    }
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="columns is-centered">
     <div class="column is-4">
