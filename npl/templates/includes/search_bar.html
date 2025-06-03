@@ -1,6 +1,38 @@
+<style>
+.search-addon {
+    align-items: stretch !important;
+}
+
+.search-addon .control {
+    margin: 0 !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: stretch !important;
+}
+
+.search-addon .input,
+.search-addon .button {
+    height: 2.5em !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.search-addon .control:first-child .input {
+    border-top-left-radius: 4px !important;
+    border-bottom-left-radius: 4px !important;
+}
+
+.search-addon .control:last-child .button {
+    border-top-right-radius: 4px !important;
+    border-bottom-right-radius: 4px !important;
+}
+</style>
+
 <form action="/players/search/" class="box">
     <div class="field">
-        <div class="field has-addons">
+        <div class="field has-addons search-addon">
             <div class="control is-expanded">
                 <input name="name" class="input" type="text" placeholder="Search player name (or leave blank for all)" {% if name %}value="{{ name }}"{% endif %}>
             </div>
