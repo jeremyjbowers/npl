@@ -26,6 +26,45 @@ body {
     padding: 0 !important;
 }
 
+/* Responsive player card layout */
+.player-card-content {
+    display: flex;
+    flex-direction: row;
+}
+
+@media screen and (max-width: 768px) {
+    .player-card-content {
+        flex-direction: column;
+    }
+    
+    .player-image-container {
+        align-self: center !important;
+        margin-bottom: 1rem;
+    }
+    
+    .player-image-container .image {
+        width: 200px !important;
+        height: 200px !important;
+    }
+    
+    .player-content-container {
+        padding: 1rem !important;
+    }
+    
+    .player-title {
+        text-align: center;
+    }
+    
+    .player-subtitle {
+        text-align: center;
+        margin-bottom: 1rem !important;
+    }
+    
+    .player-buttons {
+        text-align: center;
+    }
+}
+
 /* Ensure image container has no border radius */
 .card .image {
     border-radius: 0 !important;
@@ -70,7 +109,7 @@ body {
     color: var(--npl-bg-primary) !important;
 }
 
-/* Dark theme tables */
+/* Dark theme tables with mobile responsiveness */
 .table.stat-table {
     background-color: var(--npl-bg-secondary) !important;
     border: 1px solid var(--npl-border) !important;
@@ -81,12 +120,16 @@ body {
     background-color: var(--npl-bg-tertiary) !important;
     color: var(--npl-text-primary) !important;
     border-bottom: 2px solid var(--npl-border) !important;
+    font-size: 0.8rem;
+    padding: 0.4rem 0.2rem;
 }
 
 .table.stat-table tbody td {
     background-color: var(--npl-bg-secondary) !important;
     color: var(--npl-text-primary) !important;
     border-bottom: 1px solid var(--npl-border) !important;
+    font-size: 0.85rem;
+    padding: 0.4rem 0.2rem;
 }
 
 .table.stat-table tbody tr:hover td {
@@ -97,6 +140,25 @@ body {
     background-color: var(--npl-bg-secondary) !important;
     color: var(--npl-text-primary) !important;
     font-weight: bold !important;
+}
+
+/* Mobile table scrolling */
+@media screen and (max-width: 768px) {
+    .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .table.stat-table {
+        min-width: 800px;
+    }
+    
+    .table.stat-table thead th,
+    .table.stat-table tbody td {
+        white-space: nowrap;
+        font-size: 0.75rem;
+        padding: 0.3rem 0.15rem;
+    }
 }
 
 /* Dark theme notifications */
@@ -121,16 +183,16 @@ h2.title {
 {% block content %}
 <div class="block">
     <div class="card">
-        <div class="card-content" style="display: flex;">
-            <div style="flex-shrink: 0; display: flex;">
+        <div class="card-content player-card-content">
+            <div class="player-image-container" style="flex-shrink: 0; display: flex;">
                 <figure class="image" style="width: 120px; height: auto; margin: 0; align-self: stretch;">
                     <img src="{{ p.mlb_image_url }}" alt="{{ p.name }}" style="width: 100%; height: 100%; object-fit: cover;">
                 </figure>
             </div>
-            <div style="flex: 1; padding: 1.5rem;">
+            <div class="player-content-container" style="flex: 1; padding: 1.5rem;">
                 <div class="media-content">
-                    <h1 class="title is-3">{{ p.position|default_if_none:"" }} {{ p.name }}</h1>
-                    <div class="subtitle">
+                    <h1 class="title is-3 player-title">{{ p.position|default_if_none:"" }} {{ p.name }}</h1>
+                    <div class="subtitle player-subtitle">
                         {% if p.team %}
                             <span class="has-text-weight-semibold has-text-success">{{ p.team.name }}</span>
                         {% else %}
@@ -146,8 +208,8 @@ h2.title {
                         {% endif %}
                     </div>
                     
-                    <div class="content is-small" style="margin-top: 0.75rem;">
-                        <a href="{{ p.mlb_url }}" target="_blank" class="button is-small is-outlined is-link" style="margin-right: 0.5rem;">
+                    <div class="content is-small player-buttons" style="margin-top: 0.75rem;">
+                        <a href="{{ p.mlb_url }}" target="_blank" class="button is-small is-outlined is-link" style="margin-right: 0.5rem; margin-bottom: 0.5rem;">
                             MLB.com
                             <span class="icon ml-1">
                                 <i class="fas fa-external-link-alt is-size-7"></i>

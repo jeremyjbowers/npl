@@ -209,6 +209,60 @@ h1.title, h2.title, h3.title {
     border-top-right-radius: 4px !important;
     border-bottom-right-radius: 4px !important;
 }
+
+/* Mobile responsiveness for financial charts */
+@media screen and (max-width: 480px) {
+    .metric-row {
+        font-size: 0.65rem;
+    }
+    
+    .metric-label {
+        width: 50px;
+        font-size: 0.6rem;
+    }
+    
+    .percentile-bar {
+        margin: 0 0.25rem;
+        height: 6px;
+    }
+    
+    .percentile-value {
+        width: 25px;
+        font-size: 0.6rem;
+    }
+}
+
+/* Team card mobile improvements */
+@media screen and (max-width: 768px) {
+    .team-card {
+        margin-bottom: 1rem;
+    }
+    
+    .team-card .content {
+        padding: 1rem;
+    }
+    
+    .team-card .has-text-weight-medium {
+        font-size: 0.9rem;
+        line-height: 1.2;
+    }
+    
+    .financial-chart {
+        margin-top: 0.75rem;
+    }
+}
+
+/* Division header mobile improvements */
+@media screen and (max-width: 768px) {
+    .division-header {
+        padding: 0.5rem 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .division-header .title {
+        font-size: 1rem;
+    }
+}
 </style>
 {% endblock %}
 

@@ -134,6 +134,65 @@ h1.title, h2.title, h3.title {
 .table tbody tr a:hover {
     color: var(--npl-primary) !important;
 }
+
+/* Mobile responsiveness for team tables */
+@media screen and (max-width: 768px) {
+    .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .table.team-table {
+        min-width: 1000px;
+        font-size: 0.75rem;
+    }
+    
+    .table.team-table th,
+    .table.team-table td {
+        padding: 0.25rem 0.15rem;
+        white-space: nowrap;
+    }
+    
+    .table.team-table th {
+        font-size: 0.65rem;
+    }
+    
+    /* Hide some columns on mobile for better readability */
+    .table.team-table .hidden-mobile {
+        display: none;
+    }
+}
+
+/* Position count mobile improvements */
+@media screen and (max-width: 768px) {
+    .position-count {
+        padding: 1rem !important;
+        flex-wrap: wrap;
+    }
+    
+    .position-count .level-item {
+        margin-bottom: 0.5rem;
+        min-width: calc(25% - 0.5rem);
+    }
+    
+    .position-count .title {
+        font-size: 1.25rem;
+    }
+    
+    .position-count .heading {
+        font-size: 0.65rem;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .position-count .level-item {
+        min-width: calc(50% - 0.5rem);
+    }
+    
+    .position-count .title {
+        font-size: 1rem;
+    }
+}
 </style>
 {% endblock %}
 

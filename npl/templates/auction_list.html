@@ -129,6 +129,80 @@ body {
 .table tbody tr, .table tbody tr td {
     color: var(--npl-text-primary) !important;
 }
+
+/* Mobile responsiveness for auction table */
+@media screen and (max-width: 768px) {
+    .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .auction-table {
+        min-width: 1200px;
+        font-size: 0.7rem;
+    }
+    
+    .auction-table th,
+    .auction-table td {
+        padding: 0.25rem 0.15rem;
+        white-space: nowrap;
+    }
+    
+    .auction-table th {
+        font-size: 0.65rem;
+    }
+    
+    .bid-form {
+        flex-direction: column;
+        gap: 0.15rem;
+    }
+    
+    .bid-input {
+        width: 70px;
+        font-size: 0.65rem;
+        padding: 0.2rem;
+    }
+    
+    .bid-button {
+        font-size: 0.65rem;
+        padding: 0.2rem 0.4rem;
+    }
+    
+    .player-name {
+        font-size: 0.75rem;
+    }
+    
+    .your-bid {
+        font-size: 0.65rem;
+    }
+    
+    .already-bid {
+        font-size: 0.6rem;
+    }
+}
+
+/* Mobile improvements for notification */
+@media screen and (max-width: 768px) {
+    .notification {
+        padding: 0.75rem;
+        font-size: 0.85rem;
+    }
+    
+    .notification ul {
+        margin-left: 1rem;
+    }
+    
+    .notification li {
+        margin-bottom: 0.25rem;
+    }
+}
+
+/* Mobile title improvements */
+@media screen and (max-width: 768px) {
+    .title.is-3 {
+        font-size: 1.5rem;
+    }
+}
 </style>
 {% endblock %}
 

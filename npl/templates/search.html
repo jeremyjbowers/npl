@@ -207,6 +207,64 @@ h1.title, h2.title, h3.title {
     border-top-right-radius: 4px !important;
     border-bottom-right-radius: 4px !important;
 }
+
+/* Mobile table responsiveness */
+@media screen and (max-width: 768px) {
+    .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .table {
+        min-width: 900px;
+        font-size: 0.8rem;
+    }
+    
+    .table th,
+    .table td {
+        padding: 0.3rem 0.2rem;
+        white-space: nowrap;
+    }
+    
+    .table th {
+        font-size: 0.7rem;
+    }
+    
+    /* Adjust button sizes for mobile */
+    .button.is-small {
+        font-size: 0.65rem;
+        padding: 0.2rem 0.4rem;
+    }
+}
+
+/* Position count mobile improvements */
+@media screen and (max-width: 768px) {
+    .position-count {
+        padding: 1rem !important;
+    }
+    
+    .position-count .level-item {
+        margin-bottom: 0.5rem;
+    }
+    
+    .position-count .title {
+        font-size: 1.5rem;
+    }
+    
+    .position-count .heading {
+        font-size: 0.7rem;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .position-count .title {
+        font-size: 1.25rem;
+    }
+    
+    .position-count .heading {
+        font-size: 0.65rem;
+    }
+}
 </style>
 {% endblock %}
 
