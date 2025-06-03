@@ -15,42 +15,64 @@
         <div class="navbar-start">
             <div class="navbar-item has-dropdown is-hoverable">
                 <a class="navbar-link">Teams</a>
-                <div class="navbar-dropdown" style="width: 500px; max-width: 90vw;">
-                    {% regroup all_teams by division.name as division_groups %}
-                    {% for division in division_groups %}
-                    <div class="navbar-item" style="padding: 0.75rem 1rem;">
-                        <div style="margin-bottom: 0.75rem;">
-                            <span class="has-text-weight-bold is-size-6 {% if division.list.0.league.name and 'AL' in division.list.0.league.name or 'American' in division.list.0.league.name %}has-text-danger{% elif division.list.0.league.name and 'NL' in division.list.0.league.name or 'National' in division.list.0.league.name %}{% endif %}" {% if division.list.0.league.name and 'NL' in division.list.0.league.name or 'National' in division.list.0.league.name %}style="color: #1d4ed8;"{% endif %}>
-                                {% if division.list.0.league.name %}
-                                    {% if 'American' in division.list.0.league.name %}AL{% elif 'National' in division.list.0.league.name %}NL{% else %}{{ division.list.0.league.name }}{% endif %} - {{ division.grouper }}
-                                {% else %}
-                                    {{ division.grouper }}
+                <div class="navbar-dropdown" style="width: 600px; max-width: 90vw;">
+                    <div style="display: flex; gap: 2rem; padding: 0.5rem;">
+                        <!-- AL Column -->
+                        <div style="flex: 1;">
+                            {% regroup all_teams by division.name as division_groups %}
+                            {% for division in division_groups %}
+                                {% if division.list.0.league.name and 'AL' in division.list.0.league.name or 'American' in division.list.0.league.name %}
+                                <div style="margin-bottom: 1rem;">
+                                    <div style="margin-bottom: 0.5rem;">
+                                        <span class="has-text-weight-bold is-size-6 has-text-danger">
+                                            AL - {{ division.grouper }}
+                                        </span>
+                                    </div>
+                                    <div style="margin-left: 1rem;">
+                                        {% for team in division.list %}
+                                        <div style="margin-bottom: 0.25rem;">
+                                            <a href="/teams/{{ team.short_name|lower }}/" 
+                                               style="color: #363636; text-decoration: none; font-size: 0.875rem; display: block;"
+                                               onmouseover="this.style.color='#3273dc';"
+                                               onmouseout="this.style.color='#363636';">
+                                                {{ team.full_name }}
+                                            </a>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
                                 {% endif %}
-                            </span>
+                            {% endfor %}
                         </div>
-                        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.25rem;">
-                            {% for team in division.list %}
-                            <a href="/teams/{{ team.short_name|lower }}/" 
-                               style="padding: 0.375rem 0.5rem; 
-                                      background-color: #f5f5f5; 
-                                      border-radius: 4px; 
-                                      text-decoration: none; 
-                                      color: #363636; 
-                                      font-size: 0.875rem; 
-                                      text-align: center; 
-                                      transition: background-color 0.2s;
-                                      min-width: 0;"
-                               onmouseover="this.style.backgroundColor='#e8e8e8';"
-                               onmouseout="this.style.backgroundColor='#f5f5f5';">
-                                {{ team.short_name }}
-                            </a>
+                        
+                        <!-- NL Column -->
+                        <div style="flex: 1;">
+                            {% regroup all_teams by division.name as division_groups %}
+                            {% for division in division_groups %}
+                                {% if division.list.0.league.name and 'NL' in division.list.0.league.name or 'National' in division.list.0.league.name %}
+                                <div style="margin-bottom: 1rem;">
+                                    <div style="margin-bottom: 0.5rem;">
+                                        <span class="has-text-weight-bold is-size-6" style="color: #1d4ed8;">
+                                            NL - {{ division.grouper }}
+                                        </span>
+                                    </div>
+                                    <div style="margin-left: 1rem;">
+                                        {% for team in division.list %}
+                                        <div style="margin-bottom: 0.25rem;">
+                                            <a href="/teams/{{ team.short_name|lower }}/" 
+                                               style="color: #363636; text-decoration: none; font-size: 0.875rem; display: block;"
+                                               onmouseover="this.style.color='#3273dc';"
+                                               onmouseout="this.style.color='#363636';">
+                                                {{ team.full_name }}
+                                            </a>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
                             {% endfor %}
                         </div>
                     </div>
-                    {% if not forloop.last %}
-                    <hr class="navbar-divider" style="margin: 0.25rem 0;">
-                    {% endif %}
-                    {% endfor %}
                 </div>
             </div>
             
