@@ -194,15 +194,34 @@ h1.title, h2.title, h3.title {
 <div class="block">
     <div class="box">
         <h1 class="title is-3">{{ team.name }}</h1>
-        <div class="subtitle">
-            <span>
-                <strong>Owner{% if team.owners.all|length > 1 %}s{% endif %}:</strong>
-                {% for owner in team.owners.all %}
-                    {% if not forloop.first %}, {% endif %}
-                    <span class="tag is-light">{{ owner }}</span>
-                {% endfor %}
-            </span>
+        
+        {% if team.owners.all %}
+        <div class="content">
+            <h4 class="title is-6 mb-3">Owner{% if team.owners.all|length > 1 %}s{% endif %}</h4>
+            {% for owner in team.owners.all %}
+            <div class="media mb-3" style="align-items: center;">
+                <div class="media-content">
+                    <div style="line-height: 1.4;">
+                        <strong style="color: var(--npl-text-primary);">{{ owner.name }}</strong>
+                        {% if owner.title %}
+                        <br>
+                        <span style="color: var(--npl-text-secondary); font-size: 0.9rem;">{{ owner.title }}</span>
+                        {% endif %}
+                        {% if owner.email %}
+                        <br>
+                        <a href="mailto:{{ owner.email }}" style="color: var(--npl-primary); font-size: 0.85rem; text-decoration: none;">
+                            <i class="fas fa-envelope" style="margin-right: 0.25rem;"></i>{{ owner.email }}
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% if not forloop.last %}
+            <hr style="margin: 0.75rem 0; background-color: var(--npl-border);">
+            {% endif %}
+            {% endfor %}
         </div>
+        {% endif %}
         
         {% if team.league %}
         <div class="field is-grouped is-grouped-multiline">
