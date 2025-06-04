@@ -190,12 +190,32 @@ def team_detail(request, short_name):
     context['pitchers'] = team_players.filter(simple_position="P").order_by('-mls_time', 'mls_year')
     context['mlb_hitters'] = team_players.exclude(simple_position="P").exclude(roster_40man=False).order_by('simple_position','-mls_time', 'mls_year')
     context['mlb_pitchers'] = team_players.filter(simple_position="P", roster_40man=True).order_by('-mls_time', 'mls_year')
-    context['aaa_pitchers'] = team_players.filter(simple_position="P", roster_tripleA=True).order_by('-mls_time', 'mls_year')
-    context['aaa_hitters'] = team_players.exclude(simple_position="P").filter(roster_tripleA=True).order_by('-mls_time', 'mls_year')
-    context['aa_pitchers'] = team_players.filter(simple_position="P", roster_doubleA=True).order_by('-mls_time', 'mls_year')
-    context['aa_hitters'] = team_players.exclude(simple_position="P").filter(roster_doubleA=True).order_by('-mls_time', 'mls_year')
-    context['a_pitchers'] = team_players.filter(simple_position="P", roster_singleA=True).order_by('-mls_time', 'mls_year')
-    context['a_hitters'] = team_players.exclude(simple_position="P").filter(roster_singleA=True).order_by('-mls_time', 'mls_year')
+    """
+    ("7-DAY INJURED LIST", "roster_7dayIL"),
+    ("56-DAY INJURED LIST", "roster_56dayIL"),
+    ("END OF SEASON INJURED LIST", "roster_eosIL"),
+    ("RESTRICTED LIST", "roster_restricted"),
+    ("TRIPLE-A", "roster_tripleA"),
+    ("DOUBLE-A", "roster_doubleA"),
+    ("SINGLE-A", "roster_singleA"),
+    ("ON OPTION", "roster_tripleA_option"),
+    ("ASSIGNED OUTRIGHT", "roster_outrighted"),
+    ("FOREIGN", "roster_foreign"),
+    ("RETIRED", "roster_retired"),
+    ("NON-ROSTER", "roster_nonroster")
+    """
+    context['roster_7dayIL'] = team_players.filter(roster_7dayIL=True).order_by('-mls_time', 'mls_year')
+    context['roster_56dayIL'] = team_players.filter(roster_56dayIL=True).order_by('-mls_time', 'mls_year')
+    context['roster_eosIL'] = team_players.filter(roster_eosIL=True).order_by('-mls_time', 'mls_year')
+    context['roster_restricted'] = team_players.filter(roster_restricted=True).order_by('-mls_time', 'mls_year')
+    context['roster_outrighted'] = team_players.filter(roster_outrighted=True).order_by('-mls_time', 'mls_year')
+    context['roster_foreign'] = team_players.filter(roster_foreign=True).order_by('-mls_time', 'mls_year')
+    context['roster_retired'] = team_players.filter(roster_retired=True).order_by('-mls_time', 'mls_year')
+    context['roster_nonroster'] = team_players.filter(roster_nonroster=True).order_by('-mls_time', 'mls_year')
+    context['roster_tripleA'] = team_players.filter(roster_tripleA=True).order_by('-mls_time', 'mls_year')
+    context['roster_tripleA_option'] = team_players.filter(roster_tripleA_option=True).order_by('-mls_time', 'mls_year')
+    context['roster_doubleA'] = team_players.filter(roster_doubleA=True).order_by('-mls_time', 'mls_year')
+    context['roster_singleA'] = team_players.filter(roster_singleA=True).order_by('-mls_time', 'mls_year')
     return render(request, "team.html", context)
 
 def transactions(request):

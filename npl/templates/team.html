@@ -257,8 +257,8 @@ h1.title, h2.title, h3.title {
 <div class="block">
     <h2 class="title is-4" id="mlb-roster">
         MLB Roster
-        <a href="#top" class="button is-small is-light ml-2">
-            <span>top</span>
+        <a href="#top" style="color: var(--npl-text-secondary); text-decoration: none; margin-left: 0.5rem; font-size: 0.875rem;" title="Back to top">
+            <i class="fas fa-angle-double-up"></i>
         </a>
     </h2>
     
@@ -296,11 +296,292 @@ h1.title, h2.title, h3.title {
     </div>
 </div>
 
+{% if roster_7dayIL.count > 0 %}
+<div class="block">
+    <h2 class="title is-4" id="roster-7dayIL">
+        7-Day IL
+        <a href="#top" style="color: var(--npl-text-secondary); text-decoration: none; margin-left: 0.5rem; font-size: 0.875rem;" title="Back to top">
+            <i class="fas fa-angle-double-up"></i>
+        </a>
+    </h2>
+    
+    <div class="table-container">
+        <table class="table is-fullwidth is-striped is-hoverable team-table">
+            <thead>
+                <tr>
+                    <th>Pos</th>
+                    <th>Player</th>
+                    <th></th>
+                    <th>Roster</th>
+                    <th>Age</th>
+                    <th>MLB</th>
+                    <th>MLS</th>
+                    <th>Opt</th>
+                    <th>Status</th>
+                    <th>2025</th>
+                    <th>2026</th>
+                    <th>2027</th>
+                    <th>2028</th>
+                    <th>2029</th>
+                    <th>2030</th>
+                    <th>2031</th>
+                    <th>2032</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in roster_7dayIL %}{% include "includes/player_row.html" %}{% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% if roster_56dayIL.count > 0 %}
+<div class="block">
+    <h2 class="title is-4" id="roster-56dayIL">
+        56-Day IL
+        <a href="#top" style="color: var(--npl-text-secondary); text-decoration: none; margin-left: 0.5rem; font-size: 0.875rem;" title="Back to top">
+            <i class="fas fa-angle-double-up"></i>
+        </a>
+    </h2>
+    
+    <div class="table-container">
+        <table class="table is-fullwidth is-striped is-hoverable team-table">
+            <thead>
+                <tr>
+                    <th>Pos</th>
+                    <th>Player</th>
+                    <th></th>
+                    <th>Roster</th>
+                    <th>Age</th>
+                    <th>MLB</th>
+                    <th>MLS</th>
+                    <th>Opt</th>
+                    <th>Status</th>
+                    <th>2025</th>
+                    <th>2026</th>
+                    <th>2027</th>
+                    <th>2028</th>
+                    <th>2029</th>
+                    <th>2030</th>
+                    <th>2031</th>
+                    <th>2032</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in roster_56dayIL %}{% include "includes/player_row.html" %}{% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% if roster_eosIL.count > 0 %}
+<div class="block">
+    <h2 class="title is-4" id="roster-eosIL">
+        End of Season IL
+        <a href="#top" style="color: var(--npl-text-secondary); text-decoration: none; margin-left: 0.5rem; font-size: 0.875rem;" title="Back to top">
+            <i class="fas fa-angle-double-up"></i>
+        </a>
+    </h2>
+    
+    <div class="table-container">
+        <table class="table is-fullwidth is-striped is-hoverable team-table">
+            <thead>
+                <tr>
+                    <th>Pos</th>
+                    <th>Player</th>
+                    <th></th>
+                    <th>Roster</th>
+                    <th>Age</th>
+                    <th>MLB</th>
+                    <th>MLS</th>
+                    <th>Opt</th>
+                    <th>Status</th>
+                    <th>2025</th>
+                    <th>2026</th>
+                    <th>2027</th>
+                    <th>2028</th>
+                    <th>2029</th>
+                    <th>2030</th>
+                    <th>2031</th>
+                    <th>2032</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in roster_eosIL %}{% include "includes/player_row.html" %}{% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% if roster_restricted.count > 0 %}
+<div class="block">
+    <h2 class="title is-4" id="roster-restricted">
+        Restricted List
+        <a href="#top" style="color: var(--npl-text-secondary); text-decoration: none; margin-left: 0.5rem; font-size: 0.875rem;" title="Back to top">
+            <i class="fas fa-angle-double-up"></i>
+        </a>
+    </h2>
+    
+    <div class="table-container">
+        <table class="table is-fullwidth is-striped is-hoverable team-table">
+            <thead>
+                <tr>
+                    <th>Pos</th>
+                    <th>Player</th>
+                    <th></th>
+                    <th>Roster</th>
+                    <th>Age</th>
+                    <th>MLB</th>
+                    <th>MLS</th>
+                    <th>Opt</th>
+                    <th>Status</th>
+                    <th>2025</th>
+                    <th>2026</th>
+                    <th>2027</th>
+                    <th>2028</th>
+                    <th>2029</th>
+                    <th>2030</th>
+                    <th>2031</th>
+                    <th>2032</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in roster_restricted %}{% include "includes/player_row.html" %}{% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% if roster_foreign.count > 0 %}
+<div class="block">
+    <h2 class="title is-4" id="roster-foreign">
+        Foreign List
+        <a href="#top" style="color: var(--npl-text-secondary); text-decoration: none; margin-left: 0.5rem; font-size: 0.875rem;" title="Back to top">
+            <i class="fas fa-angle-double-up"></i>
+        </a>
+    </h2>
+    
+    <div class="table-container">
+        <table class="table is-fullwidth is-striped is-hoverable team-table">
+            <thead>
+                <tr>
+                    <th>Pos</th>
+                    <th>Player</th>
+                    <th></th>
+                    <th>Roster</th>
+                    <th>Age</th>
+                    <th>MLB</th>
+                    <th>MLS</th>
+                    <th>Opt</th>
+                    <th>Status</th>
+                    <th>2025</th>
+                    <th>2026</th>
+                    <th>2027</th>
+                    <th>2028</th>
+                    <th>2029</th>
+                    <th>2030</th>
+                    <th>2031</th>
+                    <th>2032</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in roster_foreign %}{% include "includes/player_row.html" %}{% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% if roster_outrighted.count > 0 %}
+<div class="block">
+    <h2 class="title is-4" id="roster-outrighted">
+        Outrighted
+        <a href="#top" style="color: var(--npl-text-secondary); text-decoration: none; margin-left: 0.5rem; font-size: 0.875rem;" title="Back to top">
+            <i class="fas fa-angle-double-up"></i>
+        </a>
+    </h2>
+    
+    <div class="table-container">
+        <table class="table is-fullwidth is-striped is-hoverable team-table">
+            <thead>
+                <tr>
+                    <th>Pos</th>
+                    <th>Player</th>
+                    <th></th>
+                    <th>Roster</th>
+                    <th>Age</th>
+                    <th>MLB</th>
+                    <th>MLS</th>
+                    <th>Opt</th>
+                    <th>Status</th>
+                    <th>2025</th>
+                    <th>2026</th>
+                    <th>2027</th>
+                    <th>2028</th>
+                    <th>2029</th>
+                    <th>2030</th>
+                    <th>2031</th>
+                    <th>2032</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in roster_outrighted %}{% include "includes/player_row.html" %}{% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% if roster_nonroster.count > 0 %}
+<div class="block">
+    <h2 class="title is-4" id="roster-nonroster">
+        Non-Roster
+        <a href="#top" style="color: var(--npl-text-secondary); text-decoration: none; margin-left: 0.5rem; font-size: 0.875rem;" title="Back to top">
+            <i class="fas fa-angle-double-up"></i>
+        </a>
+    </h2>
+    
+    <div class="table-container">
+        <table class="table is-fullwidth is-striped is-hoverable team-table">
+            <thead>
+                <tr>
+                    <th>Pos</th>
+                    <th>Player</th>
+                    <th></th>
+                    <th>Roster</th>
+                    <th>Age</th>
+                    <th>MLB</th>
+                    <th>MLS</th>
+                    <th>Opt</th>
+                    <th>Status</th>
+                    <th>2025</th>
+                    <th>2026</th>
+                    <th>2027</th>
+                    <th>2028</th>
+                    <th>2029</th>
+                    <th>2030</th>
+                    <th>2031</th>
+                    <th>2032</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in roster_nonroster %}{% include "includes/player_row.html" %}{% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% if roster_tripleA.count > 0 %}
 <div class="block">
     <h2 class="title is-4" id="aaa-roster">
         AAA Roster
-        <a href="#top" class="button is-small is-light ml-2">
-            <span>top</span>
+        <a href="#top" style="color: var(--npl-text-secondary); text-decoration: none; margin-left: 0.5rem; font-size: 0.875rem;" title="Back to top">
+            <i class="fas fa-angle-double-up"></i>
         </a>
     </h2>
     
@@ -316,6 +597,7 @@ h1.title, h2.title, h3.title {
                     <th>MLB</th>
                     <th>MLS</th>
                     <th>Opt</th>
+                    <th>Status</th>
                     <th>2025</th>
                     <th>2026</th>
                     <th>2027</th>
@@ -327,21 +609,59 @@ h1.title, h2.title, h3.title {
                 </tr>
             </thead>
             <tbody>
-                {% for p in aaa_pitchers %}{% include "includes/player_row.html" %}{% endfor %}
-                {% regroup aaa_hitters by simple_position as position_players %}
-                {% for position in position_players %}
-                    {% for p in position.list %}{% include "includes/player_row.html" %}{% endfor %}
-                {% endfor %}
+                {% for p in roster_tripleA %}{% include "includes/player_row.html" %}{% endfor %}
             </tbody>
         </table>
     </div>
 </div>
+{% endif %}
 
+{% if roster_tripleA_option.count > 0 %}
+<div class="block">
+    <h2 class="title is-4" id="aaa-roster">
+        AAA Roster (On Option)
+        <a href="#top" style="color: var(--npl-text-secondary); text-decoration: none; margin-left: 0.5rem; font-size: 0.875rem;" title="Back to top">
+            <i class="fas fa-angle-double-up"></i>
+        </a>
+    </h2>
+    
+    <div class="table-container">
+        <table class="table is-fullwidth is-striped is-hoverable team-table">
+            <thead>
+                <tr>
+                    <th>Pos</th>
+                    <th>Player</th>
+                    <th></th>
+                    <th>Roster</th>
+                    <th>Age</th>
+                    <th>MLB</th>
+                    <th>MLS</th>
+                    <th>Opt</th>
+                    <th>Status</th>
+                    <th>2025</th>
+                    <th>2026</th>
+                    <th>2027</th>
+                    <th>2028</th>
+                    <th>2029</th>
+                    <th>2030</th>
+                    <th>2031</th>
+                    <th>2032</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in roster_tripleA_option %}{% include "includes/player_row.html" %}{% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% if roster_doubleA.count > 0 %}
 <div class="block">
     <h2 class="title is-4" id="aa-roster">
         AA Roster
-        <a href="#top" class="button is-small is-light ml-2">
-            <span>top</span>
+        <a href="#top" style="color: var(--npl-text-secondary); text-decoration: none; margin-left: 0.5rem; font-size: 0.875rem;" title="Back to top">
+            <i class="fas fa-angle-double-up"></i>
         </a>
     </h2>
     
@@ -369,18 +689,19 @@ h1.title, h2.title, h3.title {
                 </tr>
             </thead>
             <tbody>
-                {% for p in aa_pitchers %}{% include "includes/player_row.html" %}{% endfor %}
-                {% for p in aa_hitters %}{% include "includes/player_row.html" %}{% endfor %}
+                {% for p in roster_doubleA %}{% include "includes/player_row.html" %}{% endfor %}
             </tbody>
         </table>
     </div>
 </div>
+{% endif %}
 
+{% if roster_singleA.count > 0 %}
 <div class="block">
     <h2 class="title is-4" id="a-roster">
         A Roster
-        <a href="#top" class="button is-small is-light ml-2">
-            <span>top</span>
+        <a href="#top" style="color: var(--npl-text-secondary); text-decoration: none; margin-left: 0.5rem; font-size: 0.875rem;" title="Back to top">
+            <i class="fas fa-angle-double-up"></i>
         </a>
     </h2>
     
@@ -408,10 +729,11 @@ h1.title, h2.title, h3.title {
                 </tr>
             </thead>
             <tbody>
-                {% for p in a_pitchers %}{% include "includes/player_row.html" %}{% endfor %}
-                {% for p in a_hitters %}{% include "includes/player_row.html" %}{% endfor %}
+                {% for p in roster_singleA %}{% include "includes/player_row.html" %}{% endfor %}
             </tbody>
         </table>
     </div>
 </div>
+{% endif %}
+
 {% endblock %}

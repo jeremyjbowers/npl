@@ -78,15 +78,15 @@ class Command(BaseCommand):
             for row in sheet:
                 if row == []:
                     continue
+
                 if row == ['', 'FINANCIALS']:
                     current_header = None
                     break
-
                 for header,x in ROSTER_HEADERS:
                     if header in row[1]:
                         current_header = header
-                        
-                if row[0] in ["-", "1"]:
+
+                if row[0].strip() in ["-", "1", ""]:
                     player_dict = {
                         "roster_85man": False,
                         "roster_40man": False,
@@ -120,7 +120,8 @@ class Command(BaseCommand):
                             if "aaa" in key:
                                 player_dict['roster_tripleA'] = True
 
-                        players.append(utils.format_player_row(row, t, player_dict))
+                        if "," in row[1]:
+                            players.append(utils.format_player_row(row, t, player_dict))
 
                 
             for idx, p in enumerate(players):
