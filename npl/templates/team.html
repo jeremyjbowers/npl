@@ -4,12 +4,6 @@
 
 {% block extra_head %}
 <style>
-/* Force dark theme for team pages */
-body {
-    background-color: var(--npl-bg-primary) !important;
-    color: var(--npl-text-primary) !important;
-}
-
 /* Dark theme for team header box */
 .box {
     background-color: var(--npl-bg-secondary) !important;
@@ -99,25 +93,25 @@ h1.title, h2.title, h3.title {
 
 /* Preserve status indicator colors with dark theme backgrounds */
 .table tbody tr.minors td { 
-    background-color: #2d3d2d !important; 
+    background-color: var(--npl-status-minors) !important; 
     color: var(--npl-text-primary) !important;
 }
 .table tbody tr.il-60 td { 
-    background-color: #3d2d3d !important; 
+    background-color: var(--npl-status-il-60) !important; 
     color: var(--npl-text-primary) !important;
 }
 .table tbody tr.il-15 td, 
 .table tbody tr.il-10 td, 
 .table tbody tr.il-7 td { 
-    background-color: #3d3d2d !important; 
+    background-color: var(--npl-status-il-other) !important; 
     color: var(--npl-text-primary) !important;
 }
 .table tbody tr.auction-nonmlb td { 
-    background-color: #333333 !important; 
+    background-color: var(--npl-status-nonmlb) !important; 
     color: var(--npl-text-primary) !important;
 }
 .table tbody tr.owned td { 
-    background-color: #2d3d3d !important; 
+    background-color: var(--npl-status-owned) !important; 
     color: var(--npl-text-primary) !important;
 }
 .table tbody tr.majors td {
@@ -223,7 +217,7 @@ h1.title, h2.title, h3.title {
 </div>
 
 <div class="block">
-    <nav class="level position-count has-background-light p-4" style="border-radius: 8px;">
+    <nav class="level position-count p-4" style="border-radius: 8px;">
         <div class="level-item has-text-centered">
             <div>
                 <p class="heading">Total</p>
@@ -242,7 +236,7 @@ h1.title, h2.title, h3.title {
             <div>
                 <p class="heading">{{ position.grouper }}</p>
                 <p class="title">
-                    <a href="#position-{{ position.grouper }}" class="has-text-dark">
+                    <a href="#position-{{ position.grouper }}">
                         {{ position.list|length }}
                     </a>
                 </p>
@@ -253,7 +247,7 @@ h1.title, h2.title, h3.title {
             <div>
                 <p class="heading">P</p>
                 <p class="title">
-                    <a href="#position-p" class="has-text-dark">{{ pitchers|length }}</a>
+                    <a href="#position-p">{{ pitchers|length }}</a>
                 </p>
             </div>
         </div>

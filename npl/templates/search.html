@@ -4,12 +4,6 @@
 
 {% block extra_head %}
 <style>
-/* Force dark theme for search pages */
-body {
-    background-color: var(--npl-bg-primary) !important;
-    color: var(--npl-text-primary) !important;
-}
-
 /* Dark theme search form */
 form.box {
     background-color: var(--npl-bg-secondary) !important;
@@ -273,7 +267,7 @@ h1.title, h2.title, h3.title {
     {% include "includes/search_bar.html" %}
 
     {% if hitters or pitchers %}
-    <nav class="level position-count has-background-light p-4 mb-4" style="border-radius: 8px;">
+    <nav class="level position-count p-4 mb-4" style="border-radius: 8px;">
         <div class="level-item has-text-centered">
             <div>
                 <p class="heading">Total</p>
@@ -287,7 +281,7 @@ h1.title, h2.title, h3.title {
             <div>
                 <p class="heading">{{ position.grouper }}</p>
                 <p class="title">
-                    <a href="#position-{{ position.grouper }}" class="has-text-dark">
+                    <a href="#position-{{ position.grouper }}">
                         {{ position.list|length }}
                     </a>
                 </p>
@@ -301,7 +295,7 @@ h1.title, h2.title, h3.title {
             <div>
                 <p class="heading">P</p>
                 <p class="title">
-                    <a href="#position-p" class="has-text-dark">{{ pitchers|length }}</a>
+                    <a href="#position-p">{{ pitchers|length }}</a>
                 </p>
             </div>
         </div>

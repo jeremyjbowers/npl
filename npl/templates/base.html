@@ -17,19 +17,48 @@
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
         
         <style type="text/css">
-            /* Dark mode design for data display */
+            /* Theme system with CSS variables */
             :root {
+                /* Light theme variables */
                 --npl-primary: #4fc3f7;
                 --npl-success: #66bb6a;
                 --npl-info: #42a5f5;
                 --npl-warning: #ffb74d;
                 --npl-danger: #ef5350;
+            }
+            
+            /* Light theme */
+            body {
+                --npl-bg-primary: #ffffff;
+                --npl-bg-secondary: #f8f9fa;
+                --npl-bg-tertiary: #e9ecef;
+                --npl-text-primary: #2c3e50;
+                --npl-text-secondary: #6c757d;
+                --npl-border: #dee2e6;
+                
+                /* Light theme status colors */
+                --npl-status-minors: #e8f5e8;
+                --npl-status-il-60: #ffe8e8;
+                --npl-status-il-other: #fff3e0;
+                --npl-status-nonmlb: #f5f5f5;
+                --npl-status-owned: #e3f2fd;
+            }
+            
+            /* Dark theme */
+            body.theme-dark {
                 --npl-bg-primary: #1a1a1a;
                 --npl-bg-secondary: #2d2d2d;
                 --npl-bg-tertiary: #3a3a3a;
                 --npl-text-primary: #ffffff;
                 --npl-text-secondary: #b3b3b3;
                 --npl-border: #404040;
+                
+                /* Dark theme status colors */
+                --npl-status-minors: #2d3d2d;
+                --npl-status-il-60: #3d2d3d;
+                --npl-status-il-other: #3d3d2d;
+                --npl-status-nonmlb: #333333;
+                --npl-status-owned: #2d3d3d;
             }
             
             html, body {
@@ -45,6 +74,7 @@
                 background-color: var(--npl-bg-primary);
                 display: flex;
                 flex-direction: column;
+                transition: background-color 0.3s ease, color 0.3s ease;
             }
             
             main.section {
@@ -120,51 +150,54 @@
             /* Compact tables for data display */
             .table {
                 font-size: 13px;
-                background-color: white;
-                border: 1px solid #e9ecef;
+                background-color: var(--npl-bg-secondary);
+                border: 1px solid var(--npl-border);
                 border-radius: 8px;
                 overflow: hidden;
+                color: var(--npl-text-primary);
             }
             .table thead th {
-                background-color: var(--npl-text-primary);
+                background-color: var(--npl-bg-tertiary);
                 font-weight: 600;
                 font-size: 12px;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
                 padding: 0.75rem 0.5rem;
-                border-bottom: 2px solid #dee2e6;
+                border-bottom: 2px solid var(--npl-border);
                 color: var(--npl-text-primary);
             }
             .table tbody td {
                 padding: 0.5rem;
                 vertical-align: middle;
-                border-bottom: 1px solid #f1f3f4;
+                border-bottom: 1px solid var(--npl-border);
+                background-color: var(--npl-bg-secondary);
+                color: var(--npl-text-primary);
             }
-            .table tbody tr:hover {
-                background-color: #f8f9fa;
+            .table tbody tr:hover td {
+                background-color: var(--npl-bg-tertiary);
             }
             
             /* Status indicators for roster data with dark theme colors */
             .table tbody tr.minors td { 
-                background-color: #2d3d2d !important; 
+                background-color: var(--npl-status-minors) !important; 
                 color: var(--npl-text-primary) !important;
             }
             .table tbody tr.il-60 td { 
-                background-color: #3d2d3d !important; 
+                background-color: var(--npl-status-il-60) !important; 
                 color: var(--npl-text-primary) !important;
             }
             .table tbody tr.il-15 td, 
             .table tbody tr.il-10 td, 
             .table tbody tr.il-7 td { 
-                background-color: #3d3d2d !important; 
+                background-color: var(--npl-status-il-other) !important; 
                 color: var(--npl-text-primary) !important;
             }
             .table tbody tr.auction-nonmlb td { 
-                background-color: #333333 !important; 
+                background-color: var(--npl-status-nonmlb) !important; 
                 color: var(--npl-text-primary) !important;
             }
             .table tbody tr.owned td { 
-                background-color: #2d3d3d !important; 
+                background-color: var(--npl-status-owned) !important; 
                 color: var(--npl-text-primary) !important;
             }
             .table tbody tr.majors td {
@@ -183,6 +216,7 @@
                 box-shadow: 0 2px 0 0 var(--npl-border);
                 border-bottom: 1px solid var(--npl-border);
                 background-color: var(--npl-bg-secondary) !important;
+                transition: background-color 0.3s ease;
             }
             .navbar-brand .navbar-item {
                 font-weight: 700;
@@ -194,6 +228,7 @@
                 padding: 0.5rem 0.75rem;
                 color: var(--npl-text-primary) !important;
                 background-color: transparent !important;
+                transition: background-color 0.3s ease, color 0.3s ease;
             }
             .navbar-item:hover {
                 background-color: var(--npl-bg-tertiary) !important;
@@ -325,7 +360,7 @@
             /* Utility classes */
             .is-size-7 { font-size: 12px; }
             .has-text-weight-medium { font-weight: 500; }
-            .has-background-light { background-color: var(--npl-text-primary); }
+            .has-background-light { background-color: var(--npl-bg-tertiary); }
             
             /* Position count navigation styling */
             .position-count .level-item {
@@ -350,52 +385,25 @@
                 font-weight: bold;
             }
             
-            /* Targeted fixes for dark mode issues - preserve designed colors */
-            * {
-                color-scheme: light !important;
-            }
-            
-            /* Fix specific dark elements without destroying visual hierarchy */
-            .box, .card, .card-content, .hero, .hero-body {
-                background-color: #ffffff !important;
-            }
-            
-            /* Fix light grey subtitle text in hero sections */
-            .box .subtitle, .card .subtitle, .hero .subtitle {
+            /* Theme toggle button */
+            .theme-toggle {
+                background: none !important;
+                border: 1px solid var(--npl-border) !important;
                 color: var(--npl-text-primary) !important;
+                padding: 0.5rem 0.75rem !important;
+                border-radius: 4px !important;
+                cursor: pointer !important;
+                transition: all 0.3s ease !important;
+                font-size: 0.875rem !important;
             }
             
-            /* Force light navbar dropdown */
-            .navbar-dropdown, .navbar-dropdown .navbar-item {
-                background-color: #ffffff !important;
-                color: #2c3e50 !important;
+            .theme-toggle:hover {
+                background-color: var(--npl-bg-tertiary) !important;
+                border-color: var(--npl-primary) !important;
             }
             
-            /* Fix navbar buttons and user display */
-            .navbar .button.is-static {
-                background-color: #f8f9fa !important;
-                color: #2c3e50 !important;
-                border-color: #dee2e6 !important;
-            }
-            
-            /* Ensure table rows that appear dark are light */
-            .table tbody tr {
-                background-color: #ffffff !important;
-                color: #2c3e50 !important;
-            }
-            
-            /* Force light backgrounds on ALL table elements */
-            .table, .table tbody, .table thead, .table tr, .table td, .table th {
-                background-color: #ffffff !important;
-                color: #2c3e50 !important;
-            }
-            
-            /* Disable dark mode media queries */
-            @media (prefers-color-scheme: dark) {
-                .box, .card, .card-content, .hero, .hero-body {
-                    background-color: #ffffff !important;
-                    color: #2c3e50 !important;
-                }
+            .theme-toggle .icon {
+                margin-right: 0.25rem !important;
             }
         </style>
         

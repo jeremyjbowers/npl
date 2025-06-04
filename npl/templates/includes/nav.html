@@ -125,6 +125,13 @@
                         <span class="button is-static is-small" style="background-color: var(--npl-bg-tertiary) !important; color: var(--npl-text-secondary) !important; border-color: var(--npl-border) !important;">
                             {{ user.email|truncatechars:20 }}
                         </span>
+                        <button class="button is-small theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+                            <span class="icon">
+                                <i class="fas fa-moon theme-icon-dark"></i>
+                                <i class="fas fa-sun theme-icon-light" style="display: none;"></i>
+                            </span>
+                            <span class="theme-text">Dark</span>
+                        </button>
                         {% if user.is_staff %}
                         <a class="button is-info is-small" href="/admin/" style="background-color: var(--npl-info) !important; color: var(--npl-bg-primary) !important;">
                             Admin
@@ -136,6 +143,13 @@
                     </div>
                 {% else %}
                     <div class="buttons">
+                        <button class="button is-small theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+                            <span class="icon">
+                                <i class="fas fa-moon theme-icon-dark"></i>
+                                <i class="fas fa-sun theme-icon-light" style="display: none;"></i>
+                            </span>
+                            <span class="theme-text">Dark</span>
+                        </button>
                         <a class="button is-primary is-small" href="/accounts/login/" style="background-color: var(--npl-primary) !important; color: var(--npl-bg-primary) !important;">
                             Log in
                         </a>
@@ -160,5 +174,40 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
+    
+    // Theme management
+    initializeTheme();
 });
+
+function initializeTheme() {
+    // Check for saved theme or default to light
+    const savedTheme = localStorage.getItem('npl-theme') || 'light';
+    applyTheme(savedTheme);
+}
+
+function toggleTheme() {
+    const currentTheme = document.body.classList.contains('theme-dark') ? 'dark' : 'light';
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    applyTheme(newTheme);
+    localStorage.setItem('npl-theme', newTheme);
+}
+
+function applyTheme(theme) {
+    const body = document.body;
+    const darkIcon = document.querySelector('.theme-icon-dark');
+    const lightIcon = document.querySelector('.theme-icon-light');
+    const themeText = document.querySelector('.theme-text');
+    
+    if (theme === 'dark') {
+        body.classList.add('theme-dark');
+        if (darkIcon) darkIcon.style.display = 'none';
+        if (lightIcon) lightIcon.style.display = 'inline';
+        if (themeText) themeText.textContent = 'Light';
+    } else {
+        body.classList.remove('theme-dark');
+        if (darkIcon) darkIcon.style.display = 'inline';
+        if (lightIcon) lightIcon.style.display = 'none';
+        if (themeText) themeText.textContent = 'Dark';
+    }
+}
 </script>
