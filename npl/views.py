@@ -3,20 +3,22 @@ import datetime
 import itertools
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import Count, Avg, Sum, Max, Min, Q
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.http import JsonResponse
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from decimal import *
+from django.contrib import messages
+from django.utils import timezone
 
 import ujson as json
 from datetime import datetime, timedelta
 import pytz
-from django.utils import timezone
 
 from npl import models, utils
+from .forms import TransactionTypeForm, TRANSACTION_FORM_MAP
 
 def auction_bid_api(request, auctionid):
     now = datetime.now(pytz.timezone('US/Eastern'))
@@ -218,11 +220,145 @@ def team_detail(request, short_name):
     context['roster_singleA'] = team_players.filter(roster_singleA=True).order_by('-mls_time', 'mls_year')
     return render(request, "team.html", context)
 
-def transactions(request):
-    context = utils.build_context(request)
-    context['transactions'] = models.Transaction.objects.all()
+def get_next_processing_deadline():
+    """Calculate the next Monday 1 PM EST processing deadline (full datetime)"""
+    import pytz
+    from datetime import datetime, timedelta
+    
+    # Get current time in EST
+    est = pytz.timezone('US/Eastern')
+    now = timezone.now().astimezone(est)
+    
+    # Find next Monday
+    days_ahead = 7 - now.weekday()  # Monday is 0
+    if days_ahead <= 0:  # Target day already happened this week
+        days_ahead += 7
+    elif days_ahead == 7 and now.hour >= 13:  # It's Monday after 1 PM
+        days_ahead = 7  # Next Monday
+    
+    next_monday = now + timedelta(days=days_ahead)
+    # Set to 1 PM EST on that Monday
+    deadline = next_monday.replace(hour=13, minute=0, second=0, microsecond=0)
+    
+    return deadline
 
-    return render(request, 'transactions.html', context)
+def get_next_processing_week():
+    """Calculate the next Monday 1 PM EST processing deadline (date only for database)"""
+    return get_next_processing_deadline().date()
+
+@login_required
+def transaction_form_step1(request):
+    """Step 1: Choose transaction type"""
+    if request.method == 'POST':
+        form = TransactionTypeForm(request.POST)
+        if form.is_valid():
+            transaction_type = form.cleaned_data['transaction_type']
+            return redirect(f'/transactions/form/step2/?type={transaction_type}')
+    else:
+        form = TransactionTypeForm()
+    
+    context = utils.build_context(request)
+    context.update({
+        'form': form,
+        'step': 1,
+        'total_steps': 2,
+        'processing_info': 'Transactions are processed Mondays at 1 PM EST.',
+        'next_deadline': get_next_processing_deadline()
+    })
+    
+    return render(request, 'transactions/form_step1.html', context)
+
+@login_required
+def transaction_form_step2(request):
+    """Step 2: Transaction-specific form"""
+    transaction_type = request.GET.get('type')
+    
+    if not transaction_type or transaction_type not in TRANSACTION_FORM_MAP:
+        messages.error(request, 'Invalid transaction type selected.')
+        return redirect('/transactions/form/')
+    
+    FormClass = TRANSACTION_FORM_MAP[transaction_type]
+    
+    if request.method == 'POST':
+        form = FormClass(request.POST, user=request.user)
+        if form.is_valid():
+            # Create transaction submission
+            team_id = form.cleaned_data.get('team')
+            if isinstance(team_id, str):
+                team = models.Team.objects.get(id=int(team_id))
+            else:
+                team = team_id
+            
+            # Prepare form data for JSON storage
+            form_data = form.cleaned_data.copy()
+            
+            # Convert player object to string for JSON storage
+            if 'player' in form_data:
+                player = form_data['player']
+                if hasattr(player, 'name'):  # It's a Player object
+                    form_data['player'] = player.name
+                    form_data['player_id'] = player.id
+                    form_data['player_mlb_id'] = player.mlb_id
+                # If it's already a string, leave it as is
+            
+            # Convert team object to ID if needed
+            if 'team' in form_data:
+                if hasattr(form_data['team'], 'id'):
+                    form_data['team'] = form_data['team'].id
+            
+            # Convert any other model objects to their string representations
+            for key, value in form_data.items():
+                if hasattr(value, '_meta'):  # It's a Django model instance
+                    form_data[key] = str(value)
+            
+            submission = models.TransactionSubmission.objects.create(
+                user=request.user,
+                team=team,
+                transaction_type=transaction_type,
+                form_data=form_data,
+                processing_week=get_next_processing_week()
+            )
+            
+            messages.success(request, f'Transaction submitted successfully! Reference ID: #{submission.id}')
+            return redirect('/transactions/success/')
+    else:
+        form = FormClass(user=request.user)
+    
+    context = utils.build_context(request)
+    context.update({
+        'form': form,
+        'transaction_type': transaction_type,
+        'transaction_display': dict(TransactionTypeForm.TRANSACTION_CHOICES)[transaction_type],
+        'step': 2,
+        'total_steps': 2,
+        'next_deadline': get_next_processing_deadline()
+    })
+    
+    return render(request, 'transactions/form_step2.html', context)
+
+@login_required
+def transaction_success(request):
+    """Success page after transaction submission"""
+    context = utils.build_context(request)
+    context.update({
+        'recent_submissions': models.TransactionSubmission.objects.filter(
+            user=request.user
+        ).order_by('-created')[:5]
+    })
+    
+    return render(request, 'transactions/success.html', context)
+
+@login_required  
+def transaction_list(request):
+    """List user's transaction submissions"""
+    context = utils.build_context(request)
+    context.update({
+        'submissions': models.TransactionSubmission.objects.filter(
+            user=request.user
+        ).order_by('-created')
+    })
+    
+    return render(request, 'transactions/list.html', context)
 
 def search(request):
     def to_bool(b):
@@ -608,3 +744,9 @@ def nominations_list(request):
     context['approved_nominations'] = approved_nominations
     
     return render(request, "nominations_list.html", context)
+
+def transactions(request):
+    context = utils.build_context(request)
+    context['transactions'] = models.Transaction.objects.all()
+
+    return render(request, 'transactions.html', context)

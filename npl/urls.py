@@ -24,7 +24,14 @@ urlpatterns = [
     
     path('pages/<str:slug>/', views.npl_page_detail),
     path('pages/', views.npl_page_list),
+    
+    # Transaction form system
+    path("transactions/form/", views.transaction_form_step1, name='transaction_form'),
+    path("transactions/form/step2/", views.transaction_form_step2, name='transaction_form_step2'),
+    path("transactions/success/", views.transaction_success, name='transaction_success'),
+    path("transactions/list/", views.transaction_list, name='transaction_list'),
     path("transactions/", views.transactions),
+    
     path("players/search/", views.search),
     path("players/<str:playerid>/", views.player_detail),
     path("teams/<str:short_name>/", views.team_detail),

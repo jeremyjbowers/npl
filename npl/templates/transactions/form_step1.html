@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Transaction Form - Step 1 | The NPL{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="columns is-centered">
+        <div class="column is-half">
+            <div class="box">
+                <h1 class="title is-4">Submit a Transaction</h1>
+                <h2 class="subtitle">Step {{ step }} of {{ total_steps }}</h2>
+                
+                <!-- Progress bar -->
+                <div class="field">
+                    <progress class="progress is-primary" value="{{ step }}" max="{{ total_steps }}">{{ step }}/{{ total_steps }}</progress>
+                </div>
+                
+                <!-- Processing info -->
+                <div class="notification is-info">
+                    <div class="content">
+                        <p><strong>Processing Schedule:</strong> {{ processing_info }}</p>
+                        <p><strong>Next Deadline:</strong> {{ next_deadline|date:"l, F j, Y \a\t g:i A T" }}</p>
+                    </div>
+                </div>
+                
+                <!-- Form -->
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="field">
+                        <label class="label">{{ form.transaction_type.label }}</label>
+                        <div class="control">
+                            <div class="select is-fullwidth">
+                                {{ form.transaction_type }}
+                            </div>
+                        </div>
+                        {% if form.transaction_type.help_text %}
+                        <p class="help">{{ form.transaction_type.help_text }}</p>
+                        {% endif %}
+                        {% if form.transaction_type.errors %}
+                        {% for error in form.transaction_type.errors %}
+                        <p class="help is-danger">{{ error }}</p>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+                    
+                    <div class="field is-grouped">
+                        <div class="control">
+                            <button type="submit" class="button is-primary">
+                                <span class="icon">
+                                    <i class="fas fa-arrow-right"></i>
+                                </span>
+                                <span>Continue</span>
+                            </button>
+                        </div>
+                        <div class="control">
+                            <a href="/transactions/" class="button">
+                                <span class="icon">
+                                    <i class="fas fa-times"></i>
+                                </span>
+                                <span>Cancel</span>
+                            </a>
+                        </div>
+                    </div>
+                </form>
+                
+                <!-- Help section -->
+                <div class="content">
+                    <hr>
+                    <h4 class="title is-6">Transaction Types:</h4>
+                    <div class="columns">
+                        <div class="column">
+                            <ul class="is-size-7">
+                                <li><strong>Injured List:</strong> Place a player on IL (7-day, 15-day, 60-day, or EOS)</li>
+                                <li><strong>Option to Minors:</strong> Send a player to minor league affiliate</li>
+                                <li><strong>Purchase Contract:</strong> Promote a player from minors</li>
+                                <li><strong>Recall Option:</strong> Bring back an optioned player</li>
+                                <li><strong>Release Player:</strong> Release a player from your roster</li>
+                            </ul>
+                        </div>
+                        <div class="column">
+                            <ul class="is-size-7">
+                                <li><strong>Waiver Request:</strong> Place a player on waivers</li>
+                                <li><strong>Waiver Claim:</strong> Claim a player from waivers</li>
+                                <li><strong>Restricted List:</strong> Place player on restricted list</li>
+                                <li><strong>Foreign/Retirement:</strong> Foreign assignment, retirement, or death</li>
+                                <li><strong>In Limbo Assignment:</strong> Special assignment status</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

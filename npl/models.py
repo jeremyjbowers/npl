@@ -198,6 +198,21 @@ class Player(BaseModel):
 
     # NPL statuses
     npl_status = models.CharField(max_length=255, blank=True, null=True)
+    
+    # Computed player_level field for consistent sorting
+    LEVEL_CHOICES = [
+        ('MLB', 'MLB'),
+        ('AAA', 'AAA'),
+        ('AA', 'AA'),
+        ('A', 'A'),
+        ('Rookie', 'Rookie'),
+        ('Foreign', 'Foreign'),
+        ('IL', 'Injured List'),
+        ('Restricted', 'Restricted'),
+        ('Retired', 'Retired'),
+        ('Unknown', 'Unknown'),
+    ]
+    player_level = models.CharField(max_length=20, choices=LEVEL_CHOICES, default='Unknown', help_text="Computed field for sorting")
 
     fg_role_type = models.CharField(max_length=255, blank=True, null=True)
     fg_role = models.CharField(max_length=255, blank=True, null=True)
@@ -256,7 +271,42 @@ class Player(BaseModel):
     stats = models.JSONField(null=True, blank=True)
 
     class Meta():
-        ordering = ['team__short_name', '-roster_40man', 'position', 'last_name']
+        ordering = [
+            # First: Level priority (MLB, AAA, AA, A, Rookie, etc.)
+            models.Case(
+                models.When(player_level='MLB', then=1),
+                models.When(player_level='IL', then=2),
+                models.When(player_level='Restricted', then=3),
+                models.When(player_level='Retired', then=4),
+                models.When(player_level='AAA', then=5),
+                models.When(player_level='AA', then=6),
+                models.When(player_level='A', then=7),
+                models.When(player_level='Rookie', then=8),
+                models.When(player_level='Foreign', then=9),
+                default=10,
+                output_field=models.IntegerField()
+            ),
+            # Second: Position priority (P, C, 1B, 2B, 3B, SS, IF, RF, CF, LF, OF, UT, DH)
+            models.Case(
+                models.When(simple_position='P', then=1),
+                models.When(simple_position='C', then=2),
+                models.When(simple_position='1B', then=3),
+                models.When(simple_position='2B', then=4),
+                models.When(simple_position='3B', then=5),
+                models.When(simple_position='SS', then=6),
+                models.When(simple_position='IF', then=7),
+                models.When(simple_position='RF', then=8),
+                models.When(simple_position='CF', then=9),
+                models.When(simple_position='LF', then=10),
+                models.When(simple_position='OF', then=11),
+                models.When(simple_position='UT', then=12),
+                models.When(simple_position='DH', then=13),
+                default=14,
+                output_field=models.IntegerField()
+            ),
+            # Third: Last name
+            'last_name'
+        ]
 
     def __unicode__(self):
         if self.team:
@@ -489,11 +539,38 @@ class Player(BaseModel):
         if not self.options:
             self.options = 3
 
+    def set_player_level(self):
+        """
+        Set the player_level field based on roster status for consistent sorting
+        """
+        # Check for special statuses first (IL, Restricted, Retired)
+        if self.roster_7dayIL or self.roster_56dayIL or self.roster_eosIL:
+            return 'IL'
+        if self.roster_restricted:
+            return 'Restricted'
+        if self.roster_retired:
+            return 'Retired'
+        if self.roster_foreign:
+            return 'Foreign'
+        # Then check regular roster levels
+        if self.roster_40man:
+            return 'MLB'
+        if self.roster_tripleA or self.roster_tripleA_option:
+            return 'AAA'
+        if self.roster_doubleA:
+            return 'AA'
+        if self.roster_singleA:
+            return 'A'
+        if self.roster_nonroster:
+            return 'Rookie'
+        return "Unknown"
+
     def save(self, *args, **kwargs):
         self.set_name()
         self.set_owned()
         self.set_simple_position()
         self.set_options()
+        self.player_level = self.set_player_level()
 
         super().save(*args, **kwargs)
 
@@ -1350,3 +1427,54 @@ class WishlistPlayer(BaseModel):
 
     class Meta:
         ordering = ['wishlist', 'rank', 'player']
+
+
+class TransactionSubmission(BaseModel):
+    """User-submitted transactions for review and approval"""
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='submitted_transactions')
+    team = models.ForeignKey(Team, on_delete=models.CASCADE)
+    transaction_type = models.CharField(max_length=50)
+    
+    # Flexible JSON field to store all form data
+    form_data = models.JSONField()
+    
+    # Status tracking
+    STATUS_CHOICES = [
+        ('pending', 'Pending Review'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+        ('processed', 'Processed'),
+    ]
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    
+    # Admin notes
+    admin_notes = models.TextField(blank=True, null=True)
+    reviewed_by = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='reviewed_transactions')
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    
+    # Processing deadline (Mondays at 1 PM EST)
+    processing_week = models.DateField(help_text="Week this transaction will be processed")
+    
+    class Meta:
+        ordering = ['-created']
+    
+    def __str__(self):
+        return f"{self.team.short_name} - {self.transaction_type} - {self.status}"
+    
+    @property
+    def transaction_display(self):
+        """Human readable transaction type"""
+        type_map = {
+            'offseason': 'Offseason Transactions',
+            'injured_list': 'Injured List',
+            'option_minors': 'Option to Minor Leagues',
+            'purchase_contract': 'Purchase a Contract',
+            'recall_option': 'Recall an Option',
+            'release_player': 'Release Player',
+            'waiver_request': 'Waiver Request',
+            'waiver_claim': 'Waiver Claim',
+            'limbo_assignment': 'In Limbo Assignment',
+            'restricted_list': 'Restricted List',
+            'foreign_retirement': 'Foreign/Retirement/Death',
+        }
+        return type_map.get(self.transaction_type, self.transaction_type.title())

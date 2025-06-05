@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}My Transaction Submissions | The NPL{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="columns">
+        <div class="column">
+            <div class="level">
+                <div class="level-left">
+                    <div class="level-item">
+                        <div>
+                            <h1 class="title is-4">My Transaction Submissions</h1>
+                            <p class="subtitle">Track the status of your submitted transactions</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="level-right">
+                    <div class="level-item">
+                        <a href="/transactions/form/" class="button is-primary">
+                            <span class="icon">
+                                <i class="fas fa-plus"></i>
+                            </span>
+                            <span>Submit New Transaction</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Processing info -->
+            <div class="notification is-info">
+                <div class="content">
+                    <p><strong>Processing Schedule:</strong> Transactions are processed Mondays at 1 PM EST.</p>
+                    <p><strong>Status Definitions:</strong></p>
+                    <ul>
+                        <li><strong>Pending:</strong> Awaiting admin review</li>
+                        <li><strong>Approved:</strong> Approved and waiting for processing</li>
+                        <li><strong>Rejected:</strong> Not approved (see admin notes)</li>
+                        <li><strong>Processed:</strong> Completed and applied to rosters</li>
+                    </ul>
+                </div>
+            </div>
+            
+            {% if submissions %}
+            <div class="box">
+                <div class="table-container">
+                    <table class="table is-fullwidth is-hoverable">
+                        <thead>
+                            <tr>
+                                <th>Reference ID</th>
+                                <th>Team</th>
+                                <th>Transaction Type</th>
+                                <th>Player/Details</th>
+                                <th>Status</th>
+                                <th>Submitted</th>
+                                <th>Processing Week</th>
+                                <th>Admin Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for submission in submissions %}
+                            <tr>
+                                <td>
+                                    <span class="tag is-light">#{{ submission.id }}</span>
+                                </td>
+                                <td>
+                                    <strong>{{ submission.team.short_name }}</strong><br>
+                                    <span class="is-size-7 has-text-grey">{{ submission.team.full_name }}</span>
+                                </td>
+                                <td>
+                                    <span class="has-text-weight-medium">{{ submission.transaction_display }}</span>
+                                </td>
+                                <td>
+                                    {% if submission.form_data.player %}
+                                    <strong>{{ submission.form_data.player }}</strong><br>
+                                    {% endif %}
+                                    <div class="is-size-7 has-text-grey">
+                                        {% if submission.form_data.il_type %}
+                                        IL Type: {{ submission.form_data.il_type|upper }}
+                                        {% elif submission.form_data.destination_level %}
+                                        To: {{ submission.form_data.destination_level }}
+                                        {% elif submission.form_data.from_level %}
+                                        From: {{ submission.form_data.from_level }}
+                                        {% elif submission.form_data.release_type %}
+                                        Type: {{ submission.form_data.release_type|title }}
+                                        {% elif submission.form_data.waiver_type %}
+                                        Type: {{ submission.form_data.waiver_type|title }}
+                                        {% elif submission.form_data.claiming_from %}
+                                        From: {{ submission.form_data.claiming_from }}
+                                        {% elif submission.form_data.reason %}
+                                        Reason: {{ submission.form_data.reason|title }}
+                                        {% elif submission.form_data.transaction_reason %}
+                                        Type: {{ submission.form_data.transaction_reason|title }}
+                                        {% elif submission.form_data.transaction_type %}
+                                        Type: {{ submission.form_data.transaction_type|title }}
+                                        {% elif submission.form_data.assignment_reason %}
+                                        Reason: {{ submission.form_data.assignment_reason|title }}
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if submission.status == 'pending' %}
+                                    <span class="tag is-warning">Pending Review</span>
+                                    {% elif submission.status == 'approved' %}
+                                    <span class="tag is-success">Approved</span>
+                                    {% elif submission.status == 'rejected' %}
+                                    <span class="tag is-danger">Rejected</span>
+                                    {% elif submission.status == 'processed' %}
+                                    <span class="tag is-info">Processed</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="has-text-weight-medium">{{ submission.created|date:"M j, Y" }}</span><br>
+                                    <span class="is-size-7 has-text-grey">{{ submission.created|date:"g:i A" }}</span>
+                                </td>
+                                <td>
+                                    <span class="has-text-weight-medium">{{ submission.processing_week|date:"M j, Y" }}</span>
+                                </td>
+                                <td>
+                                    {% if submission.admin_notes %}
+                                    <div class="content is-size-7">
+                                        {{ submission.admin_notes|linebreaks }}
+                                    </div>
+                                    {% else %}
+                                    <span class="has-text-grey">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% else %}
+            <div class="box has-text-centered">
+                <div class="content">
+                    <span class="icon is-large has-text-grey-light">
+                        <i class="fas fa-inbox fa-3x"></i>
+                    </span>
+                    <h3 class="title is-5 has-text-grey">No Transaction Submissions</h3>
+                    <p class="subtitle has-text-grey">You haven't submitted any transactions yet.</p>
+                    <a href="/transactions/form/" class="button is-primary">
+                        <span class="icon">
+                            <i class="fas fa-plus"></i>
+                        </span>
+                        <span>Submit Your First Transaction</span>
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Quick links -->
+            <div class="content">
+                <div class="level">
+                    <div class="level-left">
+                        <div class="level-item">
+                            <div>
+                                <h4 class="title is-6">Quick Links</h4>
+                                <div class="buttons">
+                                    <a href="/transactions/" class="button is-small">
+                                        <span class="icon">
+                                            <i class="fas fa-history"></i>
+                                        </span>
+                                        <span>All League Transactions</span>
+                                    </a>
+                                    <a href="https://tbb.quarto.pub/npl-rules/" target="_blank" class="button is-small">
+                                        <span class="icon">
+                                            <i class="fas fa-book"></i>
+                                        </span>
+                                        <span>Transaction Rules</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

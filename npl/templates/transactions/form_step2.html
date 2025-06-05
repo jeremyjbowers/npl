@@ -1,0 +1,390 @@
+{% extends "base.html" %}
+
+{% block title %}Transaction Form - Step 2 | The NPL{% endblock %}
+
+{% block extra_head %}
+<!-- Select2 CSS for typeahead autocomplete -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+    /* Custom Select2 styling to match our theme */
+    .select2-container--default .select2-selection--single {
+        height: 2.5em !important;
+        border: 1px solid var(--npl-border) !important;
+        border-radius: 4px !important;
+        background-color: var(--npl-bg-secondary) !important;
+        color: var(--npl-text-primary) !important;
+    }
+    
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 2.3em !important;
+        color: var(--npl-text-primary) !important;
+        padding-left: 0.75em !important;
+    }
+    
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 2.3em !important;
+        top: 2px !important;
+        right: 8px !important;
+    }
+    
+    .select2-dropdown {
+        background-color: var(--npl-bg-secondary) !important;
+        border: 1px solid var(--npl-border) !important;
+        border-radius: 4px !important;
+        z-index: 9999 !important;
+    }
+    
+    .select2-container--default .select2-results__option {
+        background-color: var(--npl-bg-secondary) !important;
+        color: var(--npl-text-primary) !important;
+        padding: 0.5rem 0.75rem !important;
+    }
+    
+    .select2-container--default .select2-results__option--highlighted[aria-selected] {
+        background-color: var(--npl-primary) !important;
+        color: white !important;
+    }
+    
+    .select2-container--default .select2-search--dropdown .select2-search__field {
+        background-color: var(--npl-bg-primary) !important;
+        border: 1px solid var(--npl-border) !important;
+        color: var(--npl-text-primary) !important;
+        border-radius: 4px !important;
+        padding: 0.5rem !important;
+    }
+    
+    .select2-container--default .select2-search--dropdown .select2-search__field:focus {
+        border-color: var(--npl-primary) !important;
+        box-shadow: 0 0 0 0.125em rgba(79, 195, 247, 0.25) !important;
+    }
+    
+    .select2-container {
+        width: 100% !important;
+    }
+    
+    /* Hide only the original select element when using Select2, not the wrapper */
+    .select.is-fullwidth.has-select2 select {
+        display: none !important;
+    }
+    
+    /* Keep the wrapper visible but remove Bulma select styling */
+    .select.is-fullwidth.has-select2 {
+        position: relative;
+    }
+    
+    .select.is-fullwidth.has-select2::after {
+        display: none; /* Hide Bulma's dropdown arrow */
+    }
+    
+    /* Ensure Select2 container is visible and properly styled */
+    .select2-container.select2-container--default {
+        display: block !important;
+        width: 100% !important;
+    }
+    
+    /* Player option enhanced display */
+    .player-option {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .player-name {
+        font-weight: 500;
+        color: var(--npl-text-primary);
+    }
+    
+    .player-details {
+        font-size: 0.85em;
+        color: var(--npl-text-secondary);
+        margin-top: 2px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="columns is-centered">
+        <div class="column is-half">
+            <div class="box">
+                <h1 class="title is-4">{{ transaction_display }}</h1>
+                <h2 class="subtitle">Step {{ step }} of {{ total_steps }}</h2>
+                
+                <!-- Progress bar -->
+                <div class="field">
+                    <progress class="progress is-primary" value="{{ step }}" max="{{ total_steps }}">{{ step }}/{{ total_steps }}</progress>
+                </div>
+                
+                <!-- Processing info -->
+                <div class="notification is-info">
+                    <div class="content">
+                        <p><strong>Next Processing Deadline:</strong> {{ next_deadline|date:"l, F j, Y \a\t g:i A T" }}</p>
+                    </div>
+                </div>
+                
+                <!-- Form -->
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    {% for field in form %}
+                        <div class="field">
+                            <label class="label">{{ field.label }}</label>
+                            <div class="control">
+                                {% if field.field.widget.input_type == 'textarea' %}
+                                    {{ field }}
+                                {% elif field.field.widget.input_type == 'select' or field.name == 'player' %}
+                                    <div class="select is-fullwidth">
+                                        {{ field }}
+                                    </div>
+                                {% elif field.field.widget.input_type == 'hidden' %}
+                                    {{ field }}
+                                {% else %}
+                                    {{ field }}
+                                {% endif %}
+                            </div>
+                            {% if field.help_text %}
+                            <p class="help">{{ field.help_text }}</p>
+                            {% endif %}
+                            {% if field.errors %}
+                            {% for error in field.errors %}
+                            <p class="help is-danger">{{ error }}</p>
+                            {% endfor %}
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                    
+                    {% if form.non_field_errors %}
+                    <div class="notification is-danger">
+                        {{ form.non_field_errors }}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="field is-grouped">
+                        <div class="control">
+                            <button type="submit" class="button is-primary">
+                                <span class="icon">
+                                    <i class="fas fa-check"></i>
+                                </span>
+                                <span>Submit Transaction</span>
+                            </button>
+                        </div>
+                        <div class="control">
+                            <a href="/transactions/form/" class="button">
+                                <span class="icon">
+                                    <i class="fas fa-arrow-left"></i>
+                                </span>
+                                <span>Back</span>
+                            </a>
+                        </div>
+                        <div class="control">
+                            <a href="/transactions/" class="button">
+                                <span class="icon">
+                                    <i class="fas fa-times"></i>
+                                </span>
+                                <span>Cancel</span>
+                            </a>
+                        </div>
+                    </div>
+                </form>
+                
+                <!-- Help section based on transaction type -->
+                <div class="content">
+                    <hr>
+                    {% if transaction_type == 'offseason' %}
+                    <h4 class="title is-6">Offseason Transaction Guidelines:</h4>
+                    <div class="content is-size-7">
+                        <ul>
+                            <li><strong>Free Agent Signing:</strong> Signing an unowned free agent player</li>
+                            <li><strong>Trade:</strong> Multi-team player exchange (requires coordination with other teams)</li>
+                            <li><strong>Contract Extension:</strong> Extending an existing player's contract</li>
+                            <li><strong>Minor League Contract:</strong> Signing to a minor league deal</li>
+                            <li><strong>Spring Training Invitation:</strong> Non-roster invitations to spring training</li>
+                            <li>All offseason transactions are subject to roster limits and salary cap rules</li>
+                        </ul>
+                    </div>
+                    {% elif transaction_type == 'limbo_assignment' %}
+                    <h4 class="title is-6">In Limbo Assignment Guidelines:</h4>
+                    <div class="content is-size-7">
+                        <ul>
+                            <li><strong>Pending Trade:</strong> Player involved in ongoing trade negotiations</li>
+                            <li><strong>Under Investigation:</strong> Player subject to league or team investigation</li>
+                            <li><strong>Contract Dispute:</strong> Unresolved contract issues</li>
+                            <li>Players in limbo cannot participate in games or other transactions</li>
+                            <li>Limbo assignments require admin approval before processing</li>
+                        </ul>
+                    </div>
+                    {% elif transaction_type == 'injured_list' %}
+                    <h4 class="title is-6">Injured List Guidelines:</h4>
+                    <div class="content is-size-7">
+                        <ul>
+                            <li><strong>7-Day IL:</strong> Minimum 7 days, typically for minor injuries</li>
+                            <li><strong>15-Day IL:</strong> Minimum 15 days, for moderate injuries</li>
+                            <li><strong>60-Day IL:</strong> Minimum 60 days, for major injuries or surgeries</li>
+                            <li><strong>End of Season IL:</strong> For season-ending injuries</li>
+                            <li>Players can be placed retroactively up to 10 days</li>
+                        </ul>
+                    </div>
+                    {% elif transaction_type == 'option_minors' %}
+                    <h4 class="title is-6">Option Rules:</h4>
+                    <div class="content is-size-7">
+                        <ul>
+                            <li>Players must have option years remaining</li>
+                            <li>Players with 5+ years service time cannot be optioned without consent</li>
+                            <li>Once optioned, player must stay in minors for 10 days (unless injury)</li>
+                        </ul>
+                    </div>
+                    {% elif transaction_type == 'waiver_request' %}
+                    <h4 class="title is-6">Waiver Process:</h4>
+                    <div class="content is-size-7">
+                        <ul>
+                            <li>Players are placed on waivers for 48 hours</li>
+                            <li>Teams can claim in reverse order of standings</li>
+                            <li>If claimed, you can pull back or let the claim go through</li>
+                        </ul>
+                    </div>
+                    {% elif transaction_type == 'waiver_claim' %}
+                    <h4 class="title is-6">Waiver Claims:</h4>
+                    <div class="content is-size-7">
+                        <ul>
+                            <li>Claims are processed in reverse order of standings</li>
+                            <li>You must have roster space to claim a player</li>
+                            <li>Claiming team assumes player's current contract</li>
+                        </ul>
+                    </div>
+                    {% elif transaction_type == 'purchase_contract' %}
+                    <h4 class="title is-6">Purchase Contract Guidelines:</h4>
+                    <div class="content is-size-7">
+                        <ul>
+                            <li><strong>Eligible Players:</strong> Only players from your minor league system who are not on the 40-man roster</li>
+                            <li><strong>Automatic Level Detection:</strong> The system will automatically determine which level the player is being promoted from</li>
+                            <li><strong>40-Man Roster:</strong> Purchasing a contract moves the player to your 40-man roster</li>
+                            <li><strong>Contract Details:</strong> Specify salary, length, terms, and any special conditions</li>
+                            <li>Players must have option years remaining or be first-time major league contracts</li>
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extrascript %}
+<!-- Select2 JavaScript for typeahead autocomplete -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Select2 for player selection fields
+    const playerField = $('#id_player');
+    
+    if (playerField.length > 0) {
+        // Check if it's a select field or text input
+        if (playerField.is('select')) {
+            // Mark the wrapper before initializing Select2
+            playerField.closest('.select.is-fullwidth').addClass('has-select2');
+            
+            playerField.select2({
+                placeholder: "Search for a player...",
+                allowClear: true,
+                width: '100%',
+                dropdownParent: playerField.closest('.field'),
+                templateResult: function(option) {
+                    if (!option.id) {
+                        return option.text;
+                    }
+                    
+                    // Parse the enhanced display text
+                    // Format: "Name (Position) - Team (Level)"
+                    var fullText = option.text;
+                    var parts = fullText.split(' - ');
+                    var nameAndPosition = parts[0] || fullText;
+                    var teamAndLevel = parts[1] || '';
+                    
+                    // Further parse name and position
+                    var nameParts = nameAndPosition.match(/^(.+?)\s*(\([^)]+\))?\s*$/);
+                    var playerName = nameParts ? nameParts[1] : nameAndPosition;
+                    var position = nameParts && nameParts[2] ? nameParts[2] : '';
+                    
+                    // Parse team and level from "Team (Level)" format
+                    var teamLevelMatch = teamAndLevel.match(/^(.+?)\s*\(([^)]+)\)\s*$/);
+                    var teamInfo = teamLevelMatch ? teamLevelMatch[1] : teamAndLevel;
+                    var levelInfo = teamLevelMatch ? teamLevelMatch[2] : '';
+                    
+                    // Enhanced display with player info
+                    var $option = $(
+                        '<div class="player-option">' +
+                            '<div class="player-name">' + playerName + '</div>' +
+                            '<div class="player-details">' + 
+                                (position ? position + ' ' : '') +
+                                (teamInfo ? '• ' + teamInfo : '') +
+                                (levelInfo ? ' • ' + levelInfo : '') +
+                            '</div>' +
+                        '</div>'
+                    );
+                    return $option;
+                },
+                templateSelection: function(option) {
+                    return option.text || "Search for a player...";
+                },
+                matcher: function(params, data) {
+                    // If there are no search terms, return all options
+                    if ($.trim(params.term) === '') {
+                        return data;
+                    }
+                    
+                    // Return null if the option doesn't contain the search term
+                    var searchTerm = params.term.toLowerCase();
+                    var optionText = data.text.toLowerCase();
+                    
+                    // Search in full text (name, position, team)
+                    if (optionText.indexOf(searchTerm) > -1) {
+                        return data;
+                    }
+                    
+                    return null;
+                },
+
+            });
+            
+        } else {
+            // For text inputs, add some basic autocomplete styling
+            playerField.attr('placeholder', 'Start typing player name...');
+            playerField.addClass('player-text-input');
+        }
+    }
+    
+    // Initialize Select2 for other select fields with many options
+    $('select').not('#id_player').each(function() {
+        var optionCount = $(this).find('option').length;
+        if (optionCount > 8) { // Only for selects with many options
+            $(this).closest('.select.is-fullwidth').addClass('has-select2');
+            $(this).select2({
+                width: '100%',
+                dropdownParent: $(this).closest('.field'),
+                placeholder: "Select an option...",
+                allowClear: false
+            });
+        }
+    });
+    
+    // Handle theme changes - update Select2 styling
+    function updateSelect2Theme() {
+        $('.select2-container').each(function() {
+            $(this).addClass('theme-updated');
+        });
+    }
+    
+    // Initial theme update
+    updateSelect2Theme();
+    
+    // Listen for theme changes if the theme toggle exists
+    if (typeof toggleTheme === 'function') {
+        var originalToggleTheme = toggleTheme;
+        toggleTheme = function() {
+            originalToggleTheme();
+            setTimeout(updateSelect2Theme, 100);
+        };
+    }
+});
+</script>
+{% endblock %} 
