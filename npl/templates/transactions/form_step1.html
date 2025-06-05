@@ -2,6 +2,29 @@
 
 {% block title %}Transaction Form - Step 1 | The NPL{% endblock %}
 
+{% block extra_head %}
+<style>
+    /* Fix form labels for dark mode compatibility */
+    .label {
+        color: var(--npl-text-primary) !important;
+    }
+    
+    /* Style help text properly */
+    .help {
+        color: var(--npl-text-secondary) !important;
+    }
+    
+    /* Style title headers */
+    .title {
+        color: var(--npl-text-primary) !important;
+    }
+    
+    .subtitle {
+        color: var(--npl-text-secondary) !important;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container">
     <div class="columns is-centered">
