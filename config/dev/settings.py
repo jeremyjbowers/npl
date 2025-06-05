@@ -94,9 +94,9 @@ CACHES = {
     }
 }
 
-# Cache session backend for better performance  
-SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
-SESSION_CACHE_ALIAS = 'default'
+# Use pure database sessions for reliable persistence
+# cached_db can cause session issues if cache expires before session
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 
 AUTH_PASSWORD_VALIDATORS = [
     {
