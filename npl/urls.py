@@ -43,5 +43,6 @@ urlpatterns = [
     path("players/<str:playerid>/", views.player_detail),
     path("teams/<str:short_name>/", views.team_detail),
     path("teams/my/wishlist/", views.my_wishlist),
+    path("robots.txt", views.robots_txt),
     path("", views.index, name='index'),
 ]

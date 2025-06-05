@@ -356,6 +356,7 @@ def transaction_list(request):
     
     return render(request, 'transactions/list.html', context)
 
+@login_required
 def search(request):
     def to_bool(b):
         if b.lower() in ["y", "yes", "t", "true", "on"]:
@@ -799,3 +800,47 @@ def transactions(request):
     context['transactions'] = transactions_page
     
     return render(request, 'transactions.html', context)
+
+def robots_txt(request):
+    """Serve robots.txt to block all crawlers"""
+    lines = [
+        "User-agent: *",
+        "Disallow: /",
+        "",
+        "# Block all crawlers from everything",
+        "User-agent: Googlebot",
+        "Disallow: /",
+        "",
+        "User-agent: Bingbot", 
+        "Disallow: /",
+        "",
+        "User-agent: Slurp",
+        "Disallow: /",
+        "",
+        "User-agent: DuckDuckBot",
+        "Disallow: /",
+        "",
+        "User-agent: Baiduspider",
+        "Disallow: /",
+        "",
+        "User-agent: YandexBot",
+        "Disallow: /",
+        "",
+        "User-agent: facebookexternalhit",
+        "Disallow: /",
+        "",
+        "User-agent: Twitterbot",
+        "Disallow: /",
+        "",
+        "User-agent: LinkedInBot",
+        "Disallow: /",
+        "",
+        "User-agent: WhatsApp",
+        "Disallow: /",
+        "",
+        "User-agent: Applebot",
+        "Disallow: /",
+        "",
+        "# No sitemap provided intentionally"
+    ]
+    return HttpResponse("\n".join(lines), content_type="text/plain")
