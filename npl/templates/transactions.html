@@ -1,28 +1,179 @@
 {% extends "base.html" %}
 
 {% block content %}
-<section>
-    <table class="table">
-        <thead>
-            <th style="text-align:center;">date</th>
-            <th style="text-align:center;">team</th>
-            <th style="text-align:center;">player</th>
-            <th style="text-align:center;">transaction</th>
-            <th style="text-align:center;">acquiring team</th>
-            <th style="text-align:center;">notes</th>
-        </thead>
-        <tbody>
-            {% for t in transactions %}
-            <tr>
-                <td style="text-align:center;" id="transaction-{{ t.id }}">{{ t.date }}</td>
-                <td style="text-align:center;">{{ t.calculated_team }}</td>
-                <td>{{ t.calculated_player }}</td>
-                <td style="text-align:center;">{{ t.transaction_type }}</td>
-                <td style="text-align:center;">{{ t.calculated_acquiring_team|default_if_none:"" }}</td>
-                <td>{{ t.notes|default_if_none:"" }}</td>
-            </tr>
+<div class="container">
+    <div class="block">
+        <h1 class="title is-3">All Transactions</h1>
+        
+        <!-- Transaction count and pagination info -->
+        <div class="level">
+            <div class="level-left">
+                <div class="level-item">
+                    <p class="subtitle is-6">
+                        Showing {{ transactions.start_index }} - {{ transactions.end_index }} of {{ transactions.paginator.count }} transactions
+                    </p>
+                </div>
+            </div>
+            <div class="level-right">
+                <div class="level-item">
+                    <p class="subtitle is-6">
+                        Page {{ transactions.number }} of {{ transactions.paginator.num_pages }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination (top) -->
+    {% if transactions.has_other_pages %}
+    <nav class="pagination is-centered" role="navigation" aria-label="pagination">
+        {% if transactions.has_previous %}
+            <a href="?page=1" class="pagination-previous" style="background-color: var(--npl-bg-secondary); color: var(--npl-text-primary); border-color: var(--npl-border);">
+                First
+            </a>
+            <a href="?page={{ transactions.previous_page_number }}" class="pagination-previous" style="background-color: var(--npl-bg-secondary); color: var(--npl-text-primary); border-color: var(--npl-border);">
+                Previous
+            </a>
+        {% else %}
+            <span class="pagination-previous" style="background-color: var(--npl-bg-tertiary); color: var(--npl-text-secondary); border-color: var(--npl-border);" disabled>
+                Previous
+            </span>
+        {% endif %}
+
+        {% if transactions.has_next %}
+            <a href="?page={{ transactions.next_page_number }}" class="pagination-next" style="background-color: var(--npl-bg-secondary); color: var(--npl-text-primary); border-color: var(--npl-border);">
+                Next
+            </a>
+            <a href="?page={{ transactions.paginator.num_pages }}" class="pagination-next" style="background-color: var(--npl-bg-secondary); color: var(--npl-text-primary); border-color: var(--npl-border);">
+                Last
+            </a>
+        {% else %}
+            <span class="pagination-next" style="background-color: var(--npl-bg-tertiary); color: var(--npl-text-secondary); border-color: var(--npl-border);" disabled>
+                Next
+            </span>
+        {% endif %}
+
+        <ul class="pagination-list">
+            {% for num in transactions.paginator.page_range %}
+                {% if transactions.number == num %}
+                    <li>
+                        <span class="pagination-link is-current" style="background-color: var(--npl-primary); color: var(--npl-bg-primary); border-color: var(--npl-primary);">
+                            {{ num }}
+                        </span>
+                    </li>
+                {% elif num > transactions.number|add:'-3' and num < transactions.number|add:'3' %}
+                    <li>
+                        <a href="?page={{ num }}" class="pagination-link" style="background-color: var(--npl-bg-secondary); color: var(--npl-text-primary); border-color: var(--npl-border);">
+                            {{ num }}
+                        </a>
+                    </li>
+                {% elif num == 1 or num == transactions.paginator.num_pages %}
+                    <li>
+                        <a href="?page={{ num }}" class="pagination-link" style="background-color: var(--npl-bg-secondary); color: var(--npl-text-primary); border-color: var(--npl-border);">
+                            {{ num }}
+                        </a>
+                    </li>
+                {% elif num == transactions.number|add:'-4' or num == transactions.number|add:'4' %}
+                    <li>
+                        <span class="pagination-ellipsis" style="color: var(--npl-text-secondary);">&hellip;</span>
+                    </li>
+                {% endif %}
             {% endfor %}
-        </tbody>
-    </table>
-</section>
+        </ul>
+    </nav>
+    {% endif %}
+
+    <!-- Transactions table -->
+    <div class="table-container">
+        <table class="table is-fullwidth is-striped is-hoverable" style="background-color: var(--npl-bg-primary); color: var(--npl-text-primary);">
+            <thead>
+                <tr style="background-color: var(--npl-bg-secondary);">
+                    <th class="has-text-centered" style="color: var(--npl-text-primary);">Date</th>
+                    <th class="has-text-centered" style="color: var(--npl-text-primary);">Team</th>
+                    <th style="color: var(--npl-text-primary);">Player</th>
+                    <th class="has-text-centered" style="color: var(--npl-text-primary);">Transaction</th>
+                    <th class="has-text-centered" style="color: var(--npl-text-primary);">Acquiring Team</th>
+                    <th style="color: var(--npl-text-primary);">Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in transactions %}
+                <tr id="transaction-{{ t.id }}" style="background-color: var(--npl-bg-primary); color: var(--npl-text-primary);">
+                    <td class="has-text-centered">{{ t.date }}</td>
+                    <td class="has-text-centered">{{ t.calculated_team }}</td>
+                    <td>{{ t.calculated_player }}</td>
+                    <td class="has-text-centered">{{ t.transaction_type }}</td>
+                    <td class="has-text-centered">{{ t.calculated_acquiring_team|default_if_none:"" }}</td>
+                    <td>{{ t.notes|default_if_none:"" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="has-text-centered" style="color: var(--npl-text-secondary);">
+                        No transactions found.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if transactions.has_other_pages %}
+    <nav class="pagination is-centered" role="navigation" aria-label="pagination">
+        {% if transactions.has_previous %}
+            <a href="?page=1" class="pagination-previous" style="background-color: var(--npl-bg-secondary); color: var(--npl-text-primary); border-color: var(--npl-border);">
+                First
+            </a>
+            <a href="?page={{ transactions.previous_page_number }}" class="pagination-previous" style="background-color: var(--npl-bg-secondary); color: var(--npl-text-primary); border-color: var(--npl-border);">
+                Previous
+            </a>
+        {% else %}
+            <span class="pagination-previous" style="background-color: var(--npl-bg-tertiary); color: var(--npl-text-secondary); border-color: var(--npl-border);" disabled>
+                Previous
+            </span>
+        {% endif %}
+
+        {% if transactions.has_next %}
+            <a href="?page={{ transactions.next_page_number }}" class="pagination-next" style="background-color: var(--npl-bg-secondary); color: var(--npl-text-primary); border-color: var(--npl-border);">
+                Next
+            </a>
+            <a href="?page={{ transactions.paginator.num_pages }}" class="pagination-next" style="background-color: var(--npl-bg-secondary); color: var(--npl-text-primary); border-color: var(--npl-border);">
+                Last
+            </a>
+        {% else %}
+            <span class="pagination-next" style="background-color: var(--npl-bg-tertiary); color: var(--npl-text-secondary); border-color: var(--npl-border);" disabled>
+                Next
+            </span>
+        {% endif %}
+
+        <ul class="pagination-list">
+            {% for num in transactions.paginator.page_range %}
+                {% if transactions.number == num %}
+                    <li>
+                        <span class="pagination-link is-current" style="background-color: var(--npl-primary); color: var(--npl-bg-primary); border-color: var(--npl-primary);">
+                            {{ num }}
+                        </span>
+                    </li>
+                {% elif num > transactions.number|add:'-3' and num < transactions.number|add:'3' %}
+                    <li>
+                        <a href="?page={{ num }}" class="pagination-link" style="background-color: var(--npl-bg-secondary); color: var(--npl-text-primary); border-color: var(--npl-border);">
+                            {{ num }}
+                        </a>
+                    </li>
+                {% elif num == 1 or num == transactions.paginator.num_pages %}
+                    <li>
+                        <a href="?page={{ num }}" class="pagination-link" style="background-color: var(--npl-bg-secondary); color: var(--npl-text-primary); border-color: var(--npl-border);">
+                            {{ num }}
+                        </a>
+                    </li>
+                {% elif num == transactions.number|add:'-4' or num == transactions.number|add:'4' %}
+                    <li>
+                        <span class="pagination-ellipsis" style="color: var(--npl-text-secondary);">&hellip;</span>
+                    </li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
 {% endblock %}

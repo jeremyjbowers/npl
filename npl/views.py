@@ -742,6 +742,23 @@ def nominations_list(request):
 
 def transactions(request):
     context = utils.build_context(request)
-    context['transactions'] = models.Transaction.objects.all()
-
+    
+    # Get all transactions ordered by date (newest first)
+    transactions_list = models.Transaction.objects.all().order_by('-date', '-id')
+    
+    # Set up pagination (250 transactions per page)
+    paginator = Paginator(transactions_list, 250)
+    page_number = request.GET.get('page')
+    
+    try:
+        transactions_page = paginator.page(page_number)
+    except PageNotAnInteger:
+        # If page is not an integer, deliver first page
+        transactions_page = paginator.page(1)
+    except EmptyPage:
+        # If page is out of range, deliver last page
+        transactions_page = paginator.page(paginator.num_pages)
+    
+    context['transactions'] = transactions_page
+    
     return render(request, 'transactions.html', context)
