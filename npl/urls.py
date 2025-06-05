@@ -1,10 +1,17 @@
 from django.contrib import admin
 from django.urls import include, path
+from django.shortcuts import redirect
 
 from npl import views
 from npl import auth
 
+def admin_login_redirect(request):
+    """Redirect admin login to our magic link login"""
+    return redirect('account_login')
+
 urlpatterns = [
+    # Redirect admin login to our magic link login
+    path("admin/login/", admin_login_redirect, name='admin_login_redirect'),
     path("admin/", admin.site.urls),
     path('api/v1/auctions/bid/<str:auctionid>/', views.auction_bid_api),
     path('api/v1/auctions/test/', views.auction_test_view),
