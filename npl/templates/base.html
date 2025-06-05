@@ -412,7 +412,18 @@
     <body>
         {% include "includes/nav.html" %}
         
-        <main class="section">
+        <!-- Beta Warning Banner -->
+        <div class="beta-banner" style="position: fixed; top: 3.25rem; left: 0; right: 0; z-index: 25; background-color: var(--npl-warning); color: #000; padding: 0.75rem 1rem; text-align: center; border-bottom: 1px solid rgba(0,0,0,0.1); font-weight: 500; font-size: 0.9rem;">
+            <div class="container">
+                <span class="icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </span>
+                <strong>This site is in beta - many functions do not work yet.</strong>
+                Please continue using the Google forms and sheets until this banner is removed.
+            </div>
+        </div>
+        
+        <main class="section" style="padding-top: 6.5rem;">
             <div class="container">
                 {% block content %}{% endblock %}
             </div>
