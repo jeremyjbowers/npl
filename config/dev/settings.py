@@ -79,6 +79,25 @@ DATABASES = {
     }
 }
 
+# CACHES
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'django_cache_table',
+        'TIMEOUT': 300,  # 5 minutes default timeout
+        'KEY_PREFIX': 'npl_dev_',
+        'VERSION': 1,
+        'OPTIONS': {
+            'MAX_ENTRIES': 10000,  # Limit cache table size
+            'CULL_FREQUENCY': 4,   # Delete 1/4 of entries when MAX_ENTRIES reached
+        }
+    }
+}
+
+# Cache session backend for better performance  
+SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
+SESSION_CACHE_ALIAS = 'default'
+
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
@@ -129,7 +148,6 @@ SESAME_ONE_TIME = False
 SESAME_INVALIDATE_ON_PASSWORD_CHANGE = False
 
 # SESSION SETTINGS (Database-backed for persistence across deployments)
-SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 SESSION_COOKIE_AGE = 60 * 60 * 24 * 30  # 30 days
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 SESSION_SAVE_EVERY_REQUEST = True
@@ -265,4 +283,4 @@ LEVELS = [
 
 ## LEAGUE STUFF
 LEAGUE_YEAR = 2025
-LEAGUE_SEASON = "offseason"
+LEAGUE_SEASON = "midseason"

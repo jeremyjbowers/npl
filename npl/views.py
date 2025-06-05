@@ -3,6 +3,8 @@ import datetime
 import itertools
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.cache import cache_page
+from django.views.decorators.vary import vary_on_headers
 from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import Count, Avg, Sum, Max, Min, Q
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
@@ -17,7 +19,7 @@ import ujson as json
 from datetime import datetime, timedelta
 import pytz
 
-from npl import models, utils
+from npl import models, utils, cache_helpers
 from .forms import TransactionTypeForm, TRANSACTION_FORM_MAP
 
 def auction_bid_api(request, auctionid):
@@ -165,21 +167,25 @@ def npl_page_detail(request, slug):
     context['page'] = get_object_or_404(models.Page, slug=slug)
     return render(request, "page_detail.html", context)
 
+@cache_page(300)  # 5 minutes
 def index(request):
     context = utils.build_context(request)
-    unowned_players = models.Player.objects.filter(team__isnull=True)
-    context['total_count'] = unowned_players.count()
-    context['pitchers'] = unowned_players.filter(simple_position="P").order_by('last_name')
-    context['hitters'] = unowned_players.exclude(simple_position="P").order_by('simple_position', 'last_name')
-    context['events'] = models.Event.objects.filter(active=True).order_by('date')[:8]
-    context['transactions'] = models.Transaction.objects.all().order_by('-date', 'transaction_type')[:15]
+    
+    # Use cached homepage data
+    homepage_data = cache_helpers.get_homepage_data()
+    context.update(homepage_data)
+    
     return render(request, "index.html", context)
 
+@cache_page(300)  # 5 minutes
+@vary_on_headers('Cookie')  # Cache per-user
 def player_detail(request, playerid):
     context = utils.build_context(request)
     context['p'] = get_object_or_404(models.Player, mlb_id=playerid)
     return render(request, "player.html", context)
 
+@cache_page(300)  # 5 minutes
+@vary_on_headers('Cookie')  # Cache per-user
 def team_detail(request, short_name):
     context = utils.build_context(request)
     context["team"] = get_object_or_404(models.Team, short_name__icontains=short_name)
@@ -360,6 +366,8 @@ def transaction_list(request):
     
     return render(request, 'transactions/list.html', context)
 
+@cache_page(300)  # 5 minutes
+@vary_on_headers('Cookie')  # Cache per-user for different search results
 def search(request):
     def to_bool(b):
         if b.lower() in ["y", "yes", "t", "true", "on"]:

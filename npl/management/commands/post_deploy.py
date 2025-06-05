@@ -11,3 +11,5 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         call_command('migrate')
         call_command("collectstatic", "--noinput")
+        call_command('create_cache_table')
+        call_command('util_save_all_players')
