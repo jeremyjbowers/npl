@@ -51,3 +51,4 @@ def smooth_timedelta(timedeltaobj):
     if secs > 0:
         timetot += " and {} seconds".format(int(secs))
     return timetot
+

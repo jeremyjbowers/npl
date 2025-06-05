@@ -79,18 +79,10 @@ DATABASES = {
     }
 }
 
-# CACHES
+# No caching for now
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
-        'LOCATION': 'django_cache_table',
-        'TIMEOUT': 300,  # 5 minutes default timeout
-        'KEY_PREFIX': 'npl_dev_',
-        'VERSION': 1,
-        'OPTIONS': {
-            'MAX_ENTRIES': 10000,  # Limit cache table size
-            'CULL_FREQUENCY': 4,   # Delete 1/4 of entries when MAX_ENTRIES reached
-        }
+        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
     }
 }
 

@@ -268,8 +268,6 @@ h1.title, h2.title, h3.title {
 
 <div class="block">
     <h2 class="title is-4">Teams</h2>
-    {% load cache %}
-    {% cache 300 "homepage_teams_listing" %}
     {% regroup all_teams by division.name as division_groups %}
     {% for division in division_groups %}
     <div class="block">
@@ -322,6 +320,5 @@ h1.title, h2.title, h3.title {
         </div>
     </div>
     {% endfor %}
-    {% endcache %}
 </div>
 {% endblock %}
