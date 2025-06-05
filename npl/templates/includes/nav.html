@@ -83,12 +83,23 @@
                 </span>
             </a>
             
-            <a class="navbar-item" href="https://docs.google.com/spreadsheets/d/1M9oFg6jL5cJudu44AlUBkepooy3Ww6WVjqnXeSJf1a8/edit?gid=0#gid=0" target="_blank" style="color: var(--npl-text-primary) !important;">
-                Auctions
-                <span class="icon ml-1">
-                    <i class="fas fa-external-link-alt is-size-7"></i>
-                </span>
-            </a>
+            <div class="navbar-item has-dropdown is-hoverable">
+                <a class="navbar-link" style="color: var(--npl-text-primary) !important;">Auctions</a>
+                <div class="navbar-dropdown" style="background-color: var(--npl-bg-secondary) !important; border: 1px solid var(--npl-border);">
+                    <a href="/auctions/" class="navbar-item" style="color: var(--npl-text-primary) !important;">
+                        <span class="icon">
+                            <i class="fas fa-gavel"></i>
+                        </span>
+                        <span>New Auctions</span>
+                    </a>
+                    <a href="https://docs.google.com/spreadsheets/d/1M9oFg6jL5cJudu44AlUBkepooy3Ww6WVjqnXeSJf1a8/edit?gid=0#gid=0" target="_blank" class="navbar-item" style="color: var(--npl-text-primary) !important;">
+                        <span class="icon">
+                            <i class="fas fa-external-link-alt"></i>
+                        </span>
+                        <span>Old Auctions</span>
+                    </a>
+                </div>
+            </div>
             
             <div class="navbar-item has-dropdown is-hoverable">
                 <a class="navbar-link" style="color: var(--npl-text-primary) !important;">Transactions</a>
