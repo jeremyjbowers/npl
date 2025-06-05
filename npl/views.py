@@ -13,6 +13,7 @@ from django.contrib.auth.decorators import login_required
 from decimal import *
 from django.contrib import messages
 from django.utils import timezone
+from django.db import models as django_models
 
 import ujson as json
 from datetime import datetime, timedelta
@@ -395,8 +396,44 @@ def search(request):
             context['roster_status'] = roster_status
 
     context['total_count'] = query.count()
-    context["hitters"] = query.exclude(simple_position="P").order_by("simple_position", "last_name")
-    context["pitchers"] = query.filter(simple_position="P").order_by("last_name")
+    
+    # Apply explicit ordering to match Player model's Meta ordering
+    # Level priority, then position priority, then last name
+    query = query.order_by(
+        django_models.Case(
+            django_models.When(simple_position='P', then=1),
+            django_models.When(simple_position='C', then=2),
+            django_models.When(simple_position='1B', then=3),
+            django_models.When(simple_position='2B', then=4),
+            django_models.When(simple_position='3B', then=5),
+            django_models.When(simple_position='SS', then=6),
+            django_models.When(simple_position='IF', then=7),
+            django_models.When(simple_position='RF', then=8),
+            django_models.When(simple_position='CF', then=9),
+            django_models.When(simple_position='LF', then=10),
+            django_models.When(simple_position='OF', then=11),
+            django_models.When(simple_position='UT', then=12),
+            django_models.When(simple_position='DH', then=13),
+            default=14,
+            output_field=django_models.IntegerField()
+        ),
+        'last_name'
+    )
+    # Set up pagination (500 players per page)
+    paginator = Paginator(query, 500)
+    page_number = request.GET.get('page')
+    
+    try:
+        players_page = paginator.page(page_number)
+    except PageNotAnInteger:
+        players_page = paginator.page(1)
+    except EmptyPage:
+        players_page = paginator.page(paginator.num_pages)
+    
+    # Pass all players as one unified list
+    context["players"] = players_page
+    context["players_page"] = players_page  # For pagination controls
+    
     return render(request, "search.html", context)
 
 @login_required

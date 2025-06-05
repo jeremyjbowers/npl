@@ -171,6 +171,19 @@ h1.title, h2.title, h3.title {
     background-color: var(--npl-bg-primary) !important;
 }
 
+/* Nominate button styling for better readability */
+.button.is-info {
+    background-color: var(--npl-info) !important;
+    color: white !important;
+    border-color: var(--npl-info) !important;
+}
+
+.button.is-info:hover {
+    background-color: #2980b9 !important;
+    color: white !important;
+    border-color: #2980b9 !important;
+}
+
 /* Search addon styling for dark theme */
 .search-addon {
     align-items: stretch !important;
@@ -266,60 +279,94 @@ h1.title, h2.title, h3.title {
 <div class="block">
     {% include "includes/search_bar.html" %}
 
-    {% if hitters or pitchers %}
-    <nav class="level position-count p-4 mb-4" style="border-radius: 8px;">
-        <div class="level-item has-text-centered">
-            <div>
-                <p class="heading">Total</p>
-                <p class="title">{{ total_count }}</p>
-            </div>
-        </div>
-        {% if hitters %}
-        {% regroup hitters by simple_position as position_players %}
-        {% for position in position_players %}
-        <div class="level-item has-text-centered">
-            <div>
-                <p class="heading">{{ position.grouper }}</p>
-                <p class="title">
-                    <a href="#position-{{ position.grouper }}">
-                        {{ position.list|length }}
-                    </a>
+    {% if players %}
+    <!-- Pagination info and page count -->
+    {% if players_page %}
+    <div class="level">
+        <div class="level-left">
+            <div class="level-item">
+                <p class="subtitle is-6">
+                    Showing {{ players_page.start_index }} - {{ players_page.end_index }} of {{ players_page.paginator.count }} players
                 </p>
             </div>
         </div>
-        {% endfor %}
+        <div class="level-right">
+            <div class="level-item">
+                <p class="subtitle is-6">
+                    Page {{ players_page.number }} of {{ players_page.paginator.num_pages }}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination (top) -->
+    {% if players_page.has_other_pages %}
+    <nav class="pagination is-centered mb-4" role="navigation" aria-label="pagination">
+        {% if players_page.has_previous %}
+            <a href="?{% if name %}name={{ name }}&{% endif %}{% if position %}position={{ position }}&{% endif %}{% if owned %}owned={{ owned }}&{% endif %}{% if roster_status %}roster_status={{ roster_status }}&{% endif %}page=1" class="pagination-previous" style="background-color: var(--npl-bg-secondary); color: var(--npl-text-primary); border-color: var(--npl-border);">
+                First
+            </a>
+            <a href="?{% if name %}name={{ name }}&{% endif %}{% if position %}position={{ position }}&{% endif %}{% if owned %}owned={{ owned }}&{% endif %}{% if roster_status %}roster_status={{ roster_status }}&{% endif %}page={{ players_page.previous_page_number }}" class="pagination-previous" style="background-color: var(--npl-bg-secondary); color: var(--npl-text-primary); border-color: var(--npl-border);">
+                Previous
+            </a>
+        {% else %}
+            <span class="pagination-previous" style="background-color: var(--npl-bg-tertiary); color: var(--npl-text-secondary); border-color: var(--npl-border);" disabled>
+                Previous
+            </span>
         {% endif %}
 
-        {% if pitchers %}
-        <div class="level-item has-text-centered">
-            <div>
-                <p class="heading">P</p>
-                <p class="title">
-                    <a href="#position-p">{{ pitchers|length }}</a>
-                </p>
-            </div>
-        </div>
+        {% if players_page.has_next %}
+            <a href="?{% if name %}name={{ name }}&{% endif %}{% if position %}position={{ position }}&{% endif %}{% if owned %}owned={{ owned }}&{% endif %}{% if roster_status %}roster_status={{ roster_status }}&{% endif %}page={{ players_page.next_page_number }}" class="pagination-next" style="background-color: var(--npl-bg-secondary); color: var(--npl-text-primary); border-color: var(--npl-border);">
+                Next
+            </a>
+            <a href="?{% if name %}name={{ name }}&{% endif %}{% if position %}position={{ position }}&{% endif %}{% if owned %}owned={{ owned }}&{% endif %}{% if roster_status %}roster_status={{ roster_status }}&{% endif %}page={{ players_page.paginator.num_pages }}" class="pagination-next" style="background-color: var(--npl-bg-secondary); color: var(--npl-text-primary); border-color: var(--npl-border);">
+                Last
+            </a>
+        {% else %}
+            <span class="pagination-next" style="background-color: var(--npl-bg-tertiary); color: var(--npl-text-secondary); border-color: var(--npl-border);" disabled>
+                Next
+            </span>
         {% endif %}
+
+        <ul class="pagination-list">
+            {% for num in players_page.paginator.page_range %}
+                {% if players_page.number == num %}
+                    <li>
+                        <span class="pagination-link is-current" style="background-color: var(--npl-primary); color: var(--npl-bg-primary); border-color: var(--npl-primary);">
+                            {{ num }}
+                        </span>
+                    </li>
+                {% elif num > players_page.number|add:'-3' and num < players_page.number|add:'3' %}
+                    <li>
+                        <a href="?{% if name %}name={{ name }}&{% endif %}{% if position %}position={{ position }}&{% endif %}{% if owned %}owned={{ owned }}&{% endif %}{% if roster_status %}roster_status={{ roster_status }}&{% endif %}page={{ num }}" class="pagination-link" style="background-color: var(--npl-bg-secondary); color: var(--npl-text-primary); border-color: var(--npl-border);">
+                            {{ num }}
+                        </a>
+                    </li>
+                {% elif num == 1 or num == players_page.paginator.num_pages %}
+                    <li>
+                        <a href="?{% if name %}name={{ name }}&{% endif %}{% if position %}position={{ position }}&{% endif %}{% if owned %}owned={{ owned }}&{% endif %}{% if roster_status %}roster_status={{ roster_status }}&{% endif %}page={{ num }}" class="pagination-link" style="background-color: var(--npl-bg-secondary); color: var(--npl-text-primary); border-color: var(--npl-border);">
+                            {{ num }}
+                        </a>
+                    </li>
+                {% elif num == players_page.number|add:'-4' or num == players_page.number|add:'4' %}
+                    <li>
+                        <span class="pagination-ellipsis" style="color: var(--npl-text-secondary);">&hellip;</span>
+                    </li>
+                {% endif %}
+            {% endfor %}
+        </ul>
     </nav>
+    {% endif %}
+    {% endif %}
     {% endif %}
 </div>
 
-{% if hitters %}
-{% regroup hitters by simple_position as position_players %}
-{% for position in position_players %}
+{% if players %}
 <div class="block">
-    <h2 class="title is-5" id="position-{{ position.grouper }}">
-        {{ position.grouper }} ({{ position.list|length }})
-        <a href="#top" style="color: var(--npl-text-secondary); text-decoration: none; margin-left: 0.5rem; font-size: 0.875rem;" title="Back to top">
-            <i class="fas fa-angle-double-up"></i>
-        </a>
-    </h2>
-    
     <div class="table-container">
         <table class="table is-fullwidth is-striped is-hoverable">
             <thead>
                 <tr>
-                    <th>Eligible</th>
                     <th>Player</th>
                     <th></th>
                     <th>Roster</th>
@@ -333,46 +380,70 @@ h1.title, h2.title, h3.title {
                 </tr>
             </thead>
             <tbody>
-                {% for p in position.list %}{% include "includes/player_row.html" %}{% endfor %}
+                {% for p in players %}{% include "includes/player_row.html" %}{% endfor %}
             </tbody>
         </table>
     </div>
 </div>
-{% endfor %}
 {% endif %}
 
-{% if pitchers %}
-<div class="block">
-    <h2 class="title is-5" id="position-p">
-        Pitchers ({{ pitchers|length }})
-        <a href="#top" style="color: var(--npl-text-secondary); text-decoration: none; margin-left: 0.5rem; font-size: 0.875rem;" title="Back to top">
-            <i class="fas fa-angle-double-up"></i>
+<!-- Pagination (bottom) -->
+{% if players_page and players_page.has_other_pages %}
+<nav class="pagination is-centered mt-5" role="navigation" aria-label="pagination">
+    {% if players_page.has_previous %}
+        <a href="?{% if name %}name={{ name }}&{% endif %}{% if position %}position={{ position }}&{% endif %}{% if owned %}owned={{ owned }}&{% endif %}{% if roster_status %}roster_status={{ roster_status }}&{% endif %}page=1" class="pagination-previous" style="background-color: var(--npl-bg-secondary); color: var(--npl-text-primary); border-color: var(--npl-border);">
+            First
         </a>
-    </h2>
-    
-    <div class="table-container">
-        <table class="table is-fullwidth is-striped is-hoverable">
-            <thead>
-                <tr>
-                    <th>Eligible</th>
-                    <th>Player</th>
-                    <th></th>
-                    <th>Roster</th>
-                    <th>Position</th>
-                    <th>Age</th>
-                    <th>MLB</th>
-                    <th>MLS</th>
-                    <th>Opt</th>
-                    <th>Status</th>
-                    {% if user.is_authenticated %}<th>Nominate</th>{% endif %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for p in pitchers %}{% include "includes/player_row.html" %}{% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
+        <a href="?{% if name %}name={{ name }}&{% endif %}{% if position %}position={{ position }}&{% endif %}{% if owned %}owned={{ owned }}&{% endif %}{% if roster_status %}roster_status={{ roster_status }}&{% endif %}page={{ players_page.previous_page_number }}" class="pagination-previous" style="background-color: var(--npl-bg-secondary); color: var(--npl-text-primary); border-color: var(--npl-border);">
+            Previous
+        </a>
+    {% else %}
+        <span class="pagination-previous" style="background-color: var(--npl-bg-tertiary); color: var(--npl-text-secondary); border-color: var(--npl-border);" disabled>
+            Previous
+        </span>
+    {% endif %}
+
+    {% if players_page.has_next %}
+        <a href="?{% if name %}name={{ name }}&{% endif %}{% if position %}position={{ position }}&{% endif %}{% if owned %}owned={{ owned }}&{% endif %}{% if roster_status %}roster_status={{ roster_status }}&{% endif %}page={{ players_page.next_page_number }}" class="pagination-next" style="background-color: var(--npl-bg-secondary); color: var(--npl-text-primary); border-color: var(--npl-border);">
+            Next
+        </a>
+        <a href="?{% if name %}name={{ name }}&{% endif %}{% if position %}position={{ position }}&{% endif %}{% if owned %}owned={{ owned }}&{% endif %}{% if roster_status %}roster_status={{ roster_status }}&{% endif %}page={{ players_page.paginator.num_pages }}" class="pagination-next" style="background-color: var(--npl-bg-secondary); color: var(--npl-text-primary); border-color: var(--npl-border);">
+            Last
+        </a>
+    {% else %}
+        <span class="pagination-next" style="background-color: var(--npl-bg-tertiary); color: var(--npl-text-secondary); border-color: var(--npl-border);" disabled>
+            Next
+        </span>
+    {% endif %}
+
+    <ul class="pagination-list">
+        {% for num in players_page.paginator.page_range %}
+            {% if players_page.number == num %}
+                <li>
+                    <span class="pagination-link is-current" style="background-color: var(--npl-primary); color: var(--npl-bg-primary); border-color: var(--npl-primary);">
+                        {{ num }}
+                    </span>
+                </li>
+            {% elif num > players_page.number|add:'-3' and num < players_page.number|add:'3' %}
+                <li>
+                    <a href="?{% if name %}name={{ name }}&{% endif %}{% if position %}position={{ position }}&{% endif %}{% if owned %}owned={{ owned }}&{% endif %}{% if roster_status %}roster_status={{ roster_status }}&{% endif %}page={{ num }}" class="pagination-link" style="background-color: var(--npl-bg-secondary); color: var(--npl-text-primary); border-color: var(--npl-border);">
+                        {{ num }}
+                    </a>
+                </li>
+            {% elif num == 1 or num == players_page.paginator.num_pages %}
+                <li>
+                    <a href="?{% if name %}name={{ name }}&{% endif %}{% if position %}position={{ position }}&{% endif %}{% if owned %}owned={{ owned }}&{% endif %}{% if roster_status %}roster_status={{ roster_status }}&{% endif %}page={{ num }}" class="pagination-link" style="background-color: var(--npl-bg-secondary); color: var(--npl-text-primary); border-color: var(--npl-border);">
+                        {{ num }}
+                    </a>
+                </li>
+            {% elif num == players_page.number|add:'-4' or num == players_page.number|add:'4' %}
+                <li>
+                    <span class="pagination-ellipsis" style="color: var(--npl-text-secondary);">&hellip;</span>
+                </li>
+            {% endif %}
+        {% endfor %}
+    </ul>
+</nav>
 {% endif %}
 
 <!-- Nomination Modal -->

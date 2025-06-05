@@ -1,6 +1,5 @@
 {% load humanize %}
 <tr class="{{ p.roster_status|default_if_none:'MINORS'|lower }} {% if p.options == '99'%} red{% endif %}{% if not team %}{% if p.team %} owned{% endif %}{% endif %}">
-  <td style="text-align:left;">{{ p.position|default_if_none:"" }} {% if p.is_sp %}<strong>&spades;</strong>{% endif %}</td>
   <!-- {% if team %}
   <td style="text-align:center;">{% if p.is_roster_40_man %}<span class="icon"><i class="fa fa-check-circle" aria-hidden="true"></i></span>{% else %}<span class="icon"><i class="fa fa-times-circle-o" aria-hidden="true"></i></span>{% endif %}</td>
   <td style="text-align:center;">{% if p.is_roster_30_man %}<span class="icon"><i class="fa fa-check-circle" aria-hidden="true"></i></span>{% else %}<span class="icon"><i class="fa fa-times-circle-o" aria-hidden="true"></i></span>{% endif %}</td>
