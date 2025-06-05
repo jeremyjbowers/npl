@@ -1,3 +1,36 @@
+<style>
+/* Default styles for dropdown items */
+.navbar .navbar-dropdown .navbar-item,
+.navbar .navbar-dropdown a.navbar-item {
+    color: var(--npl-text-primary) !important;
+    background-color: transparent !important;
+}
+
+/* Override Bulma navbar hover styles to respect theme variables */
+.navbar .navbar-dropdown .navbar-item:hover,
+.navbar .navbar-dropdown a.navbar-item:hover {
+    background-color: var(--npl-bg-tertiary) !important;
+    color: var(--npl-primary) !important;
+}
+
+/* Also target any child spans that might have different colors */
+.navbar .navbar-dropdown .navbar-item:hover span,
+.navbar .navbar-dropdown a.navbar-item:hover span {
+    color: var(--npl-primary) !important;
+}
+
+/* Fix dropdown trigger hover (Teams, Auctions, Transactions links) */
+.navbar .navbar-link:hover {
+    background-color: var(--npl-bg-tertiary) !important;
+    color: var(--npl-primary) !important;
+}
+
+/* Ensure dropdown backgrounds use theme variables */
+.navbar .navbar-dropdown {
+    background-color: var(--npl-bg-secondary) !important;
+}
+</style>
+
 <nav class="navbar" role="navigation" aria-label="main navigation" style="position: fixed; top: 0; left: 0; right: 0; z-index: 30; background-color: var(--npl-bg-secondary); border-bottom: 1px solid var(--npl-border);">
     <div class="navbar-brand">
         <a class="navbar-item" href="/" style="color: var(--npl-primary) !important;">
@@ -15,7 +48,7 @@
         <div class="navbar-start">
             <div class="navbar-item has-dropdown is-hoverable">
                 <a class="navbar-link" style="color: var(--npl-text-primary) !important;">Teams</a>
-                <div class="navbar-dropdown" style="width: 600px; max-width: 90vw; background-color: var(--npl-bg-secondary) !important; border: 1px solid var(--npl-border); box-shadow: 0 8px 16px rgba(0,0,0,0.3);">
+                <div class="navbar-dropdown" style="width: 600px; max-width: 90vw; border: 1px solid var(--npl-border); box-shadow: 0 8px 16px rgba(0,0,0,0.3);">
 
                     <div style="display: flex; gap: 2rem; padding: 0.5rem;">
                         <!-- AL Column -->
@@ -86,14 +119,14 @@
             
             <div class="navbar-item has-dropdown is-hoverable">
                 <a class="navbar-link" style="color: var(--npl-text-primary) !important;">Auctions</a>
-                <div class="navbar-dropdown" style="background-color: var(--npl-bg-secondary) !important; border: 1px solid var(--npl-border);">
-                    <a href="/auctions/" class="navbar-item" style="color: var(--npl-text-primary) !important;">
+                <div class="navbar-dropdown" style="border: 1px solid var(--npl-border);">
+                    <a href="/auctions/" class="navbar-item">
                         <span class="icon">
                             <i class="fas fa-gavel"></i>
                         </span>
                         <span>New Auctions</span>
                     </a>
-                    <a href="https://docs.google.com/spreadsheets/d/1M9oFg6jL5cJudu44AlUBkepooy3Ww6WVjqnXeSJf1a8/edit?gid=0#gid=0" target="_blank" class="navbar-item" style="color: var(--npl-text-primary) !important;">
+                    <a href="https://docs.google.com/spreadsheets/d/1M9oFg6jL5cJudu44AlUBkepooy3Ww6WVjqnXeSJf1a8/edit?gid=0#gid=0" target="_blank" class="navbar-item">
                         <span class="icon">
                             <i class="fas fa-external-link-alt"></i>
                         </span>
@@ -104,15 +137,15 @@
             
             <div class="navbar-item has-dropdown is-hoverable">
                 <a class="navbar-link" style="color: var(--npl-text-primary) !important;">Transactions</a>
-                <div class="navbar-dropdown" style="background-color: var(--npl-bg-secondary) !important; border: 1px solid var(--npl-border);">
+                <div class="navbar-dropdown" style="border: 1px solid var(--npl-border);">
                     {% if user.is_authenticated %}
-                    <a href="/transactions/form/" class="navbar-item" style="color: var(--npl-text-primary) !important;">
+                    <a href="/transactions/form/" class="navbar-item">
                         <span class="icon">
                             <i class="fas fa-plus"></i>
                         </span>
                         <span>Submit Transaction</span>
                     </a>
-                    <a href="/transactions/list/" class="navbar-item" style="color: var(--npl-text-primary) !important;">
+                    <a href="/transactions/list/" class="navbar-item">
                         <span class="icon">
                             <i class="fas fa-list"></i>
                         </span>
@@ -120,13 +153,13 @@
                     </a>
                     <hr class="navbar-divider" style="background-color: var(--npl-border);">
                     {% endif %}
-                    <a href="/transactions/" class="navbar-item" style="color: var(--npl-text-primary) !important;">
+                    <a href="/transactions/" class="navbar-item">
                         <span class="icon">
                             <i class="fas fa-history"></i>
                         </span>
                         <span>All Transactions</span>
                     </a>
-                    <a href="https://docs.google.com/spreadsheets/d/1UQv_vnBBWUT8BiFRd7tAbvW4COWJ61BNkme7iyzf5po/" target="_blank" class="navbar-item" style="color: var(--npl-text-primary) !important;">
+                    <a href="https://docs.google.com/spreadsheets/d/1UQv_vnBBWUT8BiFRd7tAbvW4COWJ61BNkme7iyzf5po/" target="_blank" class="navbar-item">
                         <span class="icon">
                             <i class="fas fa-external-link-alt"></i>
                         </span>
