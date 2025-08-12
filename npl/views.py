@@ -230,9 +230,9 @@ def team_detail(request, short_name):
     context['roster_foreign'] = team_players.filter(roster_foreign=True).order_by('-mls_time', 'mls_year')
     context['roster_retired'] = team_players.filter(roster_retired=True).order_by('-mls_time', 'mls_year')
     context['roster_nonroster'] = team_players.filter(roster_nonroster=True).order_by('-mls_time', 'mls_year')
-    context['roster_tripleA'] = team_players.filter(roster_tripleA=True).order_by('-mls_time', 'mls_year')
-    context['roster_tripleA_option'] = team_players.filter(roster_tripleA_option=True).order_by('-mls_time', 'mls_year')
-    context['roster_doubleA'] = team_players.filter(roster_doubleA=True).order_by('-mls_time', 'mls_year')
+    context['roster_tripleA'] = team_players.filter(roster_tripleA=True).order_by('-mls_time', 'mls_year', 'last_name')
+    context['roster_tripleA_option'] = team_players.filter(roster_tripleA_option=True).order_by('-mls_time', 'mls_year', 'last_name')
+    context['roster_doubleA'] = team_players.filter(roster_doubleA=True).order_by('-mls_time', 'mls_year', 'last_name')
     context['roster_singleA'] = team_players.filter(roster_singleA=True).order_by('-mls_time', 'mls_year')
     return render(request, "team.html", context)
 
