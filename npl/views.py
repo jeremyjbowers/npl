@@ -186,8 +186,28 @@ def team_detail(request, short_name):
     context['roster_30_man_count'] = team_players.filter(roster_30man=True).count()
     context['hitters'] = team_players.exclude(simple_position="P").order_by('simple_position','-mls_time', 'mls_year')
     context['pitchers'] = team_players.filter(simple_position="P").order_by('-mls_time', 'mls_year')
-    context['mlb_hitters'] = team_players.exclude(simple_position="P").exclude(roster_40man=False).order_by('simple_position','-mls_time', 'mls_year')
-    context['mlb_pitchers'] = team_players.filter(simple_position="P", roster_40man=True).order_by('-mls_time', 'mls_year')
+    # MLB roster should only show active MLB players (40-man roster but not in AAA, IL, or other inactive statuses)
+    mlb_exclusions = {
+        'roster_tripleA': True,
+        'roster_tripleA_option': True,
+        'roster_7dayIL': True,
+        'roster_56dayIL': True,
+        'roster_eosIL': True,
+        'roster_restricted': True,
+        'roster_outrighted': True,
+        'roster_foreign': True,
+        'roster_retired': True,
+        'roster_nonroster': True,
+        'roster_doubleA': True,
+        'roster_singleA': True,
+    }
+    
+    mlb_players = team_players.filter(roster_40man=True)
+    for field, value in mlb_exclusions.items():
+        mlb_players = mlb_players.exclude(**{field: value})
+    
+    context['mlb_hitters'] = mlb_players.exclude(simple_position="P").order_by('simple_position','-mls_time', 'mls_year')
+    context['mlb_pitchers'] = mlb_players.filter(simple_position="P").order_by('-mls_time', 'mls_year')
     """
     ("7-DAY INJURED LIST", "roster_7dayIL"),
     ("56-DAY INJURED LIST", "roster_56dayIL"),
