@@ -3,6 +3,7 @@ from google.oauth2 import service_account
 
 import os
 import datetime
+import warnings
 
 import gspread
 import json
@@ -150,7 +151,12 @@ def format_player_row(row, team, player_dict):
 
     if "." in row[6]:
         player_dict['mls_time'] = float(row[6])
-        player_dict['options'] = int(row[7].replace('$', '')) or 0
+        try:
+            options_str = row[7].replace('$', '').strip()
+            if options_str:
+                player_dict['options'] = int(options_str)
+        except (ValueError, IndexError, AttributeError):
+            pass  # Keep default value of 0
 
         if len(row) > 8:
             player_dict['status'] = row[8].lower()
@@ -165,16 +171,20 @@ def format_player_row(row, team, player_dict):
 
 
 def get_google_creds(scopes):
-    if os.environ.get("B64_GOOGLE", None):
-        service_account_creds = base64.b64decode(os.environ.get("B64_GOOGLE", None))
+    # Suppress RSA keyfile warning - the library auto-corrects malformed keys
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message=".*malformed keyfile.*", category=UserWarning)
+        
+        if os.environ.get("B64_GOOGLE", None):
+            service_account_creds = base64.b64decode(os.environ.get("B64_GOOGLE", None))
 
-        service_account_info = json.loads(service_account_creds)
+            service_account_info = json.loads(service_account_creds)
 
-        creds = service_account.Credentials.from_service_account_info(
-            info=service_account_info, scopes=scopes
-        )
-    else:
-        creds = service_account.Credentials.from_service_account_file(filename="credentials.json", scopes=scopes)
+            creds = service_account.Credentials.from_service_account_info(
+                info=service_account_info, scopes=scopes
+            )
+        else:
+            creds = service_account.Credentials.from_service_account_file(filename="credentials.json", scopes=scopes)
     return creds
 
 

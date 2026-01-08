@@ -99,6 +99,10 @@ class Command(BaseCommand):
             ts_dict['cash'] = int(t[6].replace(',', '').replace('$', ''))
             ts_dict['ifa'] = int(t[7].replace(',', '').replace('$', ''))
 
+
+            print(team_dict)
+            print(ts_dict)
+
             try:
                 team_obj = models.Team.objects.get(short_name=team_dict['short_name'])
                 for k,v in team_dict.items():

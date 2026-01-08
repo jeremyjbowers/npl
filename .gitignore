@@ -1,6 +1,7 @@
 credentials.json
 *pycache*
 
+*.sql
 data/*.json
 data/*/*.json
 !data/fixtures/*.json

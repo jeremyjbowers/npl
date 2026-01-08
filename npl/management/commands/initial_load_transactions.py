@@ -38,7 +38,7 @@ class Command(BaseCommand):
         models.Transaction.objects.all().delete()
         models.TransactionType.objects.all().delete()
 
-        transactions = utils.get_sheet(settings.LEAGUE_SHEET_ID, f"2025 Transactions!A:H", value_cutoff=None)[3:]
+        transactions = utils.get_sheet(settings.LEAGUE_SHEET_ID, f"2026 Transactions!A:H", value_cutoff=None)[3:]
 
         for t in transactions:
             print(t)
