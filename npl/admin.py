@@ -130,7 +130,6 @@ class AuctionAdmin(admin.ModelAdmin):
     approve_nominations.short_description = "Approve selected nominations as auctions"
     reject_nominations.short_description = "Reject and delete selected nominations"
 
-
 @admin.register(Event)
 class EventAdmin(VersionAdmin):
     model = Event
