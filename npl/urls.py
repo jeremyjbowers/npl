@@ -25,6 +25,7 @@ urlpatterns = [
     
     # Authentication URLs - Override allauth login with our custom magic link auth
     path('accounts/login/', auth.login_view, name='account_login'),
+    path('accounts/signup/', auth.signup_closed_view, name='account_signup'),
     path('auth/magic-link/', auth.magic_link_view, name='magic_link'),
     path('auth/magic-link/verify/<str:token>/', auth.magic_link_verify_view, name='magic_link_verify'),
     path('accounts/', include('allauth.urls')),  # This includes all other django-allauth URLs

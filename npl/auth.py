@@ -72,6 +72,11 @@ def send_magic_link(request, email):
     return redirect('account_login')
 
 
+def signup_closed_view(request):
+    """Public signup is closed; league accounts are created by admins."""
+    return render(request, "account/signup_closed.html")
+
+
 def login_view(request):
     """Custom login view that only handles magic link requests"""
     if request.method == 'POST':
