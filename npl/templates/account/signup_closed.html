@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Sign up closed - The NPL{% endblock %}
+
+{% block extra_head %}
+<style>
+.box {
+    background-color: var(--npl-bg-secondary) !important;
+    color: var(--npl-text-primary) !important;
+    border: 1px solid var(--npl-border) !important;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.title {
+    color: var(--npl-text-primary) !important;
+}
+
+.notification.is-info {
+    background-color: rgba(66, 165, 245, 0.2) !important;
+    border: 1px solid var(--npl-info) !important;
+    color: var(--npl-text-primary) !important;
+}
+
+.button.is-primary {
+    background-color: var(--npl-primary) !important;
+    color: var(--npl-bg-primary) !important;
+    border-color: var(--npl-primary) !important;
+}
+
+.has-text-grey {
+    color: var(--npl-text-secondary) !important;
+}
+
+@media screen and (max-width: 768px) {
+    .column.is-4 {
+        padding: 1rem;
+    }
+
+    .box {
+        margin: 0 1rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="columns is-centered">
+    <div class="column is-4">
+        <div class="box">
+            <h1 class="title is-4 has-text-centered">Sign up is closed</h1>
+
+            <div class="notification is-info is-light mb-4">
+                <p>The NPL is a private league. New accounts are created by an administrator — we don't take public signups.</p>
+            </div>
+
+            <a class="button is-primary is-fullwidth" href="{% url 'account_login' %}">
+                <span class="icon">
+                    <i class="fas fa-magic"></i>
+                </span>
+                <span>Sign in with a magic link</span>
+            </a>
+
+            <p class="has-text-centered has-text-grey is-size-7 mt-4">
+                Don't have an account? Contact your league administrator.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -133,6 +133,11 @@ ACCOUNT_RATE_LIMITS = {
 }
 ACCOUNT_LOGOUT_ON_GET = True
 ACCOUNT_PASSWORD_MIN_LENGTH = None
+ACCOUNT_ADAPTER = 'users.adapters.AccountAdapter'
+ACCOUNT_FORMS = {
+    'signup': 'users.forms.SpamResistantSignupForm',
+}
+ACCOUNT_SIGNUP_FORM_HONEYPOT_FIELD = 'phone_number'
 
 # DJANGO-SESAME SETTINGS (Magic Links)
 SESAME_MAX_AGE = 60 * 60 * 24 * 30
