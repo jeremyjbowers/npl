@@ -755,12 +755,37 @@ class Contract(BaseModel):
 
 
 class ContractYear(BaseModel):
+    # Mirrors the colour legend on the roster sheet's Key tab; see
+    # npl.rosters.salary_type_for_fill for how a cell fill becomes one of these.
+    SALARY_TYPE_CHOICES = [
+        ('guaranteed', 'Guaranteed'),
+        ('club_option', 'Club option'),
+        ('vesting_option', 'Vesting option'),
+        ('player_option', 'Player option / opt-out'),
+        ('pre_arb_0', 'Pre-arbitration (0.000-0.171)'),
+        ('pre_arb_1', 'Pre-arbitration (1.000-1.171)'),
+        ('pre_arb_2', 'Pre-arbitration (2.000+)'),
+        ('arbitration', 'Arbitration'),
+        ('unknown', 'Unknown'),
+    ]
+    OPTION_TYPES = ('club_option', 'vesting_option', 'player_option')
+
     year = models.IntegerField()
     contract = models.ForeignKey(Contract, null=True, blank=True, on_delete=models.SET_NULL)
     amount = models.IntegerField()
+    salary_type = models.CharField(max_length=20, choices=SALARY_TYPE_CHOICES, default='guaranteed')
+    # Salary is carried by another team; see the team's Financials block.
+    is_covered = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['year']
 
     def __unicode__(self):
         return f"{self.year}: {self.contract.player.name}"
+
+    @property
+    def is_option(self):
+        return self.salary_type in self.OPTION_TYPES
 
 class Collection(BaseModel):
     name = models.CharField(max_length=255)

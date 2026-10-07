@@ -35,7 +35,7 @@
     <!-- contract stuff -->
     {% if p.contract %}
       {% for year in p.contract.years %}
-        <!-- contracts --><td style="text-align:center;">{% if year.amount != "-" %}${% endif %}{{ year.amount|intcomma }}</td>
+        <!-- contracts --><td style="text-align:center;{% if year.is_covered %} font-style:italic;{% endif %}"{% if year.salary_type and year.salary_type != "guaranteed" %} title="{{ year.get_salary_type_display }}"{% endif %}>{% if year.amount != "-" %}${% endif %}{{ year.amount|intcomma }}{% if year.is_option %}<sup>{{ year.salary_type|first|upper }}</sup>{% endif %}</td>
       {% endfor %}
     {% else %}
 <!-- contracts --><td style="text-align:center;">-</td>
