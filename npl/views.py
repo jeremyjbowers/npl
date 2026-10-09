@@ -21,6 +21,14 @@ import pytz
 
 from npl import models, utils
 from .forms import TransactionTypeForm, TRANSACTION_FORM_MAP
+from npl.transactions.service import (
+    TransactionError,
+    agree,
+    decline,
+    submit_from_form,
+    teams_for_user,
+    visible_proposals,
+)
 
 def auction_bid_api(request, auctionid):
     now = datetime.now(pytz.timezone('US/Eastern'))
@@ -298,6 +306,21 @@ def transaction_form_step2(request):
     if request.method == 'POST':
         form = FormClass(request.POST, user=request.user)
         if form.is_valid():
+            try:
+                proposal = submit_from_form(request.user, transaction_type, form.cleaned_data, source='web')
+            except TransactionError as exc:
+                form.add_error(None, str(exc))
+                context = utils.build_context(request)
+                context.update({
+                    'form': form,
+                    'transaction_type': transaction_type,
+                    'transaction_display': dict(TransactionTypeForm.TRANSACTION_CHOICES)[transaction_type],
+                    'step': 2,
+                    'total_steps': 2,
+                    'next_deadline': get_next_processing_deadline()
+                })
+                return render(request, 'transactions/form_step2.html', context)
+
             # Create transaction submission
             team_id = form.cleaned_data.get('team')
             if isinstance(team_id, str):
@@ -313,7 +336,7 @@ def transaction_form_step2(request):
                 player = form_data['player']
                 if hasattr(player, 'name'):  # It's a Player object
                     form_data['player'] = player.name
-                    form_data['player_id'] = player.id
+                    form_data['player_id'] = player.pk
                     form_data['player_mlb_id'] = player.mlb_id
                 # If it's already a string, leave it as is
             
@@ -335,7 +358,20 @@ def transaction_form_step2(request):
                 processing_week=get_next_processing_week()
             )
             
-            messages.success(request, f'Transaction submitted successfully! Reference ID: #{submission.id}')
+            if proposal.status == models.TransactionProposal.AWAITING:
+                waiting = ", ".join(
+                    party.team.short_name
+                    for party in proposal.parties.filter(agreement_status=models.TransactionParty.PENDING)
+                )
+                messages.success(
+                    request,
+                    f"Proposal #{proposal.id} is awaiting agreement from {waiting}. Reference #{submission.id}.",
+                )
+            else:
+                messages.success(
+                    request,
+                    f"Proposal #{proposal.id} is {proposal.get_status_display().lower()} for the Monday processing window. Reference #{submission.id}.",
+                )
             return redirect('/transactions/success/')
     else:
         form = FormClass(user=request.user)
@@ -366,15 +402,46 @@ def transaction_success(request):
 
 @login_required  
 def transaction_list(request):
-    """List user's transaction submissions"""
+    """List user's transaction submissions and proposals."""
+    proposals = visible_proposals(request.user)
+    owned = teams_for_user(request.user)
+    respondable_ids = set(
+        proposals.filter(
+            status=models.TransactionProposal.AWAITING,
+            parties__team__in=owned,
+            parties__role=models.TransactionParty.COUNTERPARTY,
+            parties__agreement_status=models.TransactionParty.PENDING,
+        ).values_list("id", flat=True)
+    )
     context = utils.build_context(request)
     context.update({
         'submissions': models.TransactionSubmission.objects.filter(
             user=request.user
-        ).order_by('-created')
+        ).order_by('-created'),
+        'proposals': proposals,
+        'respondable_ids': respondable_ids,
     })
     
     return render(request, 'transactions/list.html', context)
+
+
+@login_required
+def proposal_respond(request, proposal_id):
+    """Agree to or decline a trade the other club sent."""
+    proposal = get_object_or_404(models.TransactionProposal, pk=proposal_id)
+    action = request.POST.get('action')
+    try:
+        if action == 'agree':
+            agree(request.user, proposal)
+            messages.success(request, 'Agreement recorded.')
+        elif action == 'decline':
+            decline(request.user, proposal)
+            messages.success(request, 'Proposal declined.')
+        else:
+            messages.error(request, 'Choose agree or decline.')
+    except TransactionError as exc:
+        messages.error(request, str(exc))
+    return redirect('/transactions/list/')
 
 @login_required
 def search(request):

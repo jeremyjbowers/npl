@@ -4,6 +4,7 @@ from django.shortcuts import redirect
 
 from npl import views
 from npl import auth
+from npl.transactions import api as transaction_api
 
 def admin_login_redirect(request):
     """Redirect admin login to our magic link login"""
@@ -17,6 +18,16 @@ urlpatterns = [
     path('api/v1/auctions/test/', views.auction_test_view),
     path('api/v1/auctions/debug/<int:auction_id>/', views.auction_debug_view),
     path('api/v1/players/<str:playerid>/nominate/', views.nominate_player_api),
+    path('api/v1/transactions/kinds/', transaction_api.kinds),
+    path('api/v1/transactions/proposals/', transaction_api.proposals),
+    path('api/v1/transactions/proposals/<int:proposal_id>/', transaction_api.proposal_detail),
+    path('api/v1/transactions/proposals/<int:proposal_id>/agree/', transaction_api.proposal_agree),
+    path('api/v1/transactions/proposals/<int:proposal_id>/decline/', transaction_api.proposal_decline),
+    path('api/v1/transactions/proposals/<int:proposal_id>/withdraw/', transaction_api.proposal_withdraw),
+    path('api/v1/waivers/<int:waiver_id>/claim/', transaction_api.waiver_claim),
+    path('api/v1/drafts/', transaction_api.drafts),
+    path('api/v1/drafts/<int:session_id>/pick/', transaction_api.draft_pick),
+    path('api/v1/mcp/tools/', transaction_api.mcp_tools),
     path('api/v1/wishlist/bulk/', views.wishlist_bulk),
     path('api/v1/wishlist/interesting/<str:playerid>/', views.interesting_action),
     path('auctions/', views.auction_list),
@@ -37,6 +48,7 @@ urlpatterns = [
     path("transactions/form/step2/", views.transaction_form_step2, name='transaction_form_step2'),
     path("transactions/success/", views.transaction_success, name='transaction_success'),
     path("transactions/list/", views.transaction_list, name='transaction_list'),
+    path("transactions/proposals/<int:proposal_id>/respond/", views.proposal_respond, name='proposal_respond'),
     path("transactions/", views.transactions),
     
     path("players/search/", views.search),
