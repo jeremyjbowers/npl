@@ -12,6 +12,9 @@ from django.db.models import Q
 class TransactionTypeForm(forms.Form):
     """Step 1: Choose transaction type"""
     TRANSACTION_CHOICES = [
+        ('trade', 'Trade Proposal'),
+        ('signing', 'Free Agent or Contract Signing'),
+        ('ifa_signing', 'IFA Signing'),
         ('offseason', 'Offseason Transactions'),
         ('injured_list', 'Injured List'),
         ('option_minors', 'Option to Minor Leagues'),
@@ -163,8 +166,7 @@ class InjuredListForm(BaseTransactionForm):
     """Form for injured list transactions"""
     IL_TYPE_CHOICES = [
         ('7-day', '7-Day IL'),
-        ('15-day', '15-Day IL'),
-        ('60-day', '60-Day IL'),
+        ('56-day', '56-Day IL'),
         ('eos', 'End of Season IL'),
     ]
     
@@ -409,11 +411,23 @@ class WaiverRequestForm(BaseTransactionForm):
     waiver_type = forms.ChoiceField(
         choices=[
             ('outright', 'Outright Waivers'),
-            ('release', 'Release Waivers'),
             ('trade', 'Trade Waivers'),
+            ('rule5', 'Rule 5 Waivers'),
+            ('release', 'Straight Release'),
         ],
         widget=forms.Select(attrs={'class': 'select'}),
         label="Type of Waivers"
+    )
+
+    veteran_disposition = forms.ChoiceField(
+        required=False,
+        choices=[
+            ('', 'Not a 5+ service-time player'),
+            ('keep_40', 'If cleared, keep on the 40-man'),
+            ('release', 'If cleared, release'),
+        ],
+        widget=forms.Select(attrs={'class': 'select'}),
+        label="5+ service time"
     )
     
     purpose = forms.CharField(
@@ -628,8 +642,127 @@ class LimboAssignmentForm(BaseTransactionForm):
     )
 
 
+class TradeProposalForm(BaseTransactionForm):
+    """Propose a trade. The other club has to agree before it can be posted."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['counterparty'] = forms.ModelChoiceField(
+            queryset=Team.objects.all(),
+            widget=forms.Select(attrs={'class': 'select'}),
+            label="Other team",
+        )
+        self.setup_player_field(
+            label="Player (optional)",
+            help_text="A player your team is sending. Add picks and money in the fields below.",
+        )
+        self.fields['player'].required = False
+
+    def get_player_queryset(self):
+        if self.user_team:
+            return Player.objects.filter(team=self.user_team, active=True)
+        return Player.objects.none()
+
+    pick_label = forms.CharField(
+        required=False,
+        max_length=255,
+        widget=forms.TextInput(attrs={'class': 'input', 'placeholder': '2027 Rule 4, round 1'}),
+        label="Draft pick",
+    )
+    cash_amount = forms.IntegerField(
+        required=False,
+        min_value=0,
+        widget=forms.NumberInput(attrs={'class': 'input'}),
+        label="Cash reserves ($)",
+    )
+    ifa_amount = forms.IntegerField(
+        required=False,
+        min_value=0,
+        widget=forms.NumberInput(attrs={'class': 'input'}),
+        label="IFA cap space ($)",
+    )
+    notes = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={'class': 'textarea', 'rows': 3}),
+        label="Salary coverage and other terms",
+    )
+
+
+class SigningProposalForm(BaseTransactionForm):
+    """Free-agent, minor-league, or extension terms."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setup_player_field(
+            label="Player",
+            help_text="Choose an unowned player, or type a name if he is not in the database yet.",
+        )
+        self.fields['player'].required = False
+
+    def get_player_queryset(self):
+        return Player.objects.filter(active=True)
+
+    signing_kind = forms.ChoiceField(
+        choices=[
+            ('mlb_signing', 'Offseason MLB signing (points)'),
+            ('in_season_fa', 'In-season free agent (dollars, one year)'),
+            ('minor_signing', 'Minor-league contract'),
+            ('extension', 'Extension'),
+            ('ifa_signing', 'IFA signing (dollars and bonus pool)'),
+        ],
+        widget=forms.Select(attrs={'class': 'select'}),
+        label="Signing type",
+    )
+    player_name = forms.CharField(
+        required=False,
+        max_length=255,
+        widget=forms.TextInput(attrs={'class': 'input'}),
+        label="Player name, if he is not listed",
+    )
+    years = forms.IntegerField(
+        required=False,
+        min_value=1,
+        max_value=8,
+        widget=forms.NumberInput(attrs={'class': 'input'}),
+        label="Years",
+    )
+    total_amount = forms.IntegerField(
+        required=False,
+        min_value=0,
+        widget=forms.NumberInput(attrs={'class': 'input'}),
+        label="Total dollars",
+    )
+    points = forms.DecimalField(
+        required=False,
+        min_value=0,
+        decimal_places=1,
+        max_digits=6,
+        widget=forms.NumberInput(attrs={'class': 'input', 'step': '0.1'}),
+        label="Points",
+        help_text="Offseason major-league bids are whole points, starting at 11. Minor-league bids are tenths, up to 9.9.",
+    )
+    notes = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={'class': 'textarea', 'rows': 3}),
+        label="Yearly salaries, options, and buyouts",
+    )
+
+
+class IFASigningForm(SigningProposalForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['signing_kind'].initial = 'ifa_signing'
+        self.fields['signing_kind'].widget = forms.HiddenInput()
+        self.fields['points'].widget = forms.HiddenInput()
+        self.fields['total_amount'].label = "Bonus ($)"
+        self.fields['total_amount'].required = True
+
+
 # Map transaction types to their corresponding forms
 TRANSACTION_FORM_MAP = {
+    'trade': TradeProposalForm,
+    'signing': SigningProposalForm,
+    'ifa_signing': IFASigningForm,
     'offseason': OffseasonTransactionForm,
     'injured_list': InjuredListForm,
     'option_minors': OptionToMinorsForm,

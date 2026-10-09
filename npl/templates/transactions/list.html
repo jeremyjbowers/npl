@@ -41,6 +41,53 @@
                 </div>
             </div>
             
+            {% if proposals %}
+            <div class="box">
+                <h2 class="title is-5">Proposals</h2>
+                <p class="mb-3">Trades stay here until the other club agrees. Roster moves, signings, and waivers wait for the Monday processing window.</p>
+                <div class="table-container">
+                    <table class="table is-fullwidth is-hoverable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Team</th>
+                                <th>Kind</th>
+                                <th>Status</th>
+                                <th>Other clubs</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for proposal in proposals %}
+                            <tr>
+                                <td><span class="tag is-light">#{{ proposal.id }}</span></td>
+                                <td>{{ proposal.originating_team.short_name }}</td>
+                                <td>{{ proposal.kind_label }}</td>
+                                <td>{{ proposal.get_status_display }}</td>
+                                <td>
+                                    {% for party in proposal.parties.all %}
+                                        {% if party.role == 'counterparty' %}
+                                            {{ party.team.short_name }} ({{ party.get_agreement_status_display }})
+                                        {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% if proposal.status == 'awaiting_agreement' %}
+                                    <form method="post" action="/transactions/proposals/{{ proposal.id }}/respond/">
+                                        {% csrf_token %}
+                                        <button class="button is-small is-primary" name="action" value="agree" type="submit">Agree</button>
+                                        <button class="button is-small" name="action" value="decline" type="submit">Decline</button>
+                                    </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
             {% if submissions %}
             <div class="box">
                 <div class="table-container">

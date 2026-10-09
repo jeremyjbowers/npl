@@ -21,6 +21,7 @@ import pytz
 
 from npl import models, utils
 from .forms import TransactionTypeForm, TRANSACTION_FORM_MAP
+from npl.transactions.service import TransactionError, submit_from_form, visible_proposals, agree, decline
 
 def auction_bid_api(request, auctionid):
     now = datetime.now(pytz.timezone('US/Eastern'))
@@ -298,6 +299,21 @@ def transaction_form_step2(request):
     if request.method == 'POST':
         form = FormClass(request.POST, user=request.user)
         if form.is_valid():
+            try:
+                submit_from_form(request.user, transaction_type, form.cleaned_data, source='web')
+            except TransactionError as exc:
+                form.add_error(None, str(exc))
+                context = utils.build_context(request)
+                context.update({
+                    'form': form,
+                    'transaction_type': transaction_type,
+                    'transaction_display': dict(TransactionTypeForm.TRANSACTION_CHOICES)[transaction_type],
+                    'step': 2,
+                    'total_steps': 2,
+                    'next_deadline': get_next_processing_deadline()
+                })
+                return render(request, 'transactions/form_step2.html', context)
+
             # Create transaction submission
             team_id = form.cleaned_data.get('team')
             if isinstance(team_id, str):
@@ -366,15 +382,36 @@ def transaction_success(request):
 
 @login_required  
 def transaction_list(request):
-    """List user's transaction submissions"""
+    """List user's transaction submissions and proposals."""
+    proposals = visible_proposals(request.user)
     context = utils.build_context(request)
     context.update({
         'submissions': models.TransactionSubmission.objects.filter(
             user=request.user
-        ).order_by('-created')
+        ).order_by('-created'),
+        'proposals': proposals,
     })
     
     return render(request, 'transactions/list.html', context)
+
+
+@login_required
+def proposal_respond(request, proposal_id):
+    """Agree to or decline a trade the other club sent."""
+    proposal = get_object_or_404(models.TransactionProposal, pk=proposal_id)
+    action = request.POST.get('action')
+    try:
+        if action == 'agree':
+            agree(request.user, proposal)
+            messages.success(request, 'Agreement recorded.')
+        elif action == 'decline':
+            decline(request.user, proposal)
+            messages.success(request, 'Proposal declined.')
+        else:
+            messages.error(request, 'Choose agree or decline.')
+    except TransactionError as exc:
+        messages.error(request, str(exc))
+    return redirect('/transactions/list/')
 
 @login_required
 def search(request):

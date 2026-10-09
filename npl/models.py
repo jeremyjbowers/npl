@@ -104,6 +104,10 @@ class Team(BaseModel):
     luxury_cap_space = models.IntegerField(blank=True, null=True)
     cash = models.IntegerField(blank=True, null=True)
     ifa = models.IntegerField(blank=True, null=True)
+    can_transact = models.BooleanField(
+        default=True,
+        help_text="Unpaid or vacant clubs are frozen and cannot submit transactions.",
+    )
 
     class Meta:
         ordering = ["full_name"]
@@ -614,7 +618,10 @@ class Player(BaseModel):
 
 class TransactionType(BaseModel):
     transaction_type = models.CharField(max_length=255)
-
+    code = models.CharField(max_length=64, blank=True, null=True, unique=True)
+    category = models.CharField(max_length=32, blank=True, null=True)
+    requires_agreement = models.BooleanField(default=False)
+    requires_contract = models.BooleanField(default=False)
 
     class Meta():
         ordering = ['transaction_type']
@@ -648,6 +655,13 @@ class Transaction(BaseModel):
     is_archive_transaction = models.BooleanField(default=False)
 
     notes = models.TextField(null=True, blank=True)
+    proposal = models.ForeignKey(
+        "TransactionProposal",
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="ledger_rows",
+    )
 
     class Meta():
         ordering = ['-date', 'transaction_type__transaction_type']
@@ -825,7 +839,34 @@ class Auction(BaseModel):
     # Track whether this is a nomination or a binding auction
     is_nomination = models.BooleanField(default=False, help_text="Nominations are non-binding; bids are required to win")
     # Auction-specific settings
-    min_bid = models.IntegerField(default=1, help_text="Minimum bid amount in dollars")
+    min_bid = models.IntegerField(default=1, help_text="Minimum bid amount in dollars or whole points")
+    IN_SEASON = "in_season_dollars"
+    OFFSEASON = "offseason_points"
+    IFA = "ifa_dollars"
+    MLC = "mlc_points"
+    AUCTION_KIND_CHOICES = (
+        (IN_SEASON, "In-season free agency (dollars)"),
+        (OFFSEASON, "Offseason free agency (points)"),
+        (IFA, "IFA (dollars)"),
+        (MLC, "Minor-league contract (points)"),
+    )
+    auction_kind = models.CharField(
+        max_length=32, choices=AUCTION_KIND_CHOICES, default=IN_SEASON
+    )
+    DOLLARS = "dollars"
+    POINTS = "points"
+    BID_UNIT_CHOICES = (
+        (DOLLARS, "Dollars"),
+        (POINTS, "Points"),
+    )
+    bid_unit = models.CharField(max_length=16, choices=BID_UNIT_CHOICES, default=DOLLARS)
+    resulting_proposal = models.ForeignKey(
+        "TransactionProposal",
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="source_auction",
+    )
 
     class Meta:
         ordering = ['-closes']
@@ -1005,7 +1046,14 @@ class PlayerNomination(BaseModel):
 class MLBAuctionBid(BaseModel):
     team = models.ForeignKey(Team, on_delete=models.CASCADE)
     auction = models.ForeignKey(Auction, on_delete=models.CASCADE)
-    max_bid = models.IntegerField(help_text="Bid amount in dollars")
+    max_bid = models.IntegerField(help_text="Bid amount in dollars or whole points")
+    max_bid_decimal = models.DecimalField(
+        max_digits=6,
+        decimal_places=1,
+        blank=True,
+        null=True,
+        help_text="Minor-league contract bids, in tenths of a point (maximum 9.9).",
+    )
 
     class Meta:
         unique_together = ['team', 'auction']
@@ -1014,10 +1062,14 @@ class MLBAuctionBid(BaseModel):
         from django.core.exceptions import ValidationError
         
         # Validate bid amount is positive and meets minimum
-        if self.max_bid <= 0:
+        if self.auction and self.auction.auction_kind == Auction.MLC:
+            if self.max_bid_decimal is None or self.max_bid_decimal <= 0:
+                raise ValidationError("Minor-league bids are tenths of a point, up to 9.9")
+            if self.max_bid_decimal > 9.9:
+                raise ValidationError("Minor-league contract bids cannot exceed 9.9 points")
+        elif self.max_bid <= 0:
             raise ValidationError("Bid must be a positive dollar amount")
-        
-        if self.auction and self.max_bid < self.auction.min_bid:
+        elif self.auction and self.max_bid < self.auction.min_bid:
             raise ValidationError(f"Bid must be at least ${self.auction.min_bid}")
         
         # Validate auction is still active
@@ -1478,3 +1530,17 @@ class TransactionSubmission(BaseModel):
             'foreign_retirement': 'Foreign/Retirement/Death',
         }
         return type_map.get(self.transaction_type, self.transaction_type.title())
+
+
+from npl.transaction_models import (  # noqa: E402,F401
+    DraftSession,
+    InjuredListStint,
+    MinorLeagueOptOut,
+    RestrictedListStint,
+    Rule4Slot,
+    TransactionAsset,
+    TransactionParty,
+    TransactionProposal,
+    Waiver,
+    WaiverClaim,
+)

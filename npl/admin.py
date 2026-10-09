@@ -21,7 +21,17 @@ from npl.models import (
     League,
     Division,
     Wishlist,
-    WishlistPlayer
+    WishlistPlayer,
+    TransactionProposal,
+    TransactionParty,
+    TransactionAsset,
+    Waiver,
+    WaiverClaim,
+    DraftSession,
+    InjuredListStint,
+    RestrictedListStint,
+    MinorLeagueOptOut,
+    Rule4Slot,
 )
 
 admin.site.site_title = "The NPL"
@@ -279,6 +289,72 @@ class WishlistPlayerAdmin(admin.ModelAdmin):
     list_display = ['player','rank','interesting', 'player_fv', 'player_risk']
     list_filter = ['wishlist', 'interesting', 'player_fv', 'player_risk', 'player__is_owned']
     search_fields = ['player__name', 'wishlist__team__full_name']
+
+class TransactionAssetInline(admin.TabularInline):
+    model = TransactionAsset
+    extra = 0
+    autocomplete_fields = ['player', 'from_team', 'to_team']
+
+
+class TransactionPartyInline(admin.TabularInline):
+    model = TransactionParty
+    extra = 0
+    autocomplete_fields = ['team']
+
+
+@admin.register(TransactionProposal)
+class TransactionProposalAdmin(admin.ModelAdmin):
+    list_display = ['id', 'kind', 'status', 'originating_team', 'source', 'created']
+    list_filter = ['status', 'kind', 'source']
+    search_fields = ['kind', 'notes', 'originating_team__short_name']
+    autocomplete_fields = ['originating_team', 'transaction_type']
+    inlines = [TransactionPartyInline, TransactionAssetInline]
+
+
+@admin.register(Waiver)
+class WaiverAdmin(admin.ModelAdmin):
+    list_display = ['player', 'placing_team', 'waiver_type', 'status', 'placed_on', 'clears_on']
+    list_filter = ['waiver_type', 'status']
+    search_fields = ['player__name', 'placing_team__full_name']
+    autocomplete_fields = ['player', 'placing_team', 'claiming_team']
+
+
+@admin.register(WaiverClaim)
+class WaiverClaimAdmin(admin.ModelAdmin):
+    list_display = ['waiver', 'team', 'created']
+    autocomplete_fields = ['waiver', 'team']
+
+
+@admin.register(DraftSession)
+class DraftSessionAdmin(admin.ModelAdmin):
+    list_display = ['year', 'draft_type', 'half', 'status', 'current_pick']
+    list_filter = ['draft_type', 'status', 'year']
+
+
+@admin.register(InjuredListStint)
+class InjuredListStintAdmin(admin.ModelAdmin):
+    list_display = ['player', 'team', 'length', 'placed_on', 'active_stint']
+    list_filter = ['length', 'active_stint']
+    autocomplete_fields = ['player', 'team']
+
+
+@admin.register(RestrictedListStint)
+class RestrictedListStintAdmin(admin.ModelAdmin):
+    list_display = ['player', 'team', 'rl_type', 'placed_on', 'active_stint']
+    autocomplete_fields = ['player', 'team']
+
+
+@admin.register(MinorLeagueOptOut)
+class MinorLeagueOptOutAdmin(admin.ModelAdmin):
+    list_display = ['player', 'team', 'salary']
+    autocomplete_fields = ['player', 'team']
+
+
+@admin.register(Rule4Slot)
+class Rule4SlotAdmin(admin.ModelAdmin):
+    list_display = ['year', 'round', 'pick', 'slot_value']
+    list_filter = ['year', 'round']
+
 
 @admin.register(PlayerNomination)
 class PlayerNominationAdmin(admin.ModelAdmin):
