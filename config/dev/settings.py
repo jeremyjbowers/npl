@@ -135,12 +135,18 @@ ACCOUNT_LOGOUT_ON_GET = True
 ACCOUNT_PASSWORD_MIN_LENGTH = None
 
 # DJANGO-SESAME SETTINGS (Magic Links)
-SESAME_MAX_AGE = 60 * 60 * 24 * 30
+# The signed timestamp is a 32-bit count of seconds since 2020-01-01, so a
+# link cannot outlive 2088. Sixty years is inside that window. Links are
+# reusable, and changing a password does not revoke them.
+SESAME_MAX_AGE = 60 * 60 * 24 * 365 * 60
 SESAME_ONE_TIME = False
 SESAME_INVALIDATE_ON_PASSWORD_CHANGE = False
 
 # SESSION SETTINGS (Database-backed for persistence across deployments)
-SESSION_COOKIE_AGE = 60 * 60 * 24 * 30  # 30 days
+# Browsers drop cookies dated more than about 400 days out. Each visit
+# refreshes the cookie, so a manager stays signed in as long as they come
+# back within that window. The email link itself lasts 60 years.
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 400
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 SESSION_SAVE_EVERY_REQUEST = True
 

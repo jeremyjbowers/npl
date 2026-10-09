@@ -34,13 +34,13 @@ def send_magic_link(request, email):
     Send magic link to existing users only.
     No user creation since admins create accounts manually.
     """
-    try:
-        user = User.objects.get(email=email)
-    except User.DoesNotExist:
+    email = email.strip()
+    user = User.objects.filter(email__iexact=email).first()
+    if user is None:
         messages.error(request, "No account found with this email address. Please contact an administrator.")
         return redirect('account_login')
-    
-    # Generate token with 30-day expiry
+
+    # SESAME_MAX_AGE is sixty years, which is as long as these links can last.
     token = get_token(user)
     magic_link = request.build_absolute_uri(
         reverse('magic_link_verify', kwargs={'token': token})
@@ -58,7 +58,7 @@ def send_magic_link(request, email):
     })
     
     try:
-        MailgunEmailer.send_email(email, subject, html_content)
+        MailgunEmailer.send_email(user.email, subject, html_content)
         messages.success(
             request,
             "We've sent you a magic link! Check your email (including spam folder) to sign in."

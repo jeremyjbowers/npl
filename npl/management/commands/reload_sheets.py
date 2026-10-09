@@ -12,8 +12,6 @@ class Command(BaseCommand):
         # Update the universe of players from MLB
         call_command('load_mlb_rosters')
 
-        # Update NPL specific data
-        call_command('initial_load_teams')
-        call_command('initial_load_npl_roster_sheet')
-        call_command('initial_load_contracts')
+        # Roster tabs are the opening snapshot: clubs, MLB IDs, money, owners.
+        call_command('load_roster_workbook')
         call_command('initial_load_transactions')
