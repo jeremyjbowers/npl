@@ -161,6 +161,77 @@ class TeamSeason(BaseModel):
     def __unicode__(self):
         return f"{self.season} Season: {self.team}"
 
+
+class TeamLedgerYear(BaseModel):
+    """One season of cap, payroll, cash, and IFA figures from a roster tab.
+
+    The roster workbook is the opening snapshot. After that load, these rows
+    are the balances transactions on the site start from.
+    """
+
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="ledger_years")
+    year = models.IntegerField()
+    payroll = models.IntegerField(blank=True, null=True)
+    cap_space = models.IntegerField(blank=True, null=True)
+    cash = models.IntegerField(blank=True, null=True)
+    luxury_tax = models.IntegerField(blank=True, null=True)
+    luxury_note = models.CharField(max_length=255, blank=True, default="")
+    salary_cap = models.IntegerField(blank=True, null=True)
+    available_cap = models.IntegerField(blank=True, null=True)
+    cash_reserves = models.IntegerField(blank=True, null=True)
+    roster_85 = models.IntegerField(blank=True, null=True)
+    roster_40 = models.IntegerField(blank=True, null=True)
+    roster_30 = models.IntegerField(blank=True, null=True)
+    ifa_base = models.IntegerField(blank=True, null=True)
+    ifa_acquired = models.IntegerField(blank=True, null=True)
+    ifa_total = models.IntegerField(blank=True, null=True)
+
+    class Meta:
+        ordering = ["year"]
+        constraints = [
+            models.UniqueConstraint(fields=["team", "year"], name="unique_team_ledger_year")
+        ]
+
+    def __unicode__(self):
+        return f"{self.team} {self.year}"
+
+
+class TeamFinancialLine(BaseModel):
+    """A payroll or cash line from a roster tab, including carried salary."""
+
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="financial_lines")
+    year = models.IntegerField(blank=True, null=True)
+    section = models.CharField(max_length=32)
+    kind = models.CharField(max_length=32)
+    label = models.CharField(max_length=255, blank=True, default="")
+    counterparty = models.CharField(max_length=255, blank=True, default="")
+    counterparty_team = models.ForeignKey(
+        Team,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="counterparty_financial_lines",
+    )
+    player_name = models.CharField(max_length=255, blank=True, default="")
+    player = models.ForeignKey(
+        "Player",
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="financial_lines",
+    )
+    amount = models.IntegerField(blank=True, null=True)
+    text_value = models.CharField(max_length=64, blank=True, default="")
+    note = models.TextField(blank=True, default="")
+    sort_order = models.IntegerField(default=0)
+
+    class Meta:
+        ordering = ["section", "sort_order", "year"]
+
+    def __unicode__(self):
+        return f"{self.team} {self.year} {self.kind} {self.label}"
+
+
 class Player(BaseModel):
     team = models.ForeignKey(Team, on_delete=models.SET_NULL, blank=True, null=True)
     is_owned = models.BooleanField(default=False)
@@ -540,20 +611,20 @@ class Player(BaseModel):
 
     def set_options(self):
         """
-        Options
+        Options. Zero is a real sheet value (no options left). 99 is the
+        sheet's marker for a player who cannot be optioned.
         """
-        if not self.options == 99:
-            if self.options > 3:
-                self.options = 3
-
-        if not self.options:
+        if self.options is None:
+            self.options = 3
+            return
+        if self.options != 99 and self.options > 3:
             self.options = 3
 
     def set_player_level(self):
         """
-        Set the player_level field based on roster status for consistent sorting
+        Set the player_level field based on roster status for consistent sorting.
+        An option or minor-league assignment wins over the 40-man flag.
         """
-        # Check for special statuses first (IL, Restricted, Retired)
         if self.roster_7dayIL or self.roster_56dayIL or self.roster_eosIL:
             return 'IL'
         if self.roster_restricted:
@@ -562,9 +633,6 @@ class Player(BaseModel):
             return 'Retired'
         if self.roster_foreign:
             return 'Foreign'
-        # Then check regular roster levels
-        if self.roster_40man:
-            return 'MLB'
         if self.roster_tripleA or self.roster_tripleA_option:
             return 'AAA'
         if self.roster_doubleA:
@@ -573,6 +641,8 @@ class Player(BaseModel):
             return 'A'
         if self.roster_nonroster:
             return 'Rookie'
+        if self.roster_40man or self.roster_30man:
+            return 'MLB'
         return "Unknown"
 
     def save(self, *args, **kwargs):

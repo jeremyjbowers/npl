@@ -50,10 +50,12 @@ def build_context(request):
 
     # add the owner to the page
     context["owner"] = None
+    context["owner_team"] = None
     if request.user.is_authenticated:
-        owner = models.Owner.objects.get(user=request.user)
+        owner = models.Owner.objects.filter(user=request.user).first()
         context["owner"] = owner
-        context['owner_team'] = models.Team.objects.get(owners=owner)
+        if owner:
+            context["owner_team"] = models.Team.objects.filter(owners=owner).first()
 
     context["all_teams"] = models.Team.objects.all().order_by('league', 'division', 'short_name')
     
