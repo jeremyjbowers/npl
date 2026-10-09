@@ -48,7 +48,10 @@ _KIND_ROWS = (
     ("il_7", "IL: 7 Day", "roster", False, False, True),
     ("il_56", "IL: 56 Day", "roster", False, False, True),
     ("il_eos", "IL: End of Season", "roster", False, False, True),
+    ("il_covid", "IL: COVID", "roster", False, False, True),
+    ("il_move", "IL: Move", "roster", False, False, True),
     ("il_activate", "IL: Activate", "roster", False, False, True),
+    ("in_limbo", "In Limbo Assignment", "roster", False, False, True),
     ("option_minors", "Option to Minors", "roster", False, False, True),
     ("recall_option", "Recall Option", "roster", False, False, True),
     ("purchase_contract", "Contract: Purchased", "roster", False, True, True),
@@ -168,7 +171,7 @@ FORM_TYPE_TO_CODE = {
     "waiver_request": "waiver_request_outright",
     "waiver_claim": "waiver_claimed",
     "restricted_list": "restricted_place",
-    "limbo_assignment": "restricted_place",
+    "limbo_assignment": "in_limbo",
 }
 
 IL_FORM_TO_CODE = {
@@ -177,7 +180,40 @@ IL_FORM_TO_CODE = {
     "60-day": "il_56",
     "15-day": "il_7",
     "eos": "il_eos",
+    "covid": "il_covid",
+    "moving": "il_move",
 }
+
+# Restricted-list tab. Counts against the 40-man, accrues service, accrues salary.
+RL_TYPES = {
+    "RES": {"label": "Restricted List", "counts_against_40": False, "accrues_service": False, "accrues_salary": False},
+    "DV": {"label": "Domestic Violence Suspension", "counts_against_40": False, "accrues_service": False, "accrues_salary": False},
+    "PED": {"label": "Performance Enhancing Drug Suspension", "counts_against_40": False, "accrues_service": False, "accrues_salary": False},
+    "Bet": {"label": "Betting Suspension", "counts_against_40": False, "accrues_service": False, "accrues_salary": False},
+    "Pat": {"label": "Paternity Leave", "counts_against_40": True, "accrues_service": True, "accrues_salary": True},
+    "FMEL": {"label": "Family Medical Emergency List", "counts_against_40": True, "accrues_service": True, "accrues_salary": True},
+    "Ber": {"label": "Bereavement List", "counts_against_40": True, "accrues_service": True, "accrues_salary": True},
+    "Temp": {"label": "Pending final suspension details", "counts_against_40": False, "accrues_service": True, "accrues_salary": True},
+}
+
+# STA column on free-agent pools and rosters. "OR" means never previously outrighted.
+STA_CODES = ("QO", "OR", "R5", "ORFA", "OR, R5")
+
+WAIVER_SERVICE_CLASSES = (
+    ("under_3_outrighted", "Under 3 years, previously outrighted"),
+    ("under_3_never_outrighted", "Under 3 years, never outrighted (STA is OR)"),
+    ("super2_to_4_171", "Super Two through 4.171 years"),
+    ("five_plus", "5 or more years"),
+)
+
+FA_POOLS = (
+    ("mlb_current", "MLB free agents who entered this year or were in an in-season auction"),
+    ("milb_current", "Free agents with no MLB service time who entered this year"),
+    ("mlb_prior", "Earlier MLB free agents with no auction activity"),
+    ("milb_prior", "Earlier free agents who had no MLB service time when released"),
+)
+
+RULE5_OUTCOMES = ("open", "selected", "pass", "skip", "ineligible")
 
 WAIVER_FORM_TO_CODE = {
     "outright": "waiver_request_outright",
@@ -223,11 +259,28 @@ def normalize_sheet_type(raw):
     return SHEET_ALIASES.get(key)
 
 
-def sheet_asset_type(player_cell):
+def _sheet_key(player_cell):
     if not player_cell:
-        return None
-    key = " ".join(str(player_cell).strip().lower().split())
-    return SHEET_ASSET_LABELS.get(key)
+        return ""
+    return " ".join(str(player_cell).strip().lower().split())
+
+
+def sheet_asset_type(player_cell):
+    return SHEET_ASSET_LABELS.get(_sheet_key(player_cell))
+
+
+def sheet_asset_qualifier(player_cell):
+    """Rule 5 picks are logged as their own Player cell, separate from a Rule 4 pick."""
+    key = _sheet_key(player_cell)
+    if key == "r5 draft pick":
+        return "rule5"
+    if key == "draft pick":
+        return "rule4"
+    return ""
+
+
+def rl_rules(code):
+    return RL_TYPES.get(code or "", {})
 
 
 def manager_kinds():

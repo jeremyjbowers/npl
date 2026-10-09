@@ -168,6 +168,8 @@ class InjuredListForm(BaseTransactionForm):
         ('7-day', '7-Day IL'),
         ('56-day', '56-Day IL'),
         ('eos', 'End of Season IL'),
+        ('covid', 'COVID IL'),
+        ('moving', 'Move between IL types'),
     ]
     
     def __init__(self, *args, **kwargs):
@@ -419,6 +421,19 @@ class WaiverRequestForm(BaseTransactionForm):
         label="Type of Waivers"
     )
 
+    service_class = forms.ChoiceField(
+        required=False,
+        choices=[
+            ('', 'Service class'),
+            ('under_3_outrighted', 'Under 3 years, previously outrighted'),
+            ('under_3_never_outrighted', 'Under 3 years, never outrighted'),
+            ('super2_to_4_171', 'Super Two through 4.171 years'),
+            ('five_plus', '5 or more years'),
+        ],
+        widget=forms.Select(attrs={'class': 'select'}),
+        label="Service class",
+    )
+
     veteran_disposition = forms.ChoiceField(
         required=False,
         choices=[
@@ -492,9 +507,14 @@ class RestrictedListForm(BaseTransactionForm):
     
     reason = forms.ChoiceField(
         choices=[
-            ('suspension', 'Suspension'),
-            ('personal', 'Personal Reasons'),
-            ('other', 'Other'),
+            ('RES', 'Restricted list'),
+            ('DV', 'Domestic violence suspension'),
+            ('PED', 'Performance-enhancing drug suspension'),
+            ('Bet', 'Betting suspension'),
+            ('Pat', 'Paternity leave'),
+            ('FMEL', 'Family medical emergency'),
+            ('Ber', 'Bereavement'),
+            ('Temp', 'Pending final suspension details'),
         ],
         widget=forms.Select(attrs={'class': 'select'}),
         label="Reason for Restricted List"
@@ -638,7 +658,7 @@ class LimboAssignmentForm(BaseTransactionForm):
             'placeholder': 'Explain the circumstances...'
         }),
         label="Details",
-        help_text="Provide context for the limbo assignment"
+        help_text="The club has seven days to trade or outright the player. In-limbo assignments stop after the July 31 trade deadline."
     )
 
 

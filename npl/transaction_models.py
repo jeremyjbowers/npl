@@ -156,6 +156,12 @@ class TransactionAsset(BaseModel):
     mlb_id = models.CharField(max_length=255, blank=True, null=True)
     scoresheet_id = models.CharField(max_length=255, blank=True, null=True)
     raw_label = models.CharField(max_length=255, blank=True, null=True)
+    qualifier = models.CharField(
+        max_length=16,
+        blank=True,
+        default="",
+        help_text="Distinguishes a Rule 5 draft pick from a Rule 4 pick.",
+    )
     amount = models.IntegerField(blank=True, null=True)
     contract_terms = models.JSONField(blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
@@ -219,6 +225,7 @@ class Waiver(BaseModel):
     veteran_disposition = models.CharField(
         max_length=16, choices=DISPOSITION_CHOICES, blank=True, default=""
     )
+    service_class = models.CharField(max_length=32, blank=True, default="")
     placed_on = models.DateField(blank=True, null=True)
     clears_on = models.DateField(blank=True, null=True)
     opens = models.DateTimeField(blank=True, null=True)
@@ -302,10 +309,12 @@ class InjuredListStint(BaseModel):
     SEVEN = "7"
     FIFTY_SIX = "56"
     EOS = "eos"
+    COVID = "covid"
     LENGTH_CHOICES = (
         (SEVEN, "7-day"),
         (FIFTY_SIX, "56-day"),
         (EOS, "End of season"),
+        (COVID, "COVID"),
     )
 
     proposal = models.ForeignKey(
@@ -344,6 +353,9 @@ class RestrictedListStint(BaseModel):
     player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="restricted_stints")
     team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="restricted_stints")
     rl_type = models.CharField(max_length=32, blank=True, null=True)
+    counts_against_40 = models.BooleanField(default=False)
+    accrues_service = models.BooleanField(default=False)
+    accrues_salary = models.BooleanField(default=False)
     placed_on = models.DateField(blank=True, null=True)
     mlb_reinstatement = models.DateField(blank=True, null=True)
     placed_back_by = models.DateField(blank=True, null=True)
@@ -392,3 +404,99 @@ class Rule4Slot(BaseModel):
 
     def __unicode__(self):
         return f"{self.year} R{self.round} P{self.pick} ${self.slot_value}"
+
+
+class InLimboAssignment(BaseModel):
+    """Seven days to trade or outright the player. Not a restricted-list stint."""
+
+    proposal = models.OneToOneField(
+        TransactionProposal, on_delete=models.CASCADE, related_name="limbo"
+    )
+    player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="limbo_assignments")
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="limbo_assignments")
+    placed_on = models.DateField(blank=True, null=True)
+    deadline = models.DateField(blank=True, null=True)
+    reason = models.CharField(max_length=64, blank=True, default="")
+    notes = models.TextField(blank=True, null=True)
+    active_assignment = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["-placed_on", "-created"]
+
+    def __unicode__(self):
+        return f"{self.player} in limbo ({self.team})"
+
+
+class FreeAgentListing(BaseModel):
+    """One row in a free-agent pool. Auction participation is why a player is listed, not a log verb."""
+
+    MLB_CURRENT = "mlb_current"
+    MILB_CURRENT = "milb_current"
+    MLB_PRIOR = "mlb_prior"
+    MILB_PRIOR = "milb_prior"
+    POOL_CHOICES = (
+        (MLB_CURRENT, "Current MLB free agents"),
+        (MILB_CURRENT, "Current free agents with no MLB service"),
+        (MLB_PRIOR, "Earlier MLB free agents"),
+        (MILB_PRIOR, "Earlier free agents with no MLB service at release"),
+    )
+
+    player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="free_agent_listings")
+    pool = models.CharField(max_length=32, choices=POOL_CHOICES)
+    season_year = models.IntegerField()
+    former_team = models.ForeignKey(
+        Team, on_delete=models.SET_NULL, blank=True, null=True, related_name="former_free_agents"
+    )
+    entered_via_auction = models.BooleanField(default=False)
+    sta = models.CharField(max_length=32, blank=True, default="")
+
+    class Meta:
+        ordering = ["-season_year", "pool", "player"]
+        unique_together = [("player", "pool", "season_year")]
+
+    def __unicode__(self):
+        return f"{self.player} {self.pool} {self.season_year}"
+
+
+class Rule5Selection(BaseModel):
+    """One slot on a Rule 5 board: selected, passed, skipped, or ineligible."""
+
+    OPEN = "open"
+    SELECTED = "selected"
+    PASS = "pass"
+    SKIP = "skip"
+    INELIGIBLE = "ineligible"
+    OUTCOME_CHOICES = (
+        (OPEN, "Open"),
+        (SELECTED, "Selected"),
+        (PASS, "Pass"),
+        (SKIP, "Skip"),
+        (INELIGIBLE, "Ineligible"),
+    )
+
+    session = models.ForeignKey(DraftSession, on_delete=models.CASCADE, related_name="rule5_slots")
+    round_number = models.IntegerField()
+    pick_number = models.IntegerField()
+    original_team = models.ForeignKey(
+        Team, on_delete=models.SET_NULL, blank=True, null=True, related_name="rule5_original_slots"
+    )
+    holding_team = models.ForeignKey(
+        Team,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="rule5_held_slots",
+        help_text="The club named in TRADED?, when the slot has been dealt.",
+    )
+    outcome = models.CharField(max_length=16, choices=OUTCOME_CHOICES, default=OPEN)
+    player = models.ForeignKey(Player, on_delete=models.SET_NULL, blank=True, null=True)
+    selected_from = models.ForeignKey(
+        Team, on_delete=models.SET_NULL, blank=True, null=True, related_name="rule5_players_lost"
+    )
+
+    class Meta:
+        ordering = ["session", "round_number", "pick_number"]
+        unique_together = [("session", "round_number", "pick_number")]
+
+    def __unicode__(self):
+        return f"R{self.round_number}.{self.pick_number} {self.outcome}"

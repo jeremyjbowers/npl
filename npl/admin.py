@@ -28,10 +28,13 @@ from npl.models import (
     Waiver,
     WaiverClaim,
     DraftSession,
+    FreeAgentListing,
+    InLimboAssignment,
     InjuredListStint,
     RestrictedListStint,
     MinorLeagueOptOut,
     Rule4Slot,
+    Rule5Selection,
 )
 
 admin.site.site_title = "The NPL"
@@ -356,6 +359,26 @@ class MinorLeagueOptOutAdmin(admin.ModelAdmin):
 class Rule4SlotAdmin(admin.ModelAdmin):
     list_display = ['year', 'round', 'pick', 'slot_value']
     list_filter = ['year', 'round']
+
+
+@admin.register(InLimboAssignment)
+class InLimboAssignmentAdmin(admin.ModelAdmin):
+    list_display = ['player', 'team', 'placed_on', 'deadline', 'active_assignment']
+    autocomplete_fields = ['player', 'team']
+
+
+@admin.register(FreeAgentListing)
+class FreeAgentListingAdmin(admin.ModelAdmin):
+    list_display = ['player', 'pool', 'season_year', 'former_team', 'entered_via_auction', 'sta']
+    list_filter = ['pool', 'season_year', 'entered_via_auction']
+    autocomplete_fields = ['player', 'former_team']
+
+
+@admin.register(Rule5Selection)
+class Rule5SelectionAdmin(admin.ModelAdmin):
+    list_display = ['session', 'round_number', 'pick_number', 'outcome', 'original_team', 'holding_team']
+    list_filter = ['outcome']
+    autocomplete_fields = ['original_team', 'holding_team', 'player', 'selected_from']
 
 
 @admin.register(PlayerNomination)

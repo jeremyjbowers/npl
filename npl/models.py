@@ -254,6 +254,12 @@ class Player(BaseModel):
     recall_eligible = models.BooleanField(default=False)
     activation_eligible = models.BooleanField(default=False)
     waiver_clear = models.BooleanField(default=False)
+    sta = models.CharField(
+        max_length=32,
+        blank=True,
+        default="",
+        help_text="Roster status flags from the sheets: QO, OR, R5, ORFA.",
+    )
     is_r5 = models.BooleanField(default=False)
     r5_return_team = models.ForeignKey(Team, on_delete=models.SET_NULL, blank=True, null=True, related_name="r5_return_team")
 
@@ -1534,10 +1540,13 @@ class TransactionSubmission(BaseModel):
 
 from npl.transaction_models import (  # noqa: E402,F401
     DraftSession,
+    FreeAgentListing,
+    InLimboAssignment,
     InjuredListStint,
     MinorLeagueOptOut,
     RestrictedListStint,
     Rule4Slot,
+    Rule5Selection,
     TransactionAsset,
     TransactionParty,
     TransactionProposal,

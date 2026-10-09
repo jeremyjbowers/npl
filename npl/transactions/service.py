@@ -26,6 +26,8 @@ from npl.transactions.catalog import (
     SIGNING_CODES,
     WAIVER_FORM_TO_CODE,
     get_kind,
+    rl_rules,
+    sheet_asset_qualifier,
     sheet_asset_type,
 )
 
@@ -128,6 +130,7 @@ def _normalize_asset(raw, originating_team, counterparty):
         "mlb_id": raw.get("mlb_id") or (player.mlb_id if player else None),
         "scoresheet_id": raw.get("scoresheet_id") or None,
         "raw_label": raw.get("raw_label") or (player.name if player else None),
+        "qualifier": raw.get("qualifier") or sheet_asset_qualifier(raw.get("raw_label")) or "",
         "amount": amount,
         "contract_terms": raw.get("contract_terms") or None,
         "notes": raw.get("notes") or "",
@@ -147,6 +150,9 @@ def create_proposal(
     contract_terms=None,
     waiver_type=None,
     veteran_disposition="",
+    service_class="",
+    rl_type="",
+    limbo_reason="",
 ):
     kind = get_kind(code)
     team = _require_team(user, _resolve_team(team))
@@ -173,6 +179,10 @@ def create_proposal(
         players = [asset["player"] for asset in normalized if asset["player"]]
         if not players or any(player.team_id != team.id for player in players):
             raise TransactionError("A waiver request needs a player on your team.")
+    if code == "in_limbo":
+        limbo_players = [asset["player"] for asset in normalized if asset["player"]]
+        if not limbo_players:
+            raise TransactionError("An in-limbo assignment needs a player on your team.")
 
     if kind["requires_agreement"]:
         status = models.TransactionProposal.AWAITING
@@ -222,9 +232,37 @@ def create_proposal(
             mls_snapshot=(player.mls_time if player else "") or "",
             options_remaining=player.options if player else None,
             veteran_disposition=veteran_disposition or "",
+            service_class=service_class or "",
             placed_on=placed,
             opens=timezone.now(),
         )
+    if code == "in_limbo":
+        player = next((asset["player"] for asset in normalized if asset["player"]), None)
+        placed = effective_date or timezone.localdate()
+        models.InLimboAssignment.objects.create(
+            proposal=proposal,
+            player=player,
+            team=team,
+            placed_on=placed,
+            deadline=placed + datetime.timedelta(days=7),
+            reason=limbo_reason or "",
+            notes=notes or "",
+        )
+    if code == "restricted_place":
+        player = next((asset["player"] for asset in normalized if asset["player"]), None)
+        if player:
+            rules = rl_rules(rl_type)
+            models.RestrictedListStint.objects.create(
+                proposal=proposal,
+                player=player,
+                team=team,
+                rl_type=rl_type or "",
+                counts_against_40=rules.get("counts_against_40", False),
+                accrues_service=rules.get("accrues_service", False),
+                accrues_salary=rules.get("accrues_salary", False),
+                placed_on=effective_date or timezone.localdate(),
+                notes=notes or "",
+            )
     return proposal
 
 
@@ -358,8 +396,10 @@ def _open_stint(proposal, when):
     asset = proposal.assets.filter(player__isnull=False).first()
     if asset:
         player = asset.player
-    if proposal.kind in ("il_7", "il_56", "il_eos") and player:
-        length = {"il_7": "7", "il_56": "56", "il_eos": "eos"}[proposal.kind]
+    if proposal.kind in ("il_7", "il_56", "il_eos", "il_covid") and player:
+        if models.InjuredListStint.objects.filter(proposal=proposal).exists():
+            return
+        length = {"il_7": "7", "il_56": "56", "il_eos": "eos", "il_covid": "covid"}[proposal.kind]
         models.InjuredListStint.objects.create(
             proposal=proposal,
             player=player,
@@ -373,13 +413,19 @@ def _open_stint(proposal, when):
             player=player, team=proposal.originating_team, active_stint=True
         ).update(active_stint=False)
     if proposal.kind == "restricted_place" and player:
-        models.RestrictedListStint.objects.create(
-            proposal=proposal,
-            player=player,
-            team=proposal.originating_team,
-            placed_on=when,
-            notes=proposal.notes,
-        )
+        if not models.RestrictedListStint.objects.filter(proposal=proposal).exists():
+            rules = rl_rules((proposal.contract_terms or {}).get("rl_type"))
+            models.RestrictedListStint.objects.create(
+                proposal=proposal,
+                player=player,
+                team=proposal.originating_team,
+                rl_type=(proposal.contract_terms or {}).get("rl_type") or "",
+                counts_against_40=rules.get("counts_against_40", False),
+                accrues_service=rules.get("accrues_service", False),
+                accrues_salary=rules.get("accrues_salary", False),
+                placed_on=when,
+                notes=proposal.notes,
+            )
     if proposal.kind == "restricted_activate" and player:
         models.RestrictedListStint.objects.filter(
             player=player, team=proposal.originating_team, active_stint=True
@@ -676,6 +722,9 @@ def submit_from_form(user, form_type, cleaned, source="web"):
         contract_terms=terms,
         waiver_type=cleaned.get("waiver_type") if form_type == "waiver_request" else None,
         veteran_disposition=cleaned.get("veteran_disposition") or "",
+        service_class=cleaned.get("service_class") or "",
+        rl_type=cleaned.get("reason") if form_type == "restricted_list" else "",
+        limbo_reason=cleaned.get("assignment_reason") or "",
     )
 
 

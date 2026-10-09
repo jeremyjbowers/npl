@@ -17,7 +17,7 @@ from npl.models import (
     Waiver,
     WaiverClaim,
 )
-from npl.transactions.catalog import normalize_sheet_type
+from npl.transactions.catalog import normalize_sheet_type, rl_rules, sheet_asset_qualifier
 from npl.transactions.service import TransactionError, create_proposal, execute_proposal
 
 User = get_user_model()
@@ -229,6 +229,43 @@ class ProposalServiceTests(TestCase):
         self.assertEqual(first.player_id, prospect.mlb_id)
         self.assertEqual(session.current_pick_id, second.id)
         self.assertIsNone(prospect.team_id)
+
+    def test_limbo_restricted_list_and_rule5_picks_stay_distinct(self):
+        import datetime
+
+        self.assertEqual(sheet_asset_qualifier("R5 Draft Pick"), "rule5")
+        self.assertFalse(rl_rules("PED")["accrues_salary"])
+        self.assertTrue(rl_rules("Pat")["counts_against_40"])
+
+        limbo = create_proposal(
+            user=self.user,
+            team=self.team,
+            code="in_limbo",
+            limbo_reason="pending_trade",
+            assets=[{"asset_type": "player", "player": self.player}],
+        )
+        self.assertEqual((limbo.limbo.deadline - limbo.limbo.placed_on), datetime.timedelta(days=7))
+
+        restricted = create_proposal(
+            user=self.user,
+            team=self.team,
+            code="restricted_place",
+            rl_type="PED",
+            assets=[{"asset_type": "player", "player": self.player}],
+        )
+        stint = restricted.restricted_stints.get()
+        self.assertEqual(stint.rl_type, "PED")
+        self.assertFalse(stint.counts_against_40)
+
+        trade = create_proposal(
+            user=self.user,
+            team=self.team,
+            code="trade",
+            counterparty_team=self.other_team,
+            assets=[{"raw_label": "R5 Draft Pick"}],
+        )
+        self.assertEqual(trade.assets.get().qualifier, "rule5")
+        self.assertEqual(trade.assets.get().asset_type, "draft_pick")
 
 
 class TransactionApiTests(TestCase):
