@@ -42,32 +42,6 @@ def unseed_transaction_types(apps, schema_editor):
     )
 
 
-def seed_transaction_kinds(apps, schema_editor):
-    TransactionType = apps.get_model("npl", "TransactionType")
-    from npl.transactions.catalog import KINDS
-
-    for code, kind in KINDS.items():
-        if TransactionType.objects.filter(code=code).exists():
-            continue
-        match = TransactionType.objects.filter(
-            transaction_type=kind["label"], code__isnull=True
-        ).first()
-        if match:
-            match.code = code
-            match.category = kind["category"]
-            match.requires_agreement = kind["requires_agreement"]
-            match.requires_contract = kind["requires_contract"]
-            match.save()
-            continue
-        TransactionType.objects.create(
-            transaction_type=kind["label"],
-            code=code,
-            category=kind["category"],
-            requires_agreement=kind["requires_agreement"],
-            requires_contract=kind["requires_contract"],
-        )
-
-
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -353,5 +327,5 @@ class Migration(migrations.Migration):
                 'unique_together': {('waiver', 'team')},
             },
         ),
-        migrations.RunPython(seed_transaction_kinds, migrations.RunPython.noop),
+        migrations.RunPython(seed_transaction_types, unseed_transaction_types),
     ]

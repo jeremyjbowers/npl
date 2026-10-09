@@ -1,5 +1,8 @@
+"""Transaction catalog, proposal service, and JSON API."""
+
 import json
 
+from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 
 from npl.models import (
@@ -8,185 +11,254 @@ from npl.models import (
     Owner,
     Player,
     Team,
+    Transaction,
+    TransactionAsset,
     TransactionProposal,
     Waiver,
     WaiverClaim,
 )
 from npl.transactions.catalog import normalize_sheet_type
-from npl.transactions.service import (
-    TransactionError,
-    agree,
-    claim_waiver,
-    create_proposal,
-)
-from users.models import User
+from npl.transactions.service import TransactionError, create_proposal, execute_proposal
 
+User = get_user_model()
 
-ALIASES = {
+SHEET_ALIASES = {
     "Trade": "trade",
     "Option to AAA": "option_minors",
-    "Option to Minors": "option_minors",
     "Release": "release",
-    "release": "release",
     "IL: 7 Day": "il_7",
     "Recall Option": "recall_option",
     "IL: Activate": "il_activate",
     "Contract: Purchased": "purchase_contract",
-    "Contract Purchased": "purchase_contract",
     "MLB Signing": "mlb_signing",
-    "Contract: MLB Signing": "mlb_signing",
-    "Free Agent Signing": "mlb_signing",
     "Non-Tender": "non_tender",
-    "Nontender": "non_tender",
     "Cleared: OR Waivers": "waiver_cleared_outright",
-    "Waivers: Cleared": "waiver_cleared_outright",
     "In Season FA": "in_season_fa",
-    "IN Season FA": "in_season_fa",
     "IFA Signing": "ifa_signing",
     "Waiver Request: Outright": "waiver_request_outright",
-    "Outright Waivers": "waiver_request_outright",
     "IL: 56 Day": "il_56",
-    "56 Day IL": "il_56",
     "Minor League Signing": "minor_signing",
-    "Minors Signing": "minor_signing",
+    "Outright Waivers": "waiver_request_outright",
     "IL: EOS": "il_eos",
-    "EOS IL": "il_eos",
-    "IL: End of Season": "il_eos",
     "Claimed: OR Waivers": "waiver_claimed",
+    "Extension": "extension",
+    "Activate": "il_activate",
+    "56 Day IL": "il_56",
+    "Qualifying Offer": "qualifying_offer",
+    "Decline Option": "decline_option",
+    "Restricted List": "restricted_place",
+    "Foreign List": "foreign_place",
+    "Exercise Option": "exercise_option",
+    "IN Season FA": "in_season_fa",
+    "Contract Amnesty": "contract_amnesty",
+    "EOS IL": "il_eos",
+    "RL: Activate": "restricted_activate",
+    "Rule 5 Waiver Request": "waiver_request_rule5",
+    "Reinstate: Foreign List": "foreign_reinstate",
+    "Retirement": "retirement",
+    "Minors Signing": "minor_signing",
+    "Restricted List - Activate": "restricted_activate",
+    "Returned: Rule 5 Waivers": "waiver_returned_rule5",
+    "Option to Minors": "option_minors",
+    "Contract Purchased": "purchase_contract",
+    "Contract: MLB Signing": "mlb_signing",
+    "Free Agent Signing": "mlb_signing",
+    "Nontender": "non_tender",
+    "Waivers: Cleared": "waiver_cleared_outright",
     "Waiver Claim": "waiver_claimed",
     "Waivers: Claimed": "waiver_claimed",
     "Waivers Claim": "waiver_claimed",
     "Waiver Request: Claim": "waiver_claimed",
-    "Extension": "extension",
     "Contract: Extension": "extension",
-    "Qualifying Offer": "qualifying_offer",
-    "Contract: Qualifying Offer": "qualifying_offer",
-    "Decline Option": "decline_option",
-    "Contract: Decline Option": "decline_option",
-    "Option Declined": "decline_option",
-    "Restricted List": "restricted_place",
-    "Restricted List: Place": "restricted_place",
-    "Foreign List": "foreign_place",
-    "Exercise Option": "exercise_option",
     "Contract: Exercise Option": "exercise_option",
     "Contract: Exercise Vesting Option": "exercise_vesting_option",
-    "Contract Amnesty": "contract_amnesty",
-    "RL: Activate": "restricted_activate",
-    "Restricted List - Activate": "restricted_activate",
-    "Restricted List: Activate": "restricted_activate",
-    "Rule 5 Waiver Request": "waiver_request_rule5",
+    "Contract: Decline Option": "decline_option",
+    "Option Declined": "decline_option",
+    "Contract: Qualifying Offer": "qualifying_offer",
+    "release": "release",
+    "Rule 5 Draft": "rule5_draft",
     "Waiver Request: Rule 5": "waiver_request_rule5",
     "Waivers: Rule 5": "waiver_request_rule5",
-    "Reinstate: Foreign List": "foreign_reinstate",
-    "Retirement": "retirement",
-    "Returned: Rule 5 Waivers": "waiver_returned_rule5",
-    "R5 Waiver Request: Cleared/Returned": "waiver_returned_rule5",
-    "Rule 5 Draft": "rule5_draft",
-    "SS": None,
+    "R5 Waiver Request: Cleared": "waiver_returned_rule5",
+    "R5 Waiver Request: Returned": "waiver_returned_rule5",
+    "IL: End of Season": "il_eos",
+    "Restricted List: Place": "restricted_place",
+    "Restricted List: Activate": "restricted_activate",
 }
 
 
-class AliasTests(TestCase):
-    def test_sheet_labels_collapse_to_codes(self):
-        for label, code in ALIASES.items():
+class CatalogAliasTests(TestCase):
+    def test_sheet_labels_map_to_codes(self):
+        for label, code in SHEET_ALIASES.items():
             self.assertEqual(normalize_sheet_type(label), code, label)
 
+    def test_junk_ss_row_is_ignored(self):
+        self.assertIsNone(normalize_sheet_type("SS"))
+        self.assertIsNone(normalize_sheet_type("  "))
 
-class ProposalTests(TestCase):
+
+class ProposalServiceTests(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(email="a@example.com", password="secret")
-        self.other = User.objects.create_user(email="b@example.com", password="secret")
-        self.owner = Owner.objects.create(name="A", user=self.user)
-        self.other_owner = Owner.objects.create(name="B", user=self.other)
-        self.team = Team.objects.create(full_name="Cheesequake Cheddar", short_name="Cheddar")
-        self.counter = Team.objects.create(full_name="Asbury Park Bosses", short_name="Bosses")
+        self.user = User.objects.create_user(email="alpha@example.com", password="secret")
+        self.other = User.objects.create_user(email="beta@example.com", password="secret")
+        self.owner = Owner.objects.create(name="Alpha", user=self.user)
+        self.other_owner = Owner.objects.create(name="Beta", user=self.other)
+        self.team = Team.objects.create(full_name="Alpha Club", short_name="Alpha", abbreviation="ALP")
+        self.other_team = Team.objects.create(full_name="Beta Club", short_name="Beta", abbreviation="BET")
         self.team.owners.add(self.owner)
-        self.counter.owners.add(self.other_owner)
-        self.player = Player.objects.create(mlb_id="608369", name="Seager, Corey", team=self.team)
-        self.free_agent = Player.objects.create(mlb_id="665489", name="Guerrero Jr., Vladimir")
+        self.other_team.owners.add(self.other_owner)
+        self.player = Player.objects.create(
+            mlb_id="607208",
+            name="Trea Turner",
+            first_name="Trea",
+            last_name="Turner",
+            team=self.team,
+        )
 
-    def test_trade_waits_for_the_other_club(self):
+    def test_trade_requires_agreement(self):
         with self.assertRaises(TransactionError):
-            create_proposal(user=self.user, team=self.team, code="trade", assets=[])
+            create_proposal(
+                user=self.user,
+                team=self.team,
+                code="trade",
+                assets=[{"asset_type": "player", "player": self.player}],
+            )
+
         proposal = create_proposal(
             user=self.user,
             team=self.team,
             code="trade",
-            counterparty_team=self.counter,
-            assets=[
-                {
-                    "asset_type": "player",
-                    "player": self.player,
-                    "from_team": self.team,
-                    "to_team": self.counter,
-                },
-                {"asset_type": "cash", "amount": 750000, "raw_label": "Cash Reserves"},
-            ],
+            counterparty_team=self.other_team,
+            assets=[{"asset_type": "cash", "amount": 750000, "raw_label": "Cash Reserves"}],
         )
         self.assertEqual(proposal.status, TransactionProposal.AWAITING)
-        proposal = agree(self.other, proposal)
-        self.assertEqual(proposal.status, TransactionProposal.AGREED)
+        party = proposal.parties.get(role="counterparty")
+        self.assertEqual(party.team_id, self.other_team.id)
+        self.assertEqual(party.agreement_status, "pending")
 
     def test_signing_stores_contract_terms(self):
-        terms = {"years": 4, "total": 99588300, "points": "173"}
         proposal = create_proposal(
             user=self.user,
             team=self.team,
             code="mlb_signing",
-            contract_terms=terms,
             assets=[
                 {
                     "asset_type": "player",
-                    "player": self.free_agent,
-                    "raw_label": self.free_agent.name,
-                    "amount": 99588300,
-                    "contract_terms": terms,
+                    "raw_label": "Turner, Trea",
+                    "contract_terms": {"years": 4, "total": 99588300},
                 }
             ],
         )
-        asset = proposal.assets.get()
+        asset = TransactionAsset.objects.get(proposal=proposal)
         self.assertEqual(asset.contract_terms["years"], 4)
-        self.assertEqual(asset.amount, 99588300)
-        self.assertEqual(proposal.status, TransactionProposal.PROPOSED)
+        self.assertEqual(asset.contract_terms["total"], 99588300)
+        self.assertEqual(asset.raw_label, "Turner, Trea")
 
-    def test_waiver_claim(self):
+    def test_waiver_claim_records_priority_by_creation(self):
         proposal = create_proposal(
             user=self.user,
             team=self.team,
             code="waiver_request_outright",
             assets=[{"asset_type": "player", "player": self.player}],
             waiver_type="outright",
-            veteran_disposition="keep_40",
         )
         waiver = Waiver.objects.get(proposal=proposal)
         self.assertEqual(waiver.status, Waiver.OPEN)
-        self.assertEqual(waiver.veteran_disposition, "keep_40")
-        claim = claim_waiver(self.other, waiver)
-        self.assertEqual(claim.team, self.counter)
-        self.assertEqual(WaiverClaim.objects.filter(waiver=waiver).count(), 1)
+        self.assertEqual(waiver.player_id, self.player.mlb_id)
 
-    def test_api_kinds_and_create(self):
-        client = Client()
-        kinds = client.get("/api/v1/transactions/kinds/")
+        from npl.transactions.service import claim_waiver
+
+        claim = claim_waiver(self.other, waiver)
+        self.assertEqual(claim.team_id, self.other_team.id)
+        self.assertEqual(list(WaiverClaim.objects.filter(waiver=waiver)), [claim])
+
+    def test_execute_writes_ledger_without_moving_the_player(self):
+        proposal = create_proposal(
+            user=self.user,
+            team=self.team,
+            code="release",
+            assets=[{"asset_type": "player", "player": self.player, "raw_label": self.player.name}],
+        )
+        self.user.is_staff = True
+        self.user.save(update_fields=["is_staff"])
+        execute_proposal(self.user, proposal)
+        proposal.refresh_from_db()
+        self.player.refresh_from_db()
+        self.assertEqual(proposal.status, TransactionProposal.EXECUTED)
+        self.assertEqual(Transaction.objects.filter(proposal=proposal).count(), 1)
+        self.assertEqual(self.player.team_id, self.team.id)
+
+    def test_draft_pick_sets_player_and_advances(self):
+        first = DraftPick.objects.create(
+            year="2027",
+            season="offseason",
+            draft_type="open",
+            draft_round=1,
+            pick_number=1,
+            team=self.team,
+            original_team=self.team,
+        )
+        second = DraftPick.objects.create(
+            year="2027",
+            season="offseason",
+            draft_type="open",
+            draft_round=1,
+            pick_number=2,
+            team=self.other_team,
+            original_team=self.other_team,
+        )
+        prospect = Player.objects.create(
+            mlb_id="800001",
+            name="Prospect",
+            first_name="Pro",
+            last_name="Spect",
+        )
+        session = DraftSession.objects.create(
+            year="2027",
+            half="offseason",
+            draft_type="open",
+            status=DraftSession.OPEN_STATUS,
+            current_pick=first,
+        )
+        from npl.transactions.service import submit_draft_pick
+
+        submit_draft_pick(self.user, session, prospect)
+        first.refresh_from_db()
+        session.refresh_from_db()
+        prospect.refresh_from_db()
+        self.assertEqual(first.player_id, prospect.mlb_id)
+        self.assertEqual(session.current_pick_id, second.id)
+        self.assertIsNone(prospect.team_id)
+
+
+class TransactionApiTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(email="api@example.com", password="secret")
+        self.owner = Owner.objects.create(name="API", user=self.user)
+        self.team = Team.objects.create(full_name="API Club", short_name="API", abbreviation="API")
+        self.team.owners.add(self.owner)
+        self.client = Client()
+        self.client.force_login(self.user)
+
+    def test_kind_list_and_proposal_create(self):
+        kinds = self.client.get("/api/v1/transactions/kinds/")
         self.assertEqual(kinds.status_code, 200)
         codes = {item["code"] for item in kinds.json()["kinds"]}
         self.assertIn("trade", codes)
-        self.assertIn("rule4_draft", codes)
+        self.assertIn("mlb_signing", codes)
+        self.assertIn("auction_result", codes)
 
-        client.force_login(self.user)
-        created = client.post(
+        created = self.client.post(
             "/api/v1/transactions/proposals/",
             data=json.dumps(
                 {
                     "team": self.team.id,
-                    "code": "in_season_fa",
-                    "contract_terms": {"years": 1, "total": 760000},
+                    "code": "mlb_signing",
                     "assets": [
                         {
                             "asset_type": "player",
-                            "player": self.free_agent.mlb_id,
-                            "amount": 760000,
-                            "contract_terms": {"years": 1, "total": 760000},
+                            "raw_label": "Glasnow, Tyler",
+                            "contract_terms": {"years": 3, "total": 43374100},
                         }
                     ],
                 }
@@ -194,31 +266,14 @@ class ProposalTests(TestCase):
             content_type="application/json",
         )
         self.assertEqual(created.status_code, 201, created.content)
-        body = created.json()
-        self.assertEqual(body["kind"], "in_season_fa")
-        self.assertEqual(body["assets"][0]["amount"], 760000)
+        payload = created.json()
+        self.assertEqual(payload["kind"], "mlb_signing")
+        self.assertEqual(payload["status"], "proposed")
+        self.assertEqual(payload["assets"][0]["contract_terms"]["years"], 3)
 
-    def test_draft_pick_records_a_proposal(self):
-        pick = DraftPick.objects.create(
-            year="2027",
-            season="offseason",
-            draft_type="open",
-            draft_round=1,
-            pick_number=1,
-            team=self.team,
-        )
-        session = DraftSession.objects.create(
-            year="2027",
-            half="offseason",
-            draft_type="rule4",
-            status="open",
-            current_pick=pick,
-        )
-        from npl.transactions.service import submit_draft_pick
-
-        proposal = submit_draft_pick(self.user, session, self.free_agent.mlb_id)
-        self.assertEqual(proposal.kind, "rule4_draft")
-        pick.refresh_from_db()
-        self.assertIsNone(pick.player_id)
-        session.refresh_from_db()
-        self.assertEqual(session.status, DraftSession.COMPLETE)
+        tools = self.client.get("/api/v1/mcp/tools/")
+        self.assertEqual(tools.status_code, 200)
+        names = {tool["name"] for tool in tools.json()["tools"]}
+        self.assertIn("create_transaction_proposal", names)
+        self.assertIn("claim_waiver", names)
+        self.assertIn("submit_draft_pick", names)

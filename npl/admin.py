@@ -205,7 +205,9 @@ class PageAdmin(VersionAdmin):
 @admin.register(TransactionType)
 class TransactionTypeAdmin(admin.ModelAdmin):
     model = TransactionType
-    search_fields = ['transaction_type']
+    list_display = ['transaction_type', 'code', 'category', 'requires_agreement', 'requires_contract']
+    search_fields = ['transaction_type', 'code']
+    list_filter = ['category', 'requires_agreement', 'requires_contract']
 
 @admin.register(Transaction)
 class TransactionAdmin(admin.ModelAdmin):

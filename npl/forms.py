@@ -687,6 +687,20 @@ class TradeProposalForm(BaseTransactionForm):
         label="Salary coverage and other terms",
     )
 
+    def clean(self):
+        cleaned = super().clean()
+        has_asset = any([
+            isinstance(cleaned.get("player"), Player),
+            (cleaned.get("pick_label") or "").strip(),
+            cleaned.get("cash_amount") not in (None, ""),
+            cleaned.get("ifa_amount") not in (None, ""),
+        ])
+        if not has_asset:
+            raise forms.ValidationError(
+                "Add a player, a draft pick, cash reserves, or IFA cap space."
+            )
+        return cleaned
+
 
 class SigningProposalForm(BaseTransactionForm):
     """Free-agent, minor-league, or extension terms."""
@@ -700,7 +714,7 @@ class SigningProposalForm(BaseTransactionForm):
         self.fields['player'].required = False
 
     def get_player_queryset(self):
-        return Player.objects.filter(active=True)
+        return Player.objects.filter(team__isnull=True, active=True)
 
     signing_kind = forms.ChoiceField(
         choices=[

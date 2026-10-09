@@ -34,6 +34,9 @@ def _date(value):
 
 @csrf_exempt
 def kinds(request):
+    denied = _auth(request)
+    if denied:
+        return denied
     return JsonResponse({"kinds": service.list_kinds()})
 
 
@@ -177,4 +180,7 @@ def draft_pick(request, session_id):
 
 @csrf_exempt
 def mcp_tools(request):
+    denied = _auth(request)
+    if denied:
+        return denied
     return JsonResponse({"tools": tool_manifest()})
