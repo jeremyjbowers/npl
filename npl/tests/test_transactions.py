@@ -274,7 +274,7 @@ class ProposalServiceTests(TestCase):
         self.assertEqual(trade.assets.get().qualifier, "rule5")
         self.assertEqual(trade.assets.get().asset_type, "draft_pick")
 
-    def test_three_team_trade_waits_for_every_club(self):
+    def test_trade_is_a_pool_of_pieces_across_any_number_of_clubs(self):
         from npl.forms import TradeProposalForm
         from npl.transactions.service import agree, submit_from_form
 
@@ -287,6 +287,15 @@ class ProposalServiceTests(TestCase):
             cash=1_000_000,
         )
         third.owners.add(third_owner)
+        fourth_user = User.objects.create_user(email="delta@example.com", password="secret")
+        fourth_owner = Owner.objects.create(name="Delta", user=fourth_user)
+        fourth = Team.objects.create(
+            full_name="Delta Club",
+            short_name="Delta",
+            abbreviation="DEL",
+            cap_space=2_000_000,
+        )
+        fourth.owners.add(fourth_owner)
         other_player = Player.objects.create(
             mlb_id="607300",
             name="Other Player",
@@ -328,29 +337,43 @@ class ProposalServiceTests(TestCase):
             user=self.user,
             data={
                 "team": str(self.team.id),
-                "counterparty": str(self.other_team.id),
-                "third_team": str(third.id),
-                "player": self.player.pk,
-                "send_to": "counterparty",
-                "incoming_player": other_player.pk,
-                "incoming_to": "third",
-                "second_player": third_player.pk,
-                "second_to": "us",
-                "pick_label": "",
-                "cash_amount": "",
-                "ifa_amount": "",
-                "notes": "Three-team deal",
+                "piece_1_kind": "player",
+                "piece_1_from": str(self.team.id),
+                "piece_1_to": str(self.other_team.id),
+                "piece_1_player": self.player.pk,
+                "piece_2_kind": "player",
+                "piece_2_from": str(self.other_team.id),
+                "piece_2_to": str(third.id),
+                "piece_2_player": other_player.pk,
+                "piece_3_kind": "player",
+                "piece_3_from": str(third.id),
+                "piece_3_to": str(fourth.id),
+                "piece_3_player": third_player.pk,
+                "piece_4_kind": "cap_space",
+                "piece_4_from": str(fourth.id),
+                "piece_4_to": str(self.team.id),
+                "piece_4_amount": "500000",
+                "piece_5_kind": "future_considerations",
+                "piece_5_from": str(self.other_team.id),
+                "piece_5_to": str(self.team.id),
+                "piece_5_label": "PTBNL",
+                "notes": "Four clubs, mixed pieces",
             },
         )
         self.assertTrue(form.is_valid(), form.errors)
         proposal = submit_from_form(self.user, "trade", form.cleaned_data)
+        kinds = set(proposal.assets.values_list("asset_type", flat=True))
+        self.assertEqual(kinds, {"player", "cap_space", "future_considerations"})
         self.assertEqual(proposal.status, TransactionProposal.AWAITING)
-        self.assertEqual(proposal.parties.filter(role="counterparty").count(), 2)
+        self.assertEqual(proposal.parties.filter(role="counterparty").count(), 3)
 
         agree(self.other, proposal)
         proposal.refresh_from_db()
         self.assertEqual(proposal.status, TransactionProposal.AWAITING)
         agree(third_user, proposal)
+        proposal.refresh_from_db()
+        self.assertEqual(proposal.status, TransactionProposal.AWAITING)
+        agree(fourth_user, proposal)
         proposal.refresh_from_db()
         self.assertEqual(proposal.status, TransactionProposal.AGREED)
 

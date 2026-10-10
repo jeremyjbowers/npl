@@ -46,7 +46,7 @@ def tool_manifest():
         },
         {
             "name": "create_transaction_proposal",
-            "description": "Propose a trade, signing, waiver, roster move, or other transaction. A trade can include a third club. Every other club has to agree. Set from_team and to_team on each asset when more than two clubs are involved.",
+            "description": "Propose a trade, signing, waiver, roster move, or other transaction. A trade is a pool of pieces. Set from_team and to_team on each asset. Any number of clubs can be in the deal, and every club other than the filer has to agree.",
             "method": "POST",
             "path": "/api/v1/transactions/proposals/",
             "input_schema": {
@@ -59,7 +59,7 @@ def tool_manifest():
                     "counterparty_teams": {
                         "type": "array",
                         "items": {"type": "integer"},
-                        "description": "Every other club in the trade. Use this for a three-team deal.",
+                        "description": "Optional. Clubs are also taken from each asset's from_team and to_team. There is no limit on how many clubs are in a trade.",
                     },
                     "notes": {"type": "string"},
                     "effective_date": {"type": "string", "format": "date"},
@@ -85,7 +85,7 @@ def tool_manifest():
         },
         {
             "name": "agree_transaction",
-            "description": "Agree to a trade on behalf of one club in the deal. A three-team trade stays open until every other club has agreed.",
+            "description": "Agree to a trade on behalf of one club in the deal. The trade stays open until every other club has agreed.",
             "method": "POST",
             "path": "/api/v1/transactions/proposals/{id}/agree/",
             "input_schema": {

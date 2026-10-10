@@ -10,7 +10,7 @@ A club submission used to be a form dropped in a pile. It is now a proposal with
 
 - **Who filed it**, and which club it belongs to.
 - **Who else is involved.** A trade names the other club and waits until that club agrees. A roster move, signing, or waiver does not need a second club.
-- **What changes hands.** A player, a draft pick, cash reserves, IFA cap space, carried salary, or future considerations. Signings also carry the contract terms (years, dollars, points).
+- **What changes hands.** Each piece in a trade names the club that gives it and the club that gets it. A piece can be a player, a draft pick, cash, cap space, IFA pool space, carried salary, or a player to be named later. Signings also carry the contract terms (years, dollars, points).
 
 The same proposal is what you see in the admin, what the club sees under My Submissions, and what an agent sees if the club is using the API.
 
@@ -22,7 +22,7 @@ From the site, a signed-in owner uses **Transactions → Submit Transaction**, p
 
 The form covers:
 
-- Trades, including a player, a draft pick, cash reserves, and IFA cap space
+- Trades. Any number of clubs can be in one trade. The filing is the list of pieces, and each piece says who gives it and who gets it.
 - Signings: offseason MLB (points), in-season free agent (dollars, one year), minor-league contract, extension, and IFA
 - Offseason transactions
 - Injured list (7-day, 56-day, end of season, COVID, a move between lists, and activation)
@@ -33,7 +33,7 @@ The form covers:
 - Restricted list, including the list type (restricted, domestic violence, PED, betting, paternity, family medical, bereavement, or pending a suspension)
 - Foreign list, retirement, and death
 
-A trade stays **Awaiting agreement** until every other club agrees or one of them declines. That includes a three-team trade: each of the other two clubs has to agree from My Submissions, and the deal names who sends each player, pick, or sum of cash and who receives it. A two-club trade is unchanged. Everyone else lands as **Proposed** and waits for the Monday window.
+A trade stays **Awaiting agreement** until every other club in the deal agrees, or one of them declines. A two-club trade and a trade among more clubs work the same way: the clubs are whoever gives or gets a piece. Everyone else lands as **Proposed** and waits for the Monday window.
 
 A club can withdraw its own proposal while it is still open. The other club can decline a trade. A declined trade is **Rejected**. A withdrawn one is **Withdrawn**.
 

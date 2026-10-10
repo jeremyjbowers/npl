@@ -12,10 +12,13 @@ from django.utils import timezone
 
 from npl import models
 from npl.transactions.catalog import (
+    ASSET_CAP,
+    ASSET_CARRIED_SALARY,
     ASSET_CASH,
     ASSET_DRAFT_PICK,
     ASSET_FUTURE,
     ASSET_IFA,
+    ASSET_LABELS,
     ASSET_PLAYER,
     ASSET_TYPES,
     FOREIGN_FORM_TO_CODE,
@@ -205,9 +208,11 @@ def create_proposal(
     parties = _trade_parties(team, explicit, normalized) if code == "trade" else []
     if code == "trade":
         if not normalized:
-            raise TransactionError("A trade needs at least one player, pick, or financial asset.")
+            raise TransactionError(
+                "A trade needs at least one piece: a player, a pick, cash, cap space, IFA pool space, carried salary, or a player to be named later."
+            )
         if not parties:
-            raise TransactionError("A trade needs the other team.")
+            raise TransactionError("A trade needs another club.")
         involved = set()
         for asset in normalized:
             if asset.get("from_team") is None or asset.get("to_team") is None:
@@ -424,6 +429,10 @@ def execute_proposal(user, proposal):
             player_label = player_label or "Cash Reserves"
         elif asset.asset_type == ASSET_IFA:
             player_label = player_label or "IFA Cap Space"
+        elif asset.asset_type == ASSET_CAP:
+            player_label = player_label or "Cap space"
+        elif asset.asset_type == ASSET_CARRIED_SALARY:
+            player_label = player_label or "Carried salary"
         elif asset.asset_type == ASSET_DRAFT_PICK:
             player_label = player_label or "Draft Pick"
         elif asset.asset_type == ASSET_FUTURE:
@@ -645,12 +654,26 @@ def visible_proposals(user):
     )
 
 
-def _form_destination(cleaned, which, origin):
-    if which == "third":
-        return cleaned.get("third_team")
-    if which == "us":
-        return origin
-    return cleaned.get("counterparty")
+def _piece_from_form(cleaned, number):
+    """One explicitly assigned trade piece. Blank rows are skipped."""
+    prefix = f"piece_{number}"
+    kind = (cleaned.get(f"{prefix}_kind") or "").strip()
+    if not kind:
+        return None
+    player = cleaned.get(f"{prefix}_player")
+    label = (cleaned.get(f"{prefix}_label") or "").strip() or ASSET_LABELS.get(kind, kind)
+    asset = {
+        "asset_type": kind,
+        "from_team": cleaned.get(f"{prefix}_from"),
+        "to_team": cleaned.get(f"{prefix}_to"),
+        "raw_label": player.name if isinstance(player, models.Player) and kind == ASSET_PLAYER else label,
+    }
+    amount = cleaned.get(f"{prefix}_amount")
+    if amount not in (None, ""):
+        asset["amount"] = int(amount)
+    if kind == ASSET_PLAYER and isinstance(player, models.Player):
+        asset["player"] = player
+    return asset
 
 
 def submit_from_form(user, form_type, cleaned, source="web"):
@@ -674,66 +697,15 @@ def submit_from_form(user, form_type, cleaned, source="web"):
 
     if form_type == "trade":
         assets = []
-        destination = _form_destination(cleaned, cleaned.get("send_to") or "counterparty", team)
-        if isinstance(cleaned.get("player"), models.Player):
-            assets.append(
-                {
-                    "asset_type": ASSET_PLAYER,
-                    "player": cleaned["player"],
-                    "from_team": team,
-                    "to_team": destination,
-                }
-            )
-        if cleaned.get("pick_label"):
-            assets.append(
-                {
-                    "asset_type": ASSET_DRAFT_PICK,
-                    "raw_label": cleaned["pick_label"],
-                    "from_team": team,
-                    "to_team": destination,
-                }
-            )
-        if cleaned.get("cash_amount"):
-            assets.append(
-                {
-                    "asset_type": ASSET_CASH,
-                    "amount": int(cleaned["cash_amount"]),
-                    "raw_label": "Cash Reserves",
-                    "from_team": team,
-                    "to_team": destination,
-                }
-            )
-        if cleaned.get("ifa_amount"):
-            assets.append(
-                {
-                    "asset_type": ASSET_IFA,
-                    "amount": int(cleaned["ifa_amount"]),
-                    "raw_label": "IFA Cap Space",
-                    "from_team": team,
-                    "to_team": destination,
-                }
-            )
-        for player_key, dest_key in (("incoming_player", "incoming_to"), ("second_player", "second_to")):
-            incoming = cleaned.get(player_key)
-            if not isinstance(incoming, models.Player):
-                continue
-            assets.append(
-                {
-                    "asset_type": ASSET_PLAYER,
-                    "player": incoming,
-                    "from_team": incoming.team,
-                    "to_team": _form_destination(cleaned, cleaned.get(dest_key) or "us", team),
-                }
-            )
-        others = [cleaned.get("counterparty")]
-        if cleaned.get("third_team"):
-            others.append(cleaned.get("third_team"))
+        for number in range(1, 7):
+            piece = _piece_from_form(cleaned, number)
+            if piece is not None:
+                assets.append(piece)
         return create_proposal(
             user=user,
             team=team,
             code="trade",
             assets=assets,
-            counterparty_teams=others,
             notes=cleaned.get("notes") or "",
             source=source,
             effective_date=effective,
