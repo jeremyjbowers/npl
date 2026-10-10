@@ -362,7 +362,7 @@ h1.title, h2.title, h3.title {
     </div>
 </div>
 
-{% if roster_7dayIL.count > 0 %}
+{% if roster_7dayIL|length %}
 <div class="block">
     <h2 class="title is-4" id="roster-7dayIL">
         7-Day IL
@@ -401,7 +401,7 @@ h1.title, h2.title, h3.title {
 </div>
 {% endif %}
 
-{% if roster_56dayIL.count > 0 %}
+{% if roster_56dayIL|length %}
 <div class="block">
     <h2 class="title is-4" id="roster-56dayIL">
         56-Day IL
@@ -440,7 +440,7 @@ h1.title, h2.title, h3.title {
 </div>
 {% endif %}
 
-{% if roster_eosIL.count > 0 %}
+{% if roster_eosIL|length %}
 <div class="block">
     <h2 class="title is-4" id="roster-eosIL">
         End of Season IL
@@ -479,7 +479,7 @@ h1.title, h2.title, h3.title {
 </div>
 {% endif %}
 
-{% if roster_restricted.count > 0 %}
+{% if roster_restricted|length %}
 <div class="block">
     <h2 class="title is-4" id="roster-restricted">
         Restricted List
@@ -518,7 +518,7 @@ h1.title, h2.title, h3.title {
 </div>
 {% endif %}
 
-{% if roster_foreign.count > 0 %}
+{% if roster_foreign|length %}
 <div class="block">
     <h2 class="title is-4" id="roster-foreign">
         Foreign List
@@ -557,7 +557,7 @@ h1.title, h2.title, h3.title {
 </div>
 {% endif %}
 
-{% if roster_outrighted.count > 0 %}
+{% if roster_outrighted|length %}
 <div class="block">
     <h2 class="title is-4" id="roster-outrighted">
         Outrighted
@@ -596,7 +596,7 @@ h1.title, h2.title, h3.title {
 </div>
 {% endif %}
 
-{% if roster_nonroster.count > 0 %}
+{% if roster_nonroster|length %}
 <div class="block">
     <h2 class="title is-4" id="roster-nonroster">
         Non-Roster
@@ -635,7 +635,7 @@ h1.title, h2.title, h3.title {
 </div>
 {% endif %}
 
-{% if roster_tripleA.count > 0 %}
+{% if roster_tripleA|length %}
 <div class="block">
     <h2 class="title is-4" id="aaa-roster">
         AAA Roster
@@ -674,7 +674,7 @@ h1.title, h2.title, h3.title {
 </div>
 {% endif %}
 
-{% if roster_tripleA_option.count > 0 %}
+{% if roster_tripleA_option|length %}
 <div class="block">
     <h2 class="title is-4" id="aaa-roster">
         AAA Roster (On Option)
@@ -713,7 +713,7 @@ h1.title, h2.title, h3.title {
 </div>
 {% endif %}
 
-{% if roster_doubleA.count > 0 %}
+{% if roster_doubleA|length %}
 <div class="block">
     <h2 class="title is-4" id="aa-roster">
         AA Roster
@@ -752,7 +752,7 @@ h1.title, h2.title, h3.title {
 </div>
 {% endif %}
 
-{% if roster_singleA.count > 0 %}
+{% if roster_singleA|length %}
 <div class="block">
     <h2 class="title is-4" id="a-roster">
         A Roster

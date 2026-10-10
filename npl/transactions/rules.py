@@ -59,7 +59,31 @@ def evaluate(team, code, assets, contract_terms=None, proposal_id=None):
     problems.extend(_already_pending(team, code, players, proposal_id))
     problems.extend(_money(team, code, assets, contract_terms, proposal_id))
     problems.extend(_forty_man(team, code, assets, proposal_id))
+    if code == "trade":
+        for club in _trade_clubs(team, assets):
+            if club.pk == team.pk:
+                continue
+            leaving = [
+                asset.get("player")
+                for asset in assets
+                if asset.get("player") is not None
+                and asset.get("from_team") is not None
+                and asset["from_team"].pk == club.pk
+            ]
+            problems.extend(_already_pending(club, code, leaving, proposal_id))
+            problems.extend(_money(club, code, assets, contract_terms, proposal_id))
+            problems.extend(_forty_man(club, code, assets, proposal_id))
     return problems
+
+
+def _trade_clubs(team, assets):
+    clubs = {team.pk: team}
+    for asset in assets:
+        for key in ("from_team", "to_team"):
+            club = asset.get(key)
+            if club is not None:
+                clubs[club.pk] = club
+    return list(clubs.values())
 
 
 def assert_legal(team, code, assets, contract_terms=None, proposal_id=None):

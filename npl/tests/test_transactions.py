@@ -274,6 +274,90 @@ class ProposalServiceTests(TestCase):
         self.assertEqual(trade.assets.get().qualifier, "rule5")
         self.assertEqual(trade.assets.get().asset_type, "draft_pick")
 
+    def test_three_team_trade_waits_for_every_club(self):
+        from npl.forms import TradeProposalForm
+        from npl.transactions.service import agree, submit_from_form
+
+        third_user = User.objects.create_user(email="gamma@example.com", password="secret")
+        third_owner = Owner.objects.create(name="Gamma", user=third_user)
+        third = Team.objects.create(
+            full_name="Gamma Club",
+            short_name="Gamma",
+            abbreviation="GAM",
+            cash=1_000_000,
+        )
+        third.owners.add(third_owner)
+        other_player = Player.objects.create(
+            mlb_id="607300",
+            name="Other Player",
+            first_name="Other",
+            last_name="Player",
+            team=self.other_team,
+        )
+        third_player = Player.objects.create(
+            mlb_id="607301",
+            name="Third Player",
+            first_name="Third",
+            last_name="Player",
+            team=third,
+            roster_tripleA=True,
+        )
+        with self.assertRaises(TransactionError) as idle:
+            create_proposal(
+                user=self.user,
+                team=self.team,
+                code="trade",
+                counterparty_teams=[self.other_team, third],
+                assets=[{"asset_type": "player", "player": self.player, "to_team": self.other_team}],
+            )
+        self.assertIn("named", str(idle.exception).lower())
+        with self.assertRaises(TransactionError) as short:
+            create_proposal(
+                user=self.user,
+                team=self.team,
+                code="trade",
+                counterparty_teams=[self.other_team, third],
+                assets=[
+                    {"asset_type": "player", "player": self.player, "to_team": self.other_team},
+                    {"asset_type": "cash", "amount": 5_000_000, "from_team": third, "to_team": self.team},
+                ],
+            )
+        self.assertIn("short", str(short.exception).lower())
+
+        form = TradeProposalForm(
+            user=self.user,
+            data={
+                "team": str(self.team.id),
+                "counterparty": str(self.other_team.id),
+                "third_team": str(third.id),
+                "player": self.player.pk,
+                "send_to": "counterparty",
+                "incoming_player": other_player.pk,
+                "incoming_to": "third",
+                "second_player": third_player.pk,
+                "second_to": "us",
+                "pick_label": "",
+                "cash_amount": "",
+                "ifa_amount": "",
+                "notes": "Three-team deal",
+            },
+        )
+        self.assertTrue(form.is_valid(), form.errors)
+        proposal = submit_from_form(self.user, "trade", form.cleaned_data)
+        self.assertEqual(proposal.status, TransactionProposal.AWAITING)
+        self.assertEqual(proposal.parties.filter(role="counterparty").count(), 2)
+
+        agree(self.other, proposal)
+        proposal.refresh_from_db()
+        self.assertEqual(proposal.status, TransactionProposal.AWAITING)
+        agree(third_user, proposal)
+        proposal.refresh_from_db()
+        self.assertEqual(proposal.status, TransactionProposal.AGREED)
+
+        page = self.client.get("/teams/gamma/")
+        self.assertContains(page, "Pending trade")
+        self.assertContains(page, third_player.name)
+
 
 class TransactionApiTests(TestCase):
     def setUp(self):
