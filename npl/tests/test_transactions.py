@@ -694,8 +694,8 @@ class ProposalRulesAndHintsTests(TestCase):
         page = self.client.get("/teams/rules/")
         self.assertEqual(page.status_code, 200)
         self.assertContains(page, "Pending trade")
-        self.assertContains(page, "If pending proposals clear: $750,000")
-        self.assertContains(page, "They are still on the club until Monday.")
+        self.assertContains(page, "(if pending clear $750,000)")
+        self.assertContains(page, "They stay on the club until Monday.")
 
         home = self.client.get("/")
-        self.assertContains(home, "If pending proposals clear: $750,000")
+        self.assertContains(home, "Cash if pending proposals clear: $750,000")
