@@ -1,0 +1,181 @@
+@import "tailwindcss";
+
+@source "../templates";
+
+/*
+ * The NPL sheet. Same idea as ULMG: white page, black type, one green
+ * stripe, almost no chrome. Utilities live in the templates; the rules
+ * below are the pieces that repeat on every roster table.
+ */
+
+@layer base {
+  html {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  }
+
+  body {
+    font-variant-numeric: tabular-nums;
+  }
+
+  input,
+  select,
+  textarea {
+    border: 1px solid #d1d5db;
+    background: #fff;
+    padding: 0.25rem 0.5rem;
+    font: inherit;
+    font-size: 0.875rem;
+  }
+
+  input:focus,
+  select:focus,
+  textarea:focus {
+    outline: 1px solid #111;
+    outline-offset: 0;
+  }
+}
+
+@layer components {
+  .sheet {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 0.75rem;
+    line-height: 1.25;
+  }
+
+  .sheet th {
+    padding: 0.25rem 0.35rem;
+    font-weight: 700;
+    white-space: nowrap;
+    border-bottom: 1px solid #9ca3af;
+  }
+
+  .sheet td {
+    padding: 0.15rem 0.35rem;
+    white-space: nowrap;
+    vertical-align: middle;
+  }
+
+  .sheet tbody tr:nth-child(odd of :not(.band)) {
+    background: #e7f6e7;
+  }
+
+  .sheet tbody tr.band,
+  .sheet tr.band th {
+    background: #fff;
+    border-bottom: 0;
+    border-top: 1px solid #e5e7eb;
+    padding-top: 0.7rem;
+    font-size: 0.8rem;
+  }
+
+  main form.space-y-4 input,
+  main form.space-y-4 select,
+  main form.space-y-4 textarea {
+    width: 100%;
+    max-width: 36rem;
+  }
+
+  .sheet tr.majors td {
+    font-weight: 700;
+  }
+
+  .sheet tr.pending td {
+    color: #6b7280;
+  }
+
+  .sheet tr.pending td a.pending-proposal {
+    color: #111;
+  }
+
+  .btn {
+    display: inline-block;
+    background: #111;
+    color: #fff;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+    text-decoration: underline;
+    cursor: pointer;
+    border: 0;
+  }
+
+  .btn:hover {
+    background: #333;
+  }
+
+  .btn-line {
+    display: inline-block;
+    background: #fff;
+    color: #111;
+    border: 1px solid #d1d5db;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.75rem;
+    cursor: pointer;
+  }
+
+  .btn-line:hover {
+    background: #f3f4f6;
+  }
+
+  .note {
+    border: 1px solid #d1d5db;
+    background: #f9fafb;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  .note ul,
+  .copy ul,
+  .copy ol {
+    margin: 0.25rem 0 0.25rem 1.25rem;
+    list-style: disc;
+  }
+
+  .copy p,
+  .copy ul,
+  .copy ol {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .copy a {
+    text-decoration: underline;
+  }
+
+  .copy h1,
+  .copy h2,
+  .copy h3 {
+    font-weight: 700;
+    margin: 1rem 0 0.4rem;
+  }
+}
+
+.nav-dropdown {
+  position: relative;
+}
+
+.nav-dropdown-panel {
+  display: none;
+  position: absolute;
+  z-index: 40;
+  top: 100%;
+  left: 0;
+  min-width: 12rem;
+  max-height: 70vh;
+  overflow: auto;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  padding: 0.35rem 0.5rem;
+}
+
+.nav-dropdown:hover .nav-dropdown-panel,
+.nav-dropdown:focus-within .nav-dropdown-panel {
+  display: block;
+}
+
+.nav-dropdown-panel.wide {
+  min-width: 28rem;
+  columns: 2;
+  column-gap: 1.25rem;
+}

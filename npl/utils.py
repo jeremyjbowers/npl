@@ -35,62 +35,97 @@ def get_mlb_season(date):
         return int(date.year) + 1
     return date.year
 
-def build_context(request):
+def division_label(team):
+    """Nav and homepage heading, e.g. 'AL East'."""
+    league = ""
+    if team.league_id and team.league and team.league.name:
+        name = team.league.name
+        if "American" in name or name.upper() == "AL":
+            league = "AL"
+        elif "National" in name or name.upper() == "NL":
+            league = "NL"
+        else:
+            league = name
+    division = team.division.name if team.division_id and team.division and team.division.name else "Unassigned"
+    if league:
+        return f"{league} {division}"
+    return division
+
+
+def build_context(request, *, with_teams=True, with_owners=False):
+    """Shared page context.
+
+    HTML pages need the club list for the nav. JSON endpoints pass
+    with_teams=False and skip that query. Owner lookup is a single
+    indexed read; a signed-in user with no club still gets a page.
+    """
     context = {}
 
-    # to build the nav
-
-    # for search
     queries_without_page = dict(request.GET)
-    if queries_without_page.get("page", None):
-        del queries_without_page["page"]
+    queries_without_page.pop("page", None)
     context["q_string"] = "&".join(
         ["%s=%s" % (k, v[-1]) for k, v in queries_without_page.items()]
     )
 
-    # add the owner to the page
     context["owner"] = None
+    context["owner_team"] = None
     if request.user.is_authenticated:
-        owner = models.Owner.objects.get(user=request.user)
+        owner = models.Owner.objects.filter(user_id=request.user.pk).first()
         context["owner"] = owner
-        context['owner_team'] = models.Team.objects.get(owners=owner)
+        if owner:
+            context["owner_team"] = (
+                models.Team.objects.filter(owners=owner)
+                .select_related("league", "division")
+                .first()
+            )
 
-    context["all_teams"] = models.Team.objects.all().order_by('league', 'division', 'short_name')
-    
-    # Calculate financial percentiles for team graphics
-    teams_list = list(context["all_teams"])
-    
-    # Get valid financial data (non-null values)
-    cap_spaces = [team.cap_space for team in teams_list if team.cap_space is not None]
-    cash_amounts = [team.cash for team in teams_list if team.cash is not None]
-    
-    # Sort for percentile calculation
-    cap_spaces.sort()
-    cash_amounts.sort()
-    
-    # Add percentile data to each team
-    for team in teams_list:
-        # Calculate cap space percentile
-        if team.cap_space is not None and cap_spaces:
-            cap_rank = sum(1 for x in cap_spaces if x <= team.cap_space)
-            team.cap_space_percentile = (cap_rank / len(cap_spaces)) * 100
-        else:
-            team.cap_space_percentile = 0
-            
-        # Calculate cash percentile
-        if team.cash is not None and cash_amounts:
-            cash_rank = sum(1 for x in cash_amounts if x <= team.cash)
-            team.cash_percentile = (cash_rank / len(cash_amounts)) * 100
-        else:
-            team.cash_percentile = 0
+    context["all_teams"] = []
+    if with_teams:
+        teams = models.Team.objects.select_related("league", "division").order_by(
+            "league__name", "division__name", "abbreviation", "short_name"
+        )
+        if with_owners:
+            teams = teams.prefetch_related("owners")
+        context["all_teams"] = list(teams)
+        for team in context["all_teams"]:
+            team.division_label = division_label(team)
 
-    from npl.transactions.pending import attach_money, money_for_teams, open_proposals
+        from npl.transactions.pending import attach_money, money_for_teams, open_proposals
 
-    pending_money = money_for_teams(open_proposals())
-    for team in teams_list:
-        attach_money(team, pending_money)
+        pending_money = money_for_teams(open_proposals())
+        for team in context["all_teams"]:
+            attach_money(team, pending_money)
 
     return context
+
+
+def attach_position_counts(teams):
+    """One grouped query for the homepage roster tallies."""
+    from django.db.models import Count
+
+    from npl.rosters import position_bucket
+
+    team_ids = [team.id for team in teams]
+    tallies = {team.id: {"C": 0, "IF": 0, "OF": 0, "P": 0, "UT": 0, "total": 0} for team in teams}
+    if not team_ids:
+        return teams
+
+    rows = (
+        models.Player.objects.filter(team_id__in=team_ids)
+        .values("team_id", "simple_position")
+        .annotate(n=Count("pk"))
+    )
+    for row in rows:
+        bucket = tallies.get(row["team_id"])
+        if bucket is None:
+            continue
+        key = position_bucket(row["simple_position"])
+        bucket[key] += row["n"]
+        bucket["total"] += row["n"]
+
+    for team in teams:
+        team.pos_counts = tallies.get(team.id, {"C": 0, "IF": 0, "OF": 0, "P": 0, "UT": 0, "total": 0})
+    return teams
 
 def to_bool(bool_string):
     if isinstance(bool_string, str):

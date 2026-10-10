@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 
-from npl import models
+from npl import models, utils
 from npl.api_tokens import TokenError, generate_token, revoke
 
 REVEAL_SESSION_KEY = "new_api_token"
@@ -47,13 +47,11 @@ def api_tokens(request):
     if revealed is not None:
         request.session.modified = True
     tokens = models.ApiToken.objects.filter(user=request.user)
-    return render(
-        request,
-        "account/api_tokens.html",
-        {
-            "tokens": tokens,
-            "revealed": revealed,
-            "read_scope": models.ApiToken.READ,
-            "write_scope": models.ApiToken.READ_WRITE,
-        },
-    )
+    context = utils.build_context(request)
+    context.update({
+        "tokens": tokens,
+        "revealed": revealed,
+        "read_scope": models.ApiToken.READ,
+        "write_scope": models.ApiToken.READ_WRITE,
+    })
+    return render(request, "account/api_tokens.html", context)

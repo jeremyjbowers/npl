@@ -1,242 +1,129 @@
 {% extends "base.html" %}
 
-{% block title %}My Transaction Submissions | The NPL{% endblock %}
+{% block title %}My transactions — The NPL{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="columns">
-        <div class="column">
-            <div class="level">
-                <div class="level-left">
-                    <div class="level-item">
-                        <div>
-                            <h1 class="title is-4">My Transaction Submissions</h1>
-                            <p class="subtitle">Track the status of your submitted transactions</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="level-right">
-                    <div class="level-item">
-                        <a href="/transactions/form/" class="button is-primary">
-                            <span class="icon">
-                                <i class="fas fa-plus"></i>
-                            </span>
-                            <span>Submit New Transaction</span>
-                        </a>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Processing info -->
-            <div class="notification is-info">
-                <div class="content">
-                    <p><strong>Processing Schedule:</strong> Transactions are processed Mondays at 1 PM EST.</p>
-                    <p><strong>Status Definitions:</strong></p>
-                    <ul>
-                        <li><strong>Pending:</strong> Awaiting admin review</li>
-                        <li><strong>Approved:</strong> Approved and waiting for processing</li>
-                        <li><strong>Rejected:</strong> Not approved (see admin notes)</li>
-                        <li><strong>Processed:</strong> Completed and applied to rosters</li>
-                    </ul>
-                </div>
-            </div>
-            
-            {% if proposals %}
-            <div class="box">
-                <h2 class="title is-5">Proposals</h2>
-                <p class="mb-3">Trades stay here until the other club agrees. Roster moves, signings, and waivers wait for the Monday processing window.</p>
-                <div class="table-container">
-                    <table class="table is-fullwidth is-hoverable">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Team</th>
-                                <th>Kind</th>
-                                <th>Status</th>
-                                <th>Other clubs</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for proposal in proposals %}
-                            <tr>
-                                <td><span class="tag is-light">#{{ proposal.id }}</span></td>
-                                <td>{{ proposal.originating_team.short_name }}</td>
-                                <td>{{ proposal.kind_label }}</td>
-                                <td>
-                                    {{ proposal.get_status_display }}
-                                    {% if proposal.flagged %}
-                                    <span class="tag is-warning ml-1">Needs a fix</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% for party in proposal.parties.all %}
-                                        {% if party.role == 'counterparty' %}
-                                            {{ party.team.short_name }} ({{ party.get_agreement_status_display }})
-                                        {% endif %}
-                                    {% endfor %}
-                                </td>
-                                <td>
-                                    {% if proposal.id in respondable_ids %}
-                                    <form method="post" action="/transactions/proposals/{{ proposal.id }}/respond/">
-                                        {% csrf_token %}
-                                        <button class="button is-small is-primary" name="action" value="agree" type="submit">Agree</button>
-                                        <button class="button is-small" name="action" value="decline" type="submit">Decline</button>
-                                    </form>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% if proposal.flagged and proposal.flag_note %}
-                            <tr>
-                                <td colspan="6">
-                                    <div class="notification is-warning is-light mb-0 py-2">
-                                        <strong>Director note:</strong> {{ proposal.flag_note }}
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endif %}
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            {% endif %}
-
-            {% if submissions %}
-            <div class="box">
-                <div class="table-container">
-                    <table class="table is-fullwidth is-hoverable">
-                        <thead>
-                            <tr>
-                                <th>Reference ID</th>
-                                <th>Team</th>
-                                <th>Transaction Type</th>
-                                <th>Player/Details</th>
-                                <th>Status</th>
-                                <th>Submitted</th>
-                                <th>Processing Week</th>
-                                <th>Admin Notes</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for submission in submissions %}
-                            <tr>
-                                <td>
-                                    <span class="tag is-light">#{{ submission.id }}</span>
-                                </td>
-                                <td>
-                                    <strong>{{ submission.team.short_name }}</strong><br>
-                                    <span class="is-size-7 has-text-grey">{{ submission.team.full_name }}</span>
-                                </td>
-                                <td>
-                                    <span class="has-text-weight-medium">{{ submission.transaction_display }}</span>
-                                </td>
-                                <td>
-                                    {% if submission.form_data.player %}
-                                    <strong>{{ submission.form_data.player }}</strong><br>
-                                    {% endif %}
-                                    <div class="is-size-7 has-text-grey">
-                                        {% if submission.form_data.il_type %}
-                                        IL Type: {{ submission.form_data.il_type|upper }}
-                                        {% elif submission.form_data.destination_level %}
-                                        To: {{ submission.form_data.destination_level }}
-                                        {% elif submission.form_data.from_level %}
-                                        From: {{ submission.form_data.from_level }}
-                                        {% elif submission.form_data.release_type %}
-                                        Type: {{ submission.form_data.release_type|title }}
-                                        {% elif submission.form_data.waiver_type %}
-                                        Type: {{ submission.form_data.waiver_type|title }}
-                                        {% elif submission.form_data.claiming_from %}
-                                        From: {{ submission.form_data.claiming_from }}
-                                        {% elif submission.form_data.reason %}
-                                        Reason: {{ submission.form_data.reason|title }}
-                                        {% elif submission.form_data.transaction_reason %}
-                                        Type: {{ submission.form_data.transaction_reason|title }}
-                                        {% elif submission.form_data.transaction_type %}
-                                        Type: {{ submission.form_data.transaction_type|title }}
-                                        {% elif submission.form_data.assignment_reason %}
-                                        Reason: {{ submission.form_data.assignment_reason|title }}
-                                        {% endif %}
-                                    </div>
-                                </td>
-                                <td>
-                                    {% if submission.status == 'pending' %}
-                                    <span class="tag is-warning">Pending Review</span>
-                                    {% elif submission.status == 'approved' %}
-                                    <span class="tag is-success">Approved</span>
-                                    {% elif submission.status == 'rejected' %}
-                                    <span class="tag is-danger">Rejected</span>
-                                    {% elif submission.status == 'processed' %}
-                                    <span class="tag is-info">Processed</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <span class="has-text-weight-medium">{{ submission.created|date:"M j, Y" }}</span><br>
-                                    <span class="is-size-7 has-text-grey">{{ submission.created|date:"g:i A" }}</span>
-                                </td>
-                                <td>
-                                    <span class="has-text-weight-medium">{{ submission.processing_week|date:"M j, Y" }}</span>
-                                </td>
-                                <td>
-                                    {% if submission.admin_notes %}
-                                    <div class="content is-size-7">
-                                        {{ submission.admin_notes|linebreaks }}
-                                    </div>
-                                    {% else %}
-                                    <span class="has-text-grey">-</span>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            {% else %}
-            <div class="box has-text-centered">
-                <div class="content">
-                    <span class="icon is-large has-text-grey-light">
-                        <i class="fas fa-inbox fa-3x"></i>
-                    </span>
-                    <h3 class="title is-5 has-text-grey">No Transaction Submissions</h3>
-                    <p class="subtitle has-text-grey">You haven't submitted any transactions yet.</p>
-                    <a href="/transactions/form/" class="button is-primary">
-                        <span class="icon">
-                            <i class="fas fa-plus"></i>
-                        </span>
-                        <span>Submit Your First Transaction</span>
-                    </a>
-                </div>
-            </div>
-            {% endif %}
-            
-            <!-- Quick links -->
-            <div class="content">
-                <div class="level">
-                    <div class="level-left">
-                        <div class="level-item">
-                            <div>
-                                <h4 class="title is-6">Quick Links</h4>
-                                <div class="buttons">
-                                    <a href="/transactions/" class="button is-small">
-                                        <span class="icon">
-                                            <i class="fas fa-history"></i>
-                                        </span>
-                                        <span>All League Transactions</span>
-                                    </a>
-                                    <a href="https://tbb.quarto.pub/npl-rules/" target="_blank" class="button is-small">
-                                        <span class="icon">
-                                            <i class="fas fa-book"></i>
-                                        </span>
-                                        <span>Transaction Rules</span>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+<header class="mb-4 flex flex-wrap items-end justify-between gap-3">
+    <div>
+        <h1 class="text-2xl font-bold">My transactions</h1>
+        <p class="text-sm">Trades stay here until the other club agrees. Everything else waits for Monday at 1 PM ET.</p>
     </div>
+    <a href="/transactions/form/" class="btn">Submit a transaction</a>
+</header>
+
+<div class="note mb-6">
+    <p class="font-bold">Status</p>
+    <ul>
+        <li><strong>Pending:</strong> waiting on review or the other club.</li>
+        <li><strong>Approved:</strong> accepted, not yet processed.</li>
+        <li><strong>Rejected:</strong> not approved. See the notes.</li>
+        <li><strong>Processed:</strong> applied to the rosters.</li>
+    </ul>
 </div>
-{% endblock %} 
+
+{% if proposals %}
+<section class="mb-8">
+    <h2 class="mb-2 text-lg font-bold">Proposals</h2>
+    <div class="overflow-x-auto">
+        <table class="sheet">
+            <thead>
+                <tr>
+                    <th scope="col">ID</th>
+                    <th scope="col">Team</th>
+                    <th scope="col">Kind</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Other clubs</th>
+                    <th scope="col">Respond</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for proposal in proposals %}
+                <tr>
+                    <td>#{{ proposal.id }}</td>
+                    <td>{{ proposal.originating_team.short_name }}</td>
+                    <td>{{ proposal.kind_label }}</td>
+                    <td>
+                        {{ proposal.get_status_display }}
+                        {% if proposal.flagged %}<span class="ml-1 text-xs">Needs a fix</span>{% endif %}
+                    </td>
+                    <td>
+                        {% for party in proposal.parties.all %}
+                            {% if party.role == 'counterparty' %}
+                            {{ party.team.short_name }} ({{ party.get_agreement_status_display }})
+                            {% endif %}
+                        {% endfor %}
+                    </td>
+                    <td>
+                        {% if proposal.id in respondable_ids %}
+                        <form method="post" action="/transactions/proposals/{{ proposal.id }}/respond/" class="flex gap-2">
+                            {% csrf_token %}
+                            <button class="btn-line" name="action" value="agree" type="submit">Agree</button>
+                            <button class="btn-line" name="action" value="decline" type="submit">Decline</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% if proposal.flagged and proposal.flag_note %}
+                <tr class="band">
+                    <td colspan="6">Director note: {{ proposal.flag_note }}</td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endif %}
+
+<section class="mb-8">
+    <h2 class="mb-2 text-lg font-bold">Submissions</h2>
+    {% if submissions %}
+    <div class="overflow-x-auto">
+        <table class="sheet">
+            <thead>
+                <tr>
+                    <th scope="col">ID</th>
+                    <th scope="col">Team</th>
+                    <th scope="col">Type</th>
+                    <th scope="col">Details</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Submitted</th>
+                    <th scope="col">Processing week</th>
+                    <th scope="col">Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for submission in submissions %}
+                <tr>
+                    <td>#{{ submission.id }}</td>
+                    <td>{{ submission.team.short_name }}</td>
+                    <td>{{ submission.transaction_display }}</td>
+                    <td>
+                        {% if submission.form_data.player %}{{ submission.form_data.player }}{% endif %}
+                        {% if submission.form_data.il_type %} {{ submission.form_data.il_type|upper }}{% endif %}
+                        {% if submission.form_data.destination_level %} to {{ submission.form_data.destination_level }}{% endif %}
+                        {% if submission.form_data.from_level %} from {{ submission.form_data.from_level }}{% endif %}
+                        {% if submission.form_data.release_type %} {{ submission.form_data.release_type }}{% endif %}
+                        {% if submission.form_data.waiver_type %} {{ submission.form_data.waiver_type }}{% endif %}
+                        {% if submission.form_data.claiming_from %} from {{ submission.form_data.claiming_from }}{% endif %}
+                        {% if submission.form_data.reason %} {{ submission.form_data.reason }}{% endif %}
+                    </td>
+                    <td>{{ submission.get_status_display|default:submission.status }}</td>
+                    <td>{{ submission.created|date:"M j, Y g:i A" }}</td>
+                    <td>{{ submission.processing_week|date:"M j, Y" }}</td>
+                    <td class="whitespace-normal">{{ submission.admin_notes|default:"—" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p>You haven't submitted a transaction yet.</p>
+    {% endif %}
+</section>
+
+<p class="space-x-4 text-sm">
+    <a href="/transactions/">All league transactions</a>
+    <a href="https://tbb.quarto.pub/npl-rules/">Rules</a>
+</p>
+{% endblock %}

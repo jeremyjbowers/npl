@@ -1,438 +1,115 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>{% block title %}The NPL{% endblock %}</title>
-        
-        <!-- Bulma CSS - Latest version -->
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
-        
-        <!-- Font Awesome -->
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-        
-        <!-- Google Fonts -->
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-        
-        <style type="text/css">
-            /* Theme system with CSS variables */
-            :root {
-                /* Light theme variables */
-                --npl-primary: #4fc3f7;
-                --npl-success: #66bb6a;
-                --npl-info: #42a5f5;
-                --npl-warning: #ffb74d;
-                --npl-danger: #ef5350;
-            }
-            
-            /* Light theme */
-            body {
-                --npl-bg-primary: #ffffff;
-                --npl-bg-secondary: #f8f9fa;
-                --npl-bg-tertiary: #e9ecef;
-                --npl-text-primary: #2c3e50;
-                --npl-text-secondary: #6c757d;
-                --npl-border: #dee2e6;
-                
-                /* Light theme status colors */
-                --npl-status-minors: #e8f5e8;
-                --npl-status-il-60: #ffe8e8;
-                --npl-status-il-other: #fff3e0;
-                --npl-status-nonmlb: #f5f5f5;
-                --npl-status-owned: #e3f2fd;
-            }
-            
-            /* Dark theme */
-            body.theme-dark {
-                --npl-bg-primary: #1a1a1a;
-                --npl-bg-secondary: #2d2d2d;
-                --npl-bg-tertiary: #3a3a3a;
-                --npl-text-primary: #ffffff;
-                --npl-text-secondary: #b3b3b3;
-                --npl-border: #404040;
-                
-                /* Dark theme status colors */
-                --npl-status-minors: #2d3d2d;
-                --npl-status-il-60: #3d2d3d;
-                --npl-status-il-other: #3d3d2d;
-                --npl-status-nonmlb: #333333;
-                --npl-status-owned: #2d3d3d;
-            }
-            
-            html, body {
-                height: 100%;
-                min-height: 100vh;
-            }
-            
-            body {
-                font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-                font-size: 14px;
-                line-height: 1.5;
-                color: var(--npl-text-primary);
-                background-color: var(--npl-bg-primary);
-                display: flex;
-                flex-direction: column;
-                transition: background-color 0.3s ease, color 0.3s ease;
-            }
-            
-            main.section {
-                flex: 1;
-                background-color: var(--npl-bg-primary);
-            }
-            
-            /* Dark mode typography */
-            .title { 
-                font-weight: 600; 
-                margin-bottom: 1rem;
-                color: var(--npl-text-primary);
-            }
-            .title.is-4 { font-size: 1.5rem; }
-            .title.is-5 { font-size: 1.25rem; }
-            .subtitle { 
-                font-weight: 400; 
-                color: var(--npl-text-secondary);
-                margin-bottom: 0.5rem;
-            }
-            
-            /* Dark mode containers */
-            .box, .card, .card-content {
-                background-color: var(--npl-bg-secondary) !important;
-                color: var(--npl-text-primary) !important;
-                border: 1px solid var(--npl-border);
-            }
-            
-            /* Dark mode tables */
-            .table {
-                font-size: 13px;
-                background-color: var(--npl-bg-secondary);
-                border: 1px solid var(--npl-border);
-                border-radius: 8px;
-                overflow: hidden;
-                color: var(--npl-text-primary);
-            }
-            .table thead th {
-                background-color: var(--npl-bg-tertiary);
-                font-weight: 600;
-                font-size: 12px;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-                padding: 0.75rem 0.5rem;
-                border-bottom: 2px solid var(--npl-border);
-                color: var(--npl-text-primary);
-            }
-            .table tbody td {
-                padding: 0.5rem;
-                vertical-align: middle;
-                border-bottom: 1px solid var(--npl-border);
-                background-color: var(--npl-bg-secondary);
-                color: var(--npl-text-primary);
-            }
-            .table tbody tr:hover td {
-                background-color: var(--npl-bg-tertiary);
-            }
-            
-            /* Compact typography */
-            .title { 
-                font-weight: 600; 
-                margin-bottom: 1rem;
-                color: var(--npl-text-primary);
-            }
-            .title.is-4 { font-size: 1.5rem; }
-            .title.is-5 { font-size: 1.25rem; }
-            .subtitle { 
-                font-weight: 400; 
-                color: var(--npl-text-secondary);
-                margin-bottom: 0.5rem;
-            }
-            
-            /* Compact tables for data display */
-            .table {
-                font-size: 13px;
-                background-color: var(--npl-bg-secondary);
-                border: 1px solid var(--npl-border);
-                border-radius: 8px;
-                overflow: hidden;
-                color: var(--npl-text-primary);
-            }
-            .table thead th {
-                background-color: var(--npl-bg-tertiary);
-                font-weight: 600;
-                font-size: 12px;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-                padding: 0.75rem 0.5rem;
-                border-bottom: 2px solid var(--npl-border);
-                color: var(--npl-text-primary);
-            }
-            .table tbody td {
-                padding: 0.5rem;
-                vertical-align: middle;
-                border-bottom: 1px solid var(--npl-border);
-                background-color: var(--npl-bg-secondary);
-                color: var(--npl-text-primary);
-            }
-            .table tbody tr:hover td {
-                background-color: var(--npl-bg-tertiary);
-            }
-            
-            /* Status indicators for roster data with dark theme colors */
-            .table tbody tr.minors td { 
-                background-color: var(--npl-status-minors) !important; 
-                color: var(--npl-text-primary) !important;
-            }
-            .table tbody tr.il-60 td { 
-                background-color: var(--npl-status-il-60) !important; 
-                color: var(--npl-text-primary) !important;
-            }
-            .table tbody tr.il-15 td, 
-            .table tbody tr.il-10 td, 
-            .table tbody tr.il-7 td { 
-                background-color: var(--npl-status-il-other) !important; 
-                color: var(--npl-text-primary) !important;
-            }
-            .table tbody tr.auction-nonmlb td { 
-                background-color: var(--npl-status-nonmlb) !important; 
-                color: var(--npl-text-primary) !important;
-            }
-            .table tbody tr.owned td { 
-                background-color: var(--npl-status-owned) !important; 
-                color: var(--npl-text-primary) !important;
-            }
-            .table tbody tr.majors td {
-                background-color: var(--npl-bg-secondary) !important;
-                color: var(--npl-text-primary) !important;
-                font-weight: bold !important;
-            }
-            
-            /* Ensure all table rows have proper text color */
-            .table tbody tr, .table tbody tr td {
-                color: var(--npl-text-primary) !important;
-            }
-            
-            /* Dark mode navigation */
-            .navbar {
-                box-shadow: 0 2px 0 0 var(--npl-border);
-                border-bottom: 1px solid var(--npl-border);
-                background-color: var(--npl-bg-secondary) !important;
-                transition: background-color 0.3s ease;
-            }
-            .navbar-brand .navbar-item {
-                font-weight: 700;
-                font-size: 1.5rem;
-                color: var(--npl-primary) !important;
-            }
-            .navbar-item {
-                font-size: 14px;
-                padding: 0.5rem 0.75rem;
-                color: var(--npl-text-primary) !important;
-                background-color: transparent !important;
-                transition: background-color 0.3s ease, color 0.3s ease;
-            }
-            .navbar-item:hover {
-                background-color: var(--npl-bg-tertiary) !important;
-                color: var(--npl-text-primary) !important;
-            }
-            .navbar-dropdown {
-                font-size: 13px;
-                box-shadow: 0 8px 16px rgba(0,0,0,0.3);
-                border: 1px solid var(--npl-border);
-                background-color: var(--npl-bg-secondary) !important;
-            }
-            .navbar-dropdown .navbar-item {
-                color: var(--npl-text-primary) !important;
-                background-color: var(--npl-bg-secondary) !important;
-            }
-            .navbar-dropdown .navbar-item:hover {
-                background-color: var(--npl-bg-tertiary) !important;
-            }
-            
-            /* Dark mode buttons */
-            .button {
-                background-color: var(--npl-bg-tertiary) !important;
-                color: var(--npl-text-primary) !important;
-                border-color: var(--npl-border) !important;
-            }
-            .button.is-primary {
-                background-color: var(--npl-primary) !important;
-                color: var(--npl-bg-primary) !important;
-            }
-            .button.is-info {
-                background-color: var(--npl-info) !important;
-                color: var(--npl-bg-primary) !important;
-            }
-            .button.is-warning {
-                background-color: var(--npl-warning) !important;
-                color: var(--npl-bg-primary) !important;
-            }
-            .button.is-static {
-                background-color: var(--npl-bg-tertiary) !important;
-                color: var(--npl-text-secondary) !important;
-            }
-            
-            /* Dark mode tags */
-            .tag {
-                background-color: var(--npl-bg-tertiary) !important;
-                color: var(--npl-text-primary) !important;
-            }
-            .tag.is-info {
-                background-color: var(--npl-info) !important;
-                color: var(--npl-bg-primary) !important;
-            }
-            .tag.is-light {
-                background-color: var(--npl-bg-tertiary) !important;
-                color: var(--npl-text-primary) !important;
-            }
-            
-            /* Dark mode forms */
-            .input, .textarea, .select select {
-                background-color: var(--npl-bg-secondary) !important;
-                color: var(--npl-text-primary) !important;
-                border-color: var(--npl-border) !important;
-            }
-            .input:focus, .textarea:focus, .select select:focus {
-                border-color: var(--npl-primary) !important;
-                box-shadow: 0 0 0 0.125em rgba(79, 195, 247, 0.25) !important;
-            }
-            
-            /* Dark mode notifications */
-            .notification {
-                background-color: var(--npl-bg-secondary) !important;
-                color: var(--npl-text-primary) !important;
-                border: 1px solid var(--npl-border);
-            }
-            .notification.is-info {
-                background-color: rgba(66, 165, 245, 0.2) !important;
-                border-color: var(--npl-info) !important;
-            }
-            
-            /* Remove old light mode overrides */
-            .position-count {
-                background-color: var(--npl-bg-secondary) !important;
-                color: var(--npl-text-primary) !important;
-            }
-            
-            /* Compact containers */
-            .container {
-                max-width: 1200px;
-            }
-            .section {
-                padding: 1.5rem 1.5rem;
-            }
-            .block {
-                margin-bottom: 1.5rem;
-            }
-            
-            /* Compact form elements */
-            .field {
-                margin-bottom: 1rem;
-            }
-            /* .input, .textarea, .select select {
-                font-size: 14px;
-                border: 1px solid #dee2e6;
-                border-radius: 6px;
-            } */
-            .input:focus, .textarea:focus, .select select:focus {
-                border-color: var(--npl-primary);
-                box-shadow: 0 0 0 0.125em rgba(25, 118, 210, 0.25);
-            }
-            
-            /* Compact buttons */
-            /* .button {
-                font-size: 13px;
-                border-radius: 6px;
-                font-weight: 500;
-            }
-            .button.is-small {
-                font-size: 12px;
-                padding: 0.25rem 0.5rem;
-            } */
-            
-            /* Compact notifications */
-            .notification {
-                padding: 1rem;
-                border-radius: 6px;
-                margin-bottom: 1rem;
-                font-size: 14px;
-            }
-            
-            /* Utility classes */
-            .is-size-7 { font-size: 12px; }
-            .has-text-weight-medium { font-weight: 500; }
-            .has-background-light { background-color: var(--npl-bg-tertiary); }
-            
-            /* Position count navigation styling */
-            .position-count .level-item {
-                text-align: center;
-            }
-            .position-count .title {
-                font-size: 2rem;
-                font-weight: 700;
-                margin-bottom: 0;
-            }
-            .position-count .heading {
-                font-size: 0.875rem;
-                font-weight: 500;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-                color: var(--npl-text-secondary);
-            }
-            table.team-table td.hidden-on-team {
-                display: none;
-            }
-            tr.majors td {
-                font-weight: bold;
-            }
-            
-            /* Theme toggle button */
-            .theme-toggle {
-                background: none !important;
-                border: 1px solid var(--npl-border) !important;
-                color: var(--npl-text-primary) !important;
-                padding: 0.5rem 0.75rem !important;
-                border-radius: 4px !important;
-                cursor: pointer !important;
-                transition: all 0.3s ease !important;
-                font-size: 0.875rem !important;
-            }
-            
-            .theme-toggle:hover {
-                background-color: var(--npl-bg-tertiary) !important;
-                border-color: var(--npl-primary) !important;
-            }
-            
-            .theme-toggle .icon {
-                margin-right: 0.25rem !important;
-            }
-        </style>
-        
-        {% block extra_head %}{% endblock %}
-    </head>
-    <body>
-        {% include "includes/nav.html" %}
-        
-        <!-- Beta Warning Banner -->
-        <div class="beta-banner" style="position: fixed; top: 3.25rem; left: 0; right: 0; z-index: 25; background-color: var(--npl-warning); color: #000; padding: 0.75rem 1rem; text-align: center; border-bottom: 1px solid rgba(0,0,0,0.1); font-weight: 500; font-size: 0.9rem;">
-            <div class="container">
-                <span class="icon">
-                    <i class="fas fa-exclamation-triangle"></i>
-                </span>
-                This site is in beta - many functions do not work yet. Please continue using the Google forms and sheets until this banner is removed.
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}The NPL{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/npl.css' %}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-white text-black text-sm leading-tight">
+    <a href="#content" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:bg-white focus:px-2 focus:py-1 focus:underline">Skip to content</a>
+
+    <div class="sticky top-0 z-30 bg-white">
+        <header class="border-b border-gray-300 px-2 py-2">
+            {% include "includes/nav.html" %}
+        </header>
+
+        <div class="border-b border-gray-200">
+            <div class="px-2 py-1">
+                <button type="button" id="filter-toggle" class="underline text-sm" aria-controls="filter-section" aria-expanded="{% if request.path == '/players/search/' %}true{% else %}false{% endif %}">
+                    Filter Players <span id="filter-arrow">{% if request.path == '/players/search/' %}▲{% else %}▼{% endif %}</span>
+                </button>
+            </div>
+            <div id="filter-section" class="{% if request.path != '/players/search/' %}hidden{% endif %} border-t border-gray-200 bg-gray-50 px-2 py-3">
+                <form method="get" action="/players/search/" class="grid grid-cols-2 gap-3 md:grid-cols-5 md:items-end">
+                    <div class="col-span-2 md:col-span-1">
+                        <label class="mb-1 block text-xs font-bold" for="filter-name">Name</label>
+                        <input id="filter-name" type="text" name="name" value="{{ request.GET.name }}" placeholder="find a player" class="w-full">
+                    </div>
+                    <div>
+                        <label class="mb-1 block text-xs font-bold" for="filter-roster">Roster</label>
+                        <select id="filter-roster" name="roster_status" class="w-full">
+                            <option value="">All</option>
+                            <option value="mlb"{% if request.GET.roster_status == "mlb" %} selected{% endif %}>MLB</option>
+                            <option value="minors"{% if request.GET.roster_status == "minors" %} selected{% endif %}>Minors</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="mb-1 block text-xs font-bold" for="filter-owned">Owned</label>
+                        <select id="filter-owned" name="owned" class="w-full">
+                            <option value="">All</option>
+                            <option value="yes"{% if request.GET.owned == "yes" %} selected{% endif %}>Yes</option>
+                            <option value="no"{% if request.GET.owned == "no" %} selected{% endif %}>No</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="mb-1 block text-xs font-bold" for="filter-position">Position</label>
+                        <select id="filter-position" name="position" class="w-full">
+                            <option value="">All</option>
+                            <option value="P"{% if request.GET.position == "P" %} selected{% endif %}>P</option>
+                            <option value="H"{% if request.GET.position == "H" %} selected{% endif %}>Hitters</option>
+                            <option value="C"{% if request.GET.position == "C" %} selected{% endif %}>C</option>
+                            <option value="IF"{% if request.GET.position == "IF" %} selected{% endif %}>IF</option>
+                            <option value="OF"{% if request.GET.position == "OF" %} selected{% endif %}>OF</option>
+                            <option value="DH"{% if request.GET.position == "DH" %} selected{% endif %}>DH</option>
+                            <option value="UT"{% if request.GET.position == "UT" %} selected{% endif %}>UT</option>
+                        </select>
+                    </div>
+                    <div>
+                        <button type="submit" class="btn w-full">Filter</button>
+                    </div>
+                </form>
             </div>
         </div>
-        
-        <main class="section" style="padding-top: 6.5rem;">
-            <div class="container">
-                {% block content %}{% endblock %}
-            </div>
-        </main>
-        
-        <!-- Scripts -->
-        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
-        
-        {% block extrascript %}{% endblock %}
-        {% block modal %}{% endblock %}
-    </body>
+
+        <p class="border-b border-gray-200 px-2 py-1 text-xs">
+            This site is in beta. Keep using the Google forms and sheets until this note is gone.
+        </p>
+    </div>
+
+    <main id="content" class="px-3 py-4">
+        {% if messages %}
+        <ul class="mb-4 space-y-2">
+            {% for message in messages %}
+            <li class="note" role="status">{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        {% block content %}{% endblock %}
+    </main>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        var toggle = document.getElementById("filter-toggle");
+        var panel = document.getElementById("filter-section");
+        var arrow = document.getElementById("filter-arrow");
+        if (toggle && panel) {
+            toggle.addEventListener("click", function () {
+                var open = panel.classList.toggle("hidden") === false;
+                toggle.setAttribute("aria-expanded", open ? "true" : "false");
+                if (arrow) arrow.textContent = open ? "▲" : "▼";
+            });
+        }
+
+        var menuButton = document.getElementById("mobile-menu-button");
+        var menu = document.getElementById("mobile-menu");
+        var menuClose = document.getElementById("mobile-menu-close");
+        if (menuButton && menu) {
+            menuButton.addEventListener("click", function () {
+                menu.classList.remove("hidden");
+                menuButton.setAttribute("aria-expanded", "true");
+            });
+        }
+        if (menuClose && menu) {
+            menuClose.addEventListener("click", function () {
+                menu.classList.add("hidden");
+                if (menuButton) menuButton.setAttribute("aria-expanded", "false");
+            });
+        }
+    });
+    </script>
+    {% block extrascript %}{% endblock %}
+</body>
 </html>

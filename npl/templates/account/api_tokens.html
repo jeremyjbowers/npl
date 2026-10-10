@@ -1,71 +1,60 @@
 {% extends "base.html" %}
 
-{% block title %}API tokens | The NPL{% endblock %}
+{% block title %}API tokens — The NPL{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h1 class="title is-4">API tokens</h1>
-    <p class="subtitle">
-        Tokens let an agent call the transaction API and MCP tools as you.
-        A token only sees the clubs you own.
-    </p>
+<article class="max-w-3xl">
+    <header class="mb-4">
+        <h1 class="text-2xl font-bold">API tokens</h1>
+        <p class="mt-1">Tokens let an agent call the transaction API and MCP tools as you. A token only sees the clubs you own.</p>
+    </header>
 
-    <div class="notification is-info">
+    <div class="note mb-4">
         <p><strong>Read</strong> can list kinds, proposals, drafts, and the MCP tool list.</p>
         <p><strong>Read and write</strong> can also submit proposals, agree, decline, withdraw, claim waivers, and make draft picks.</p>
         <p class="mt-2">Send the secret as <code>Authorization: Bearer npl_…</code>.</p>
     </div>
 
     {% if revealed %}
-    <div class="notification is-warning">
-        <p class="has-text-weight-bold">{{ revealed.name }} ({{ revealed.scope }})</p>
-        <p class="mb-2">Copy this token now. It is stored hashed, and this page will not show it again.</p>
-        <input class="input" type="text" readonly value="{{ revealed.secret }}" onclick="this.select()">
+    <div class="note mb-4">
+        <p class="font-bold">{{ revealed.name }} ({{ revealed.scope }})</p>
+        <p class="my-2">Copy this token now. It is stored hashed, and this page will not show it again.</p>
+        <input type="text" readonly value="{{ revealed.secret }}" onclick="this.select()" class="w-full">
     </div>
     {% endif %}
 
-    <div class="box">
-        <h2 class="title is-5">New token</h2>
-        <form method="post">
+    <section class="mb-8">
+        <h2 class="mb-2 text-lg font-bold">New token</h2>
+        <form method="post" class="space-y-3">
             {% csrf_token %}
             <input type="hidden" name="action" value="create">
-            <div class="field">
-                <label class="label" for="token-name">Name</label>
-                <div class="control">
-                    <input class="input" id="token-name" name="name" maxlength="80" required placeholder="Trade agent">
-                </div>
-                <p class="help">A label for you, such as the agent that will use it.</p>
+            <div>
+                <label class="mb-1 block text-xs font-bold" for="token-name">Name</label>
+                <input id="token-name" name="name" maxlength="80" required placeholder="Trade agent">
+                <p class="mt-1 text-xs text-gray-600">A label for you, such as the agent that will use it.</p>
             </div>
-            <div class="field">
-                <label class="label">Access</label>
-                <div class="control">
-                    <label class="radio">
-                        <input type="radio" name="scope" value="{{ read_scope }}" checked>
-                        Read
-                    </label>
-                    <label class="radio">
-                        <input type="radio" name="scope" value="{{ write_scope }}">
-                        Read and write
-                    </label>
-                </div>
-            </div>
-            <button class="button is-primary" type="submit">Generate token</button>
+            <fieldset>
+                <legend class="mb-1 text-xs font-bold">Access</legend>
+                <label class="mr-4"><input type="radio" name="scope" value="{{ read_scope }}" checked> Read</label>
+                <label><input type="radio" name="scope" value="{{ write_scope }}"> Read and write</label>
+            </fieldset>
+            <button class="btn" type="submit">Generate token</button>
         </form>
-    </div>
+    </section>
 
-    <div class="box">
-        <h2 class="title is-5">Your tokens</h2>
+    <section>
+        <h2 class="mb-2 text-lg font-bold">Your tokens</h2>
         {% if tokens %}
-        <div class="table-container">
-            <table class="table is-fullwidth is-hoverable">
+        <div class="overflow-x-auto">
+            <table class="sheet">
                 <thead>
                     <tr>
-                        <th>Name</th>
-                        <th>Access</th>
-                        <th>Starts with</th>
-                        <th>Created</th>
-                        <th>Last used</th>
-                        <th></th>
+                        <th scope="col">Name</th>
+                        <th scope="col">Access</th>
+                        <th scope="col">Starts with</th>
+                        <th scope="col">Created</th>
+                        <th scope="col">Last used</th>
+                        <th scope="col"></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -78,13 +67,13 @@
                         <td>{% if token.last_used_at %}{{ token.last_used_at|date:"N j, Y, P" }}{% else %}Never{% endif %}</td>
                         <td>
                             {% if token.revoked_at %}
-                            <span class="tag">Revoked {{ token.revoked_at|date:"N j" }}</span>
+                            Revoked {{ token.revoked_at|date:"N j" }}
                             {% else %}
                             <form method="post">
                                 {% csrf_token %}
                                 <input type="hidden" name="action" value="revoke">
                                 <input type="hidden" name="token_id" value="{{ token.id }}">
-                                <button class="button is-small is-danger is-light" type="submit">Revoke</button>
+                                <button class="btn-line" type="submit">Revoke</button>
                             </form>
                             {% endif %}
                         </td>
@@ -96,6 +85,6 @@
         {% else %}
         <p>You have not created a token yet.</p>
         {% endif %}
-    </div>
-</div>
+    </section>
+</article>
 {% endblock %}

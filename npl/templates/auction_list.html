@@ -1,333 +1,111 @@
 {% extends "base.html" %}
-{% load npl_tags %}
 {% load humanize %}
 
-{% block extra_head %}
-<style>
-/* Dark theme titles */
-.title {
-    color: var(--npl-text-primary) !important;
-}
-
-/* Dark theme notifications */
-.notification.is-info {
-    background-color: rgba(66, 165, 245, 0.2) !important;
-    border: 1px solid var(--npl-info) !important;
-    color: var(--npl-text-primary) !important;
-}
-
-/* Dark theme auction table */
-.auction-table {
-    font-size: 0.875rem;
-    background-color: var(--npl-bg-secondary) !important;
-    border: 1px solid var(--npl-border) !important;
-}
-
-.auction-table th {
-    background-color: var(--npl-bg-tertiary) !important;
-    color: var(--npl-text-primary) !important;
-    font-weight: 600;
-    padding: 0.5rem 0.25rem;
-    text-align: center;
-    border: 1px solid var(--npl-border) !important;
-}
-
-.auction-table td {
-    padding: 0.375rem 0.25rem;
-    border: 1px solid var(--npl-border) !important;
-    text-align: center;
-    vertical-align: middle;
-    background-color: var(--npl-bg-secondary) !important;
-    color: var(--npl-text-primary) !important;
-}
-
-.auction-table tbody tr:hover td {
-    background-color: var(--npl-bg-tertiary) !important;
-}
-
-.expired-time {
-    color: #ef5350 !important;
-    font-weight: 600;
-}
-
-.bid-form {
-    display: flex;
-    gap: 0.25rem;
-    align-items: center;
-    justify-content: center;
-}
-
-.bid-input {
-    width: 80px;
-    padding: 0.25rem;
-    font-size: 0.75rem;
-    border: 1px solid var(--npl-border) !important;
-    border-radius: 3px;
-    background-color: var(--npl-bg-tertiary) !important;
-    color: var(--npl-text-primary) !important;
-}
-
-.bid-input:focus {
-    border-color: var(--npl-primary) !important;
-    box-shadow: 0 0 0 0.125em rgba(79, 195, 247, 0.25) !important;
-}
-
-.bid-button {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.75rem;
-    background-color: var(--npl-success) !important;
-    color: var(--npl-bg-primary) !important;
-    border: none;
-    border-radius: 3px;
-    cursor: pointer;
-    white-space: nowrap;
-}
-
-.bid-button:hover {
-    background-color: #4caf50 !important;
-}
-
-.player-name {
-    text-align: left;
-    font-weight: 500;
-}
-
-.player-name a {
-    color: var(--npl-text-primary) !important;
-    text-decoration: none;
-}
-
-.player-name a:hover {
-    color: var(--npl-primary) !important;
-}
-
-.your-bid {
-    font-weight: 600;
-    color: var(--npl-success) !important;
-}
-
-.already-bid {
-    color: var(--npl-text-secondary) !important;
-    font-style: italic;
-    font-size: 0.75rem;
-}
-
-/* Table wrapper styling */
-.table-container {
-    background-color: var(--npl-bg-secondary) !important;
-    border-radius: 8px;
-    overflow: hidden;
-}
-
-/* Ensure all table text is properly colored */
-.table tbody tr, .table tbody tr td {
-    color: var(--npl-text-primary) !important;
-}
-
-/* Mobile responsiveness for auction table */
-@media screen and (max-width: 768px) {
-    .table-container {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-    }
-    
-    .auction-table {
-        min-width: 1200px;
-        font-size: 0.7rem;
-    }
-    
-    .auction-table th,
-    .auction-table td {
-        padding: 0.25rem 0.15rem;
-        white-space: nowrap;
-    }
-    
-    .auction-table th {
-        font-size: 0.65rem;
-    }
-    
-    .bid-form {
-        flex-direction: column;
-        gap: 0.15rem;
-    }
-    
-    .bid-input {
-        width: 70px;
-        font-size: 0.65rem;
-        padding: 0.2rem;
-    }
-    
-    .bid-button {
-        font-size: 0.65rem;
-        padding: 0.2rem 0.4rem;
-    }
-    
-    .player-name {
-        font-size: 0.75rem;
-    }
-    
-    .your-bid {
-        font-size: 0.65rem;
-    }
-    
-    .already-bid {
-        font-size: 0.6rem;
-    }
-}
-
-/* Mobile improvements for notification */
-@media screen and (max-width: 768px) {
-    .notification {
-        padding: 0.75rem;
-        font-size: 0.85rem;
-    }
-    
-    .notification ul {
-        margin-left: 1rem;
-    }
-    
-    .notification li {
-        margin-bottom: 0.25rem;
-    }
-}
-
-/* Mobile title improvements */
-@media screen and (max-width: 768px) {
-    .title.is-3 {
-        font-size: 1.5rem;
-    }
-}
-</style>
-{% endblock %}
+{% block title %}Auctions — The NPL{% endblock %}
 
 {% block content %}
-<section class="block" style="padding-top: 25px;">
-    <h1 class="title is-3">NPL In-Season FA Bidding</h1>
-    
-    <div class="notification is-info">
-        <strong>Auction Rules:</strong>
-        <ul>
-            <li>You are allowed to make only <strong>one bid</strong> per auction</li>
-            <li>Nominations are NON-BINDING; you MUST bid to win an auction</li>
-            <li>FA auction time does NOT extend; auctions are <strong>blind</strong> and expire at 3 PM ET on Friday each week</li>
-            <li>Bids must be in <strong>dollars</strong></li>
-            <li>The winning amount will be <strong>$1 greater than the second highest bid</strong></li>
-            <li>All times are <strong>EST</strong></li>
-        </ul>
-    </div>
-    
-    {% if auctions %}
-    <div class="table-container">
-        <table class="table is-fullwidth is-striped auction-table">
-            <thead>
-                <tr>
-                    <th>Player</th>
-                    <th>SS#</th>
-                    <th>MLB#</th>
-                    <th>POS</th>
-                    <th>Team</th>
-                    <th>MLS</th>
-                    <th>OPT</th>
-                    <th>STA</th>
-                    <th>Winner</th>
-                    <th>Current<br>Min. Bid</th>
-                    <th>Expires At (EST)</th>
-                    <th>Time<br>Remaining</th>
-                    <th>Bid<br>Count</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for auction in auctions %}
-                <tr>
-                    <td class="player-name">
-                        <strong><a href="/players/{{ auction.player.mlb_id }}/">{{ auction.player.name }}</a></strong>
-                    </td>
-                    <td>{{ auction.player.scoresheet_id|default:"-" }}</td>
-                    <td>{{ auction.player.mlb_id|default:"-" }}</td>
-                    <td>{{ auction.player.position|default:"-" }}</td>
-                    <td>{{ auction.player.mlb_org|default:"-" }}</td>
-                    <td>{{ auction.player.service_time|default:"0.000" }}</td>
-                    <td>{{ auction.player.options|default:"3" }}</td>
-                    <td>{{ auction.player.get_npl_status|default:"-" }}</td>
-                    <td>{{ auction.status_display }}</td>
-                    <td>${{ auction.current_min_bid|intcomma }}</td>
-                    <td>{{ auction.closes|date:"n/j/Y G:i:s" }}</td>
-                    <td class="{% if auction.is_expired %}expired-time{% endif %}">
-                        {{ auction.time_remaining_display }}
-                    </td>
-                    <td>{{ auction.bid_count }}</td>
-                    <td>
-                        {% if auction.your_bid %}
-                            <div style="color: #059669; font-weight: 600;">
-                                Your bid: ${{ auction.your_bid|intcomma }}
-                            </div>
-                        {% elif auction.can_bid %}
-                            <div class="bid-form">
-                                <input type="number" 
-                                       class="bid-input" 
-                                       min="{{ auction.min_bid }}" 
-                                       placeholder="${{ auction.min_bid }}"
-                                       id="bid-{{ auction.id }}">
-                                <button class="bid-button" 
-                                        onclick="submitBid({{ auction.id }}, {{ auction.min_bid }})">
-                                    Bid
-                                </button>
-                            </div>
-                        {% elif auction.is_expired %}
-                            <span class="already-bid">Expired</span>
-                        {% else %}
-                            <span class="already-bid">Login required</span>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% else %}
-    <p>There are no active auctions at the moment.</p>
-    {% endif %}
-</section>
+<header class="mb-4">
+    <h1 class="text-2xl font-bold">In-Season FA Bidding</h1>
+</header>
+
+<div class="note mb-4">
+    <p class="font-bold">Auction rules</p>
+    <ul>
+        <li>One bid per club.</li>
+        <li>Nominations are non-binding. You must bid to win.</li>
+        <li>Auctions are blind and expire at 3 PM ET on Friday. The clock does not extend.</li>
+        <li>Bids are in dollars. The winner pays $1 more than the second-highest bid.</li>
+    </ul>
+</div>
+
+{% if auctions %}
+<div class="overflow-x-auto">
+    <table class="sheet">
+        <thead>
+            <tr>
+                <th scope="col">Player</th>
+                <th scope="col">SS#</th>
+                <th scope="col">MLB#</th>
+                <th scope="col">Pos</th>
+                <th scope="col">Team</th>
+                <th scope="col">MLS</th>
+                <th scope="col">Opt</th>
+                <th scope="col">Status</th>
+                <th scope="col">Winner</th>
+                <th scope="col">Min bid</th>
+                <th scope="col">Expires (ET)</th>
+                <th scope="col">Remaining</th>
+                <th scope="col">Bids</th>
+                <th scope="col">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for auction in auctions %}
+            <tr>
+                <td><a href="/players/{{ auction.player.mlb_id }}/">{{ auction.player.name }}</a></td>
+                <td>{{ auction.player.scoresheet_id|default:"—" }}</td>
+                <td>{{ auction.player.mlb_id|default:"—" }}</td>
+                <td>{{ auction.player.position|default:"—" }}</td>
+                <td>{{ auction.player.mlb_org|default:"—" }}</td>
+                <td>{{ auction.player.service_time|default:"0.000" }}</td>
+                <td>{{ auction.player.options|default:"3" }}</td>
+                <td>{{ auction.player.get_npl_status|default:"—" }}</td>
+                <td>{{ auction.status_display }}</td>
+                <td>${{ auction.current_min_bid|intcomma }}</td>
+                <td>{{ auction.closes|date:"n/j/Y G:i:s" }}</td>
+                <td{% if auction.is_expired %} class="text-red-700"{% endif %}>{{ auction.time_remaining_display }}</td>
+                <td>{{ auction.bid_count }}</td>
+                <td>
+                    {% if auction.your_bid %}
+                    <span class="font-bold">Your bid: ${{ auction.your_bid|intcomma }}</span>
+                    {% elif auction.can_bid %}
+                    <form class="flex items-center gap-1" onsubmit="return submitBid(event, {{ auction.id }}, {{ auction.min_bid }})">
+                        <label class="sr-only" for="bid-{{ auction.id }}">Bid on {{ auction.player.name }}</label>
+                        <input type="number" id="bid-{{ auction.id }}" min="{{ auction.min_bid }}" placeholder="{{ auction.min_bid }}" class="w-20">
+                        <button type="submit" class="btn-line">Bid</button>
+                    </form>
+                    {% elif auction.is_expired %}
+                    Expired
+                    {% else %}
+                    Log in to bid
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p>There are no active auctions.</p>
+{% endif %}
 {% endblock %}
 
 {% block extrascript %}
-<script type="text/javascript">
-function submitBid(auctionId, minBid) {
-    const bidInput = document.getElementById('bid-' + auctionId);
-    const bidAmount = parseInt(bidInput.value);
-    
-    // Validate bid
+<script>
+function submitBid(event, auctionId, minBid) {
+    event.preventDefault();
+    var bidInput = document.getElementById("bid-" + auctionId);
+    var bidAmount = parseInt(bidInput.value, 10);
     if (!bidAmount || bidAmount < minBid) {
-        alert('Please enter a valid bid amount of at least $' + minBid.toLocaleString());
-        return;
+        alert("Enter a bid of at least $" + minBid.toLocaleString() + ".");
+        return false;
     }
-    
-    // Confirm bid
-    if (!confirm('Confirm bid of $' + bidAmount.toLocaleString() + ' on this player? This is your ONLY bid allowed.')) {
-        return;
+    if (!confirm("Confirm a bid of $" + bidAmount.toLocaleString() + "? This is your only bid.")) {
+        return false;
     }
-    
-    // Submit bid
-    fetch('/api/v1/auctions/bid/' + auctionId + '/?bid=' + bidAmount)
-        .then(response => response.json())
-        .then(data => {
+    fetch("/api/v1/auctions/bid/" + auctionId + "/?bid=" + bidAmount)
+        .then(function (response) { return response.json(); })
+        .then(function (data) {
             if (data.success) {
-                alert(data.message);
                 window.location.reload();
             } else {
-                alert('Error: ' + data.message);
+                alert(data.message || "Bid failed.");
             }
         })
-        .catch(error => {
-            alert('Error submitting bid. Please try again.');
-            console.error('Error:', error);
+        .catch(function () {
+            alert("Error submitting bid. Please try again.");
         });
+    return false;
 }
-
-// Auto-refresh every 30 seconds for live updates
-setInterval(function() {
-    window.location.reload();
-}, 30000);
 </script>
 {% endblock %}

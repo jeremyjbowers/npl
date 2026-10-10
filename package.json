@@ -1,0 +1,11 @@
+{
+  "name": "npl",
+  "private": true,
+  "scripts": {
+    "css": "tailwindcss -i npl/assets/input.css -o npl/static/css/npl.css --minify"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.1.14",
+    "tailwindcss": "^4.1.14"
+  }
+}

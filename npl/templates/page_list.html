@@ -1,20 +1,23 @@
-{% extends "base.html" %} 
+{% extends "base.html" %}
 
-{% block content %} 
-    {% regroup pages by collection as collection_pages %}
-    {% for collection in collection_pages %}
-    <section class="block">
-    <h1 class="title is-2">{{ collection.grouper }}</h1>
+{% block title %}Pages — The NPL{% endblock %}
 
+{% block content %}
+{% regroup pages by collection as collection_pages %}
+{% for collection in collection_pages %}
+<section class="mb-8">
+    <h1 class="mb-3 text-2xl font-bold">{{ collection.grouper }}</h1>
     {% for page in collection.list %}
-    <div class="block">
-        <h1 class="title is-4">Rule: <a href="/pages/{{ page.slug }}/">{{ page.title }}</a>
-            {% if user.is_staff %}<small><a target="_blank" href="/admin/npl/page/{{ page.id }}/change/"><span class="icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></span></a></small>{% endif %}
-        </h1>
-        <div class="content">{{ page.summary.html|safe }}
-            <time>{{ page.last_modified|date:"N j, Y" }}</time>
-        </div>
+    <article class="mb-4">
+        <h2 class="text-lg font-bold"><a href="/pages/{{ page.slug }}/">{{ page.title }}</a>
+            {% if user.is_staff %}<a href="/admin/npl/page/{{ page.id }}/change/" class="text-xs font-normal">edit</a>{% endif %}
+        </h2>
+        <div class="copy text-sm">{{ page.summary.html|safe }}</div>
+        <p><time datetime="{{ page.last_modified|date:'Y-m-d' }}">{{ page.last_modified|date:"N j, Y" }}</time></p>
+    </article>
     {% endfor %}
-    </section>
-    {% endfor %}
+</section>
+{% empty %}
+<p>No pages yet.</p>
+{% endfor %}
 {% endblock %}

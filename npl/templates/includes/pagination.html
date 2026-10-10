@@ -1,0 +1,18 @@
+{% if page_obj and page_obj.paginator.num_pages > 1 %}
+<nav class="my-3 flex flex-wrap items-baseline justify-between gap-3 text-sm" aria-label="Pagination">
+    <p>Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }}</p>
+    <p class="space-x-3">
+        {% if page_obj.has_previous %}
+        <a href="?{% if q_string %}{{ q_string }}&{% endif %}page=1">First</a>
+        <a href="?{% if q_string %}{{ q_string }}&{% endif %}page={{ page_obj.previous_page_number }}">Previous</a>
+        {% endif %}
+        <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+        <a href="?{% if q_string %}{{ q_string }}&{% endif %}page={{ page_obj.next_page_number }}">Next</a>
+        <a href="?{% if q_string %}{{ q_string }}&{% endif %}page={{ page_obj.paginator.num_pages }}">Last</a>
+        {% endif %}
+    </p>
+</nav>
+{% elif page_obj %}
+<p class="my-3 text-sm">{{ page_obj.paginator.count }} total</p>
+{% endif %}
