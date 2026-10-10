@@ -75,9 +75,32 @@ class TransactionProposal(BaseModel):
     auction = models.ForeignKey(
         Auction, on_delete=models.SET_NULL, blank=True, null=True, related_name="proposals"
     )
+    flagged = models.BooleanField(
+        default=False,
+        help_text="Directors mark a proposal improper when the club needs to change it.",
+    )
+    flag_note = models.TextField(
+        blank=True,
+        default="",
+        help_text="What the club needs to fix. Shown to that club and to API clients.",
+    )
+    flagged_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="flagged_transaction_proposals",
+    )
+    flagged_at = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         ordering = ["-created"]
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        if self.flagged and not (self.flag_note or "").strip():
+            raise ValidationError({"flag_note": "Say what needs to be fixed."})
 
     def __unicode__(self):
         return f"{self.originating_team} {self.kind} ({self.status})"
@@ -500,3 +523,39 @@ class Rule5Selection(BaseModel):
 
     def __unicode__(self):
         return f"R{self.round_number}.{self.pick_number} {self.outcome}"
+
+
+class ApiToken(BaseModel):
+    """Bearer credential for the transaction API and MCP tools.
+
+    The secret is shown once at creation and stored only as a hash.
+    """
+
+    READ = "read"
+    READ_WRITE = "read_write"
+    SCOPE_CHOICES = (
+        (READ, "Read"),
+        (READ_WRITE, "Read and write"),
+    )
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="api_tokens",
+    )
+    name = models.CharField(max_length=80)
+    token_prefix = models.CharField(max_length=16)
+    token_hash = models.CharField(max_length=64, unique=True)
+    scope = models.CharField(max_length=16, choices=SCOPE_CHOICES)
+    last_used_at = models.DateTimeField(blank=True, null=True)
+    revoked_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        ordering = ["-created"]
+
+    def __unicode__(self):
+        return f"{self.name} ({self.get_scope_display()})"
+
+    @property
+    def is_active(self):
+        return self.revoked_at is None

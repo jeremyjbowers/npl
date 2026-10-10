@@ -1539,6 +1539,7 @@ class TransactionSubmission(BaseModel):
 
 
 from npl.transaction_models import (  # noqa: E402,F401
+    ApiToken,
     DraftSession,
     FreeAgentListing,
     InLimboAssignment,

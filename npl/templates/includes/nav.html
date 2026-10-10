@@ -151,6 +151,20 @@
                         </span>
                         <span>My Submissions</span>
                     </a>
+                    <a href="/account/tokens/" class="navbar-item">
+                        <span class="icon">
+                            <i class="fas fa-key"></i>
+                        </span>
+                        <span>API tokens</span>
+                    </a>
+                    {% if user.is_staff %}
+                    <a href="/admin/npl/transactionproposal/" class="navbar-item">
+                        <span class="icon">
+                            <i class="fas fa-flag"></i>
+                        </span>
+                        <span>Review proposals</span>
+                    </a>
+                    {% endif %}
                     <hr class="navbar-divider" style="background-color: var(--npl-border);">
                     {% endif %}
                     <a href="/transactions/" class="navbar-item">

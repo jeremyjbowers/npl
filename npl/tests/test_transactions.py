@@ -314,3 +314,147 @@ class TransactionApiTests(TestCase):
         self.assertIn("create_transaction_proposal", names)
         self.assertIn("claim_waiver", names)
         self.assertIn("submit_draft_pick", names)
+        self.assertEqual(tools.json()["auth"]["type"], "bearer")
+
+
+class ApiTokenTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(email="token@example.com", password="secret")
+        self.other = User.objects.create_user(email="other-token@example.com", password="secret")
+        self.owner = Owner.objects.create(name="Token", user=self.user)
+        self.team = Team.objects.create(full_name="Token Club", short_name="Tok", abbreviation="TOK")
+        self.team.owners.add(self.owner)
+        self.client = Client()
+
+    def _proposal_body(self):
+        return json.dumps({"team": self.team.id, "code": "release", "assets": []})
+
+    def test_owner_can_mint_and_revoke_a_token(self):
+        self.client.force_login(self.user)
+        created = self.client.post(
+            "/account/tokens/",
+            {"action": "create", "name": "Trade agent", "scope": "read_write"},
+        )
+        self.assertEqual(created.status_code, 302)
+        shown = self.client.get("/account/tokens/")
+        self.assertEqual(shown.status_code, 200)
+        secret = shown.context["revealed"]["secret"]
+        self.assertTrue(secret.startswith("npl_"))
+        self.assertContains(shown, secret)
+        again = self.client.get("/account/tokens/")
+        self.assertIsNone(again.context["revealed"])
+        self.assertNotContains(again, secret)
+
+        token = self.user.api_tokens.get()
+        revoked = self.client.post("/account/tokens/", {"action": "revoke", "token_id": token.id})
+        self.assertEqual(revoked.status_code, 302)
+        token.refresh_from_db()
+        self.assertIsNotNone(token.revoked_at)
+
+        denied = self.client.get(
+            "/api/v1/transactions/kinds/",
+            HTTP_AUTHORIZATION=f"Bearer {secret}",
+        )
+        self.assertEqual(denied.status_code, 401)
+
+    def test_read_token_cannot_write_and_write_token_can(self):
+        from npl.api_tokens import generate_token
+
+        read_token, read_secret = generate_token(self.user, "reader", "read")
+        write_token, write_secret = generate_token(self.user, "writer", "read_write")
+
+        anonymous = self.client.get("/api/v1/transactions/kinds/")
+        self.assertEqual(anonymous.status_code, 401)
+
+        listed = self.client.get(
+            "/api/v1/transactions/kinds/",
+            HTTP_AUTHORIZATION=f"Bearer {read_secret}",
+        )
+        self.assertEqual(listed.status_code, 200)
+        read_token.refresh_from_db()
+        self.assertIsNotNone(read_token.last_used_at)
+
+        blocked = self.client.post(
+            "/api/v1/transactions/proposals/",
+            data=self._proposal_body(),
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {read_secret}",
+        )
+        self.assertEqual(blocked.status_code, 403)
+
+        created = self.client.post(
+            "/api/v1/transactions/proposals/",
+            data=self._proposal_body(),
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {write_secret}",
+        )
+        self.assertEqual(created.status_code, 201, created.content)
+        self.assertEqual(created.json()["team_id"], self.team.id)
+
+        stolen = self.client.get(
+            "/api/v1/transactions/proposals/",
+            HTTP_AUTHORIZATION="Bearer npl_not-a-real-token",
+        )
+        self.assertEqual(stolen.status_code, 401)
+
+        other_client = Client()
+        other_client.force_login(self.other)
+        cannot_revoke = other_client.post(
+            "/account/tokens/",
+            {"action": "revoke", "token_id": write_token.id},
+        )
+        self.assertEqual(cannot_revoke.status_code, 404)
+        write_token.refresh_from_db()
+        self.assertIsNone(write_token.revoked_at)
+
+
+class ProposalFlagTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(email="flag@example.com", password="secret")
+        self.director = User.objects.create_superuser(email="director@example.com", password="secret")
+        self.owner = Owner.objects.create(name="Flag", user=self.user)
+        self.team = Team.objects.create(full_name="Flag Club", short_name="Flg", abbreviation="FLG")
+        self.team.owners.add(self.owner)
+
+    def test_flag_requires_a_note_and_reaches_the_club(self):
+        from django.core.exceptions import ValidationError
+        from django.contrib.admin.sites import AdminSite
+        from django.test import RequestFactory
+
+        from npl.admin import TransactionProposalAdmin
+
+        proposal = create_proposal(
+            user=self.user,
+            team=self.team,
+            code="release",
+            assets=[],
+        )
+        proposal.flagged = True
+        proposal.flag_note = ""
+        with self.assertRaises(ValidationError):
+            proposal.full_clean()
+
+        proposal.flag_note = "Name the player being released."
+        proposal.full_clean()
+        request = RequestFactory().post("/admin/npl/transactionproposal/")
+        request.user = self.director
+
+        class Changed:
+            changed_data = ["flagged", "flag_note"]
+
+        TransactionProposalAdmin(TransactionProposal, AdminSite()).save_model(
+            request, proposal, Changed(), change=True
+        )
+        proposal.refresh_from_db()
+        self.assertTrue(proposal.flagged)
+        self.assertEqual(proposal.flagged_by, self.director)
+        self.assertIsNotNone(proposal.flagged_at)
+
+        self.client.force_login(self.user)
+        page = self.client.get("/transactions/list/")
+        self.assertContains(page, "Name the player being released.")
+
+        detail = self.client.get(f"/api/v1/transactions/proposals/{proposal.id}/")
+        self.assertEqual(detail.status_code, 200)
+        self.assertTrue(detail.json()["flagged"])
+        self.assertEqual(detail.json()["flag_note"], "Name the player being released.")

@@ -533,6 +533,8 @@ def proposal_to_dict(proposal):
         "processing_week": _iso(proposal.processing_week),
         "notes": proposal.notes,
         "contract_terms": proposal.contract_terms,
+        "flagged": proposal.flagged,
+        "flag_note": proposal.flag_note if proposal.flagged else "",
         "parties": [
             {
                 "team_id": party.team_id,
