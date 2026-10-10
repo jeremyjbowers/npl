@@ -51,6 +51,28 @@ If the filing is improper, check **Flagged** under Director review and write wha
 
 You can also search by club, kind, or the text of a note.
 
+## What a club sees before Monday
+
+Until a proposal is processed, the roster and the books stay official. The site now shows the pending overlay so an owner is not guessing.
+
+- A player in an open trade, release, non-tender, waiver, retirement, or foreign-list filing is grey on the club page, with a link to that proposal.
+- Under cap space, cash, and IFA pool space, a grey line shows the figure if those open proposals clear.
+- The same grey money line appears on the team cards on the home page.
+
+The proposal itself says it has not been processed.
+
+## Filings the site turns away
+
+A proposal is rejected, with a reason, when it cannot be true on the current roster:
+
+- The player is not on that club, or a signing names a player who already has a club.
+- An option names someone off the 40-man, already on option, or out of options. A recall names someone who is not on option. A contract purchase names someone already on the 40-man.
+- The same player is already in another proposal that has not been processed.
+- The filing would put the club over 40 players on the 40-man, counting other open proposals.
+- The filing would spend cash, cap space, or IFA pool space the club does not have, again counting other open proposals.
+
+A release that frees a known salary adds that salary back to cap space in the preview. A signing subtracts its total. Cash and IFA pool space move with those assets. Directors still decide the close calls the roster data cannot see.
+
 ## What you still do yourselves
 
 The proposal is the filing. It is not the roster move.

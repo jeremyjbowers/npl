@@ -84,6 +84,12 @@ def build_context(request):
         else:
             team.cash_percentile = 0
 
+    from npl.transactions.pending import attach_money, money_for_teams, open_proposals
+
+    pending_money = money_for_teams(open_proposals())
+    for team in teams_list:
+        attach_money(team, pending_money)
+
     return context
 
 def to_bool(bool_string):

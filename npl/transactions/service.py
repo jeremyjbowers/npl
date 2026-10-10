@@ -184,6 +184,10 @@ def create_proposal(
         if not limbo_players:
             raise TransactionError("An in-limbo assignment needs a player on your team.")
 
+    from npl.transactions.rules import assert_legal
+
+    assert_legal(team, code, normalized, contract_terms=contract_terms)
+
     if kind["requires_agreement"]:
         status = models.TransactionProposal.AWAITING
     else:

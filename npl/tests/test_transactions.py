@@ -246,12 +246,19 @@ class ProposalServiceTests(TestCase):
         )
         self.assertEqual((limbo.limbo.deadline - limbo.limbo.placed_on), datetime.timedelta(days=7))
 
+        other_player = Player.objects.create(
+            mlb_id="607209",
+            name="Second Player",
+            first_name="Second",
+            last_name="Player",
+            team=self.team,
+        )
         restricted = create_proposal(
             user=self.user,
             team=self.team,
             code="restricted_place",
             rl_type="PED",
-            assets=[{"asset_type": "player", "player": self.player}],
+            assets=[{"asset_type": "player", "player": other_player}],
         )
         stint = restricted.restricted_stints.get()
         self.assertEqual(stint.rl_type, "PED")
@@ -324,10 +331,23 @@ class ApiTokenTests(TestCase):
         self.owner = Owner.objects.create(name="Token", user=self.user)
         self.team = Team.objects.create(full_name="Token Club", short_name="Tok", abbreviation="TOK")
         self.team.owners.add(self.owner)
+        self.player = Player.objects.create(
+            mlb_id="100001",
+            name="Token Player",
+            first_name="Token",
+            last_name="Player",
+            team=self.team,
+        )
         self.client = Client()
 
     def _proposal_body(self):
-        return json.dumps({"team": self.team.id, "code": "release", "assets": []})
+        return json.dumps(
+            {
+                "team": self.team.id,
+                "code": "release",
+                "assets": [{"asset_type": "player", "player": self.player.mlb_id}],
+            }
+        )
 
     def test_owner_can_mint_and_revoke_a_token(self):
         self.client.force_login(self.user)
@@ -415,6 +435,13 @@ class ProposalFlagTests(TestCase):
         self.owner = Owner.objects.create(name="Flag", user=self.user)
         self.team = Team.objects.create(full_name="Flag Club", short_name="Flg", abbreviation="FLG")
         self.team.owners.add(self.owner)
+        self.player = Player.objects.create(
+            mlb_id="100002",
+            name="Flag Player",
+            first_name="Flag",
+            last_name="Player",
+            team=self.team,
+        )
 
     def test_flag_requires_a_note_and_reaches_the_club(self):
         from django.core.exceptions import ValidationError
@@ -427,7 +454,7 @@ class ProposalFlagTests(TestCase):
             user=self.user,
             team=self.team,
             code="release",
-            assets=[],
+            assets=[{"asset_type": "player", "player": self.player}],
         )
         proposal.flagged = True
         proposal.flag_note = ""
@@ -458,3 +485,133 @@ class ProposalFlagTests(TestCase):
         self.assertEqual(detail.status_code, 200)
         self.assertTrue(detail.json()["flagged"])
         self.assertEqual(detail.json()["flag_note"], "Name the player being released.")
+
+
+class ProposalRulesAndHintsTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(email="rules@example.com", password="secret")
+        self.other = User.objects.create_user(email="rules-b@example.com", password="secret")
+        self.owner = Owner.objects.create(name="Rules", user=self.user)
+        self.other_owner = Owner.objects.create(name="Rules B", user=self.other)
+        self.team = Team.objects.create(
+            full_name="Rules Club",
+            short_name="Rules",
+            abbreviation="RUL",
+            cash=1_000_000,
+            cap_space=5_000_000,
+            ifa=400_000,
+        )
+        self.other_team = Team.objects.create(full_name="Other Club", short_name="Other", abbreviation="OTH")
+        self.team.owners.add(self.owner)
+        self.other_team.owners.add(self.other_owner)
+        self.player = Player.objects.create(
+            mlb_id="200001",
+            name="Roster Player",
+            first_name="Roster",
+            last_name="Player",
+            team=self.team,
+            roster_40man=True,
+            options=1,
+        )
+
+    def test_illegal_filings_are_rejected(self):
+        stranger = Player.objects.create(
+            mlb_id="200002",
+            name="Their Player",
+            first_name="Their",
+            last_name="Player",
+            team=self.other_team,
+        )
+        with self.assertRaises(TransactionError):
+            create_proposal(
+                user=self.user,
+                team=self.team,
+                code="trade",
+                counterparty_team=self.other_team,
+                assets=[{"asset_type": "player", "player": stranger}],
+            )
+        self.player.roster_40man = False
+        self.player.save(update_fields=["roster_40man"])
+        with self.assertRaises(TransactionError):
+            create_proposal(
+                user=self.user,
+                team=self.team,
+                code="option_minors",
+                assets=[{"asset_type": "player", "player": self.player}],
+            )
+        self.player.roster_40man = True
+        self.player.options = 99
+        self.player.save(update_fields=["roster_40man", "options"])
+        with self.assertRaises(TransactionError):
+            create_proposal(
+                user=self.user,
+                team=self.team,
+                code="option_minors",
+                assets=[{"asset_type": "player", "player": self.player}],
+            )
+        with self.assertRaises(TransactionError):
+            create_proposal(
+                user=self.user,
+                team=self.team,
+                code="trade",
+                counterparty_team=self.other_team,
+                assets=[{"asset_type": "cash", "amount": 5_000_000}],
+            )
+
+        create_proposal(
+            user=self.user,
+            team=self.team,
+            code="release",
+            assets=[{"asset_type": "player", "player": self.player}],
+        )
+        with self.assertRaises(TransactionError):
+            create_proposal(
+                user=self.user,
+                team=self.team,
+                code="release",
+                assets=[{"asset_type": "player", "player": self.player}],
+            )
+
+    def test_forty_man_limit_counts_open_proposals(self):
+        Player.objects.bulk_create(
+            [
+                Player(
+                    mlb_id=str(300000 + i),
+                    name=f"Man {i}",
+                    first_name="Man",
+                    last_name=str(i),
+                    team=self.team,
+                    roster_40man=True,
+                )
+                for i in range(39)
+            ]
+        )
+        self.assertEqual(Player.objects.filter(team=self.team, roster_40man=True).count(), 40)
+        with self.assertRaises(TransactionError):
+            create_proposal(
+                user=self.user,
+                team=self.team,
+                code="mlb_signing",
+                contract_terms={"years": 1, "total": 1_000_000},
+                assets=[{"asset_type": "player", "raw_label": "Free Agent"}],
+            )
+
+    def test_club_page_greys_a_pending_departure_and_shows_cash(self):
+        create_proposal(
+            user=self.user,
+            team=self.team,
+            code="trade",
+            counterparty_team=self.other_team,
+            assets=[
+                {"asset_type": "player", "player": self.player},
+                {"asset_type": "cash", "amount": 250_000},
+            ],
+        )
+        page = self.client.get("/teams/rules/")
+        self.assertEqual(page.status_code, 200)
+        self.assertContains(page, "Pending trade")
+        self.assertContains(page, "If pending proposals clear: $750,000")
+        self.assertContains(page, "They are still on the club until Monday.")
+
+        home = self.client.get("/")
+        self.assertContains(home, "If pending proposals clear: $750,000")

@@ -287,8 +287,14 @@ h1.title, h2.title, h3.title {
                     <div class="content">
                         <p class="has-text-weight-medium has-text-dark">{{ team.full_name }}</p>
                         <div class="is-size-7 has-text-grey">
-                            <div>Cap Space: ${{ team.cap_space|default:0|floatformat:0|intcomma }}M</div>
-                            <div>Cash: ${{ team.cash|default:0|floatformat:0|intcomma }}M</div>
+                            <div>Cap Space: ${{ team.cap_space|default:0|floatformat:0|intcomma }}</div>
+                            {% if team.pending_cap_after != None %}
+                            <div class="has-text-grey">If pending proposals clear: ${{ team.pending_cap_after|floatformat:0|intcomma }}</div>
+                            {% endif %}
+                            <div>Cash: ${{ team.cash|default:0|floatformat:0|intcomma }}</div>
+                            {% if team.pending_cash_after != None %}
+                            <div class="has-text-grey">If pending proposals clear: ${{ team.pending_cash_after|floatformat:0|intcomma }}</div>
+                            {% endif %}
                         </div>
                         
                         <div class="financial-chart">

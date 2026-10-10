@@ -50,6 +50,7 @@ urlpatterns = [
     path("transactions/success/", views.transaction_success, name='transaction_success'),
     path("transactions/list/", views.transaction_list, name='transaction_list'),
     path("transactions/proposals/<int:proposal_id>/respond/", views.proposal_respond, name='proposal_respond'),
+    path("transactions/proposals/<int:proposal_id>/", views.proposal_detail_page, name='proposal_detail'),
     path("transactions/", views.transactions),
     path("account/tokens/", api_tokens, name="api_tokens"),
     

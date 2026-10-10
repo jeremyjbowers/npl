@@ -242,6 +242,56 @@ def team_detail(request, short_name):
     context['roster_tripleA_option'] = team_players.filter(roster_tripleA_option=True).order_by('-mls_time', 'mls_year', 'last_name')
     context['roster_doubleA'] = team_players.filter(roster_doubleA=True).order_by('-mls_time', 'mls_year', 'last_name')
     context['roster_singleA'] = team_players.filter(roster_singleA=True).order_by('-mls_time', 'mls_year')
+
+    from npl.transactions.pending import (
+        annotate_players,
+        attach_money,
+        hints_for_team,
+        money_for_teams,
+        open_proposals,
+    )
+
+    proposals = open_proposals()
+    hints = hints_for_team(context["team"], proposals)
+    attach_money(context["team"], money_for_teams(proposals))
+    for key in (
+        "mlb_hitters",
+        "mlb_pitchers",
+        "roster_7dayIL",
+        "roster_56dayIL",
+        "roster_eosIL",
+        "roster_restricted",
+        "roster_outrighted",
+        "roster_foreign",
+        "roster_retired",
+        "roster_nonroster",
+        "roster_tripleA",
+        "roster_tripleA_option",
+        "roster_doubleA",
+        "roster_singleA",
+    ):
+        context[key] = annotate_players(context[key], hints)
+    context["pending_player_count"] = sum(1 for player in context["mlb_pitchers"] if getattr(player, "pending_hint", None))
+    context["pending_player_count"] += sum(
+        1
+        for key in (
+            "mlb_hitters",
+            "roster_7dayIL",
+            "roster_56dayIL",
+            "roster_eosIL",
+            "roster_restricted",
+            "roster_outrighted",
+            "roster_foreign",
+            "roster_retired",
+            "roster_nonroster",
+            "roster_tripleA",
+            "roster_tripleA_option",
+            "roster_doubleA",
+            "roster_singleA",
+        )
+        for player in context[key]
+        if getattr(player, "pending_hint", None)
+    )
     return render(request, "team.html", context)
 
 def get_next_processing_deadline():
@@ -423,6 +473,28 @@ def transaction_list(request):
     })
     
     return render(request, 'transactions/list.html', context)
+
+
+def proposal_detail_page(request, proposal_id):
+    """Public summary of a filing that has not been processed yet."""
+    proposal = get_object_or_404(
+        models.TransactionProposal.objects.select_related("originating_team").prefetch_related(
+            "parties__team", "assets__player", "assets__from_team", "assets__to_team"
+        ),
+        pk=proposal_id,
+    )
+    involved = teams_for_user(request.user) if request.user.is_authenticated else models.Team.objects.none()
+    can_see_terms = request.user.is_authenticated and (
+        request.user.is_staff or proposal.parties.filter(team__in=involved).exists()
+    )
+    return render(
+        request,
+        "transactions/proposal.html",
+        {
+            "proposal": proposal,
+            "can_see_terms": can_see_terms,
+        },
+    )
 
 
 @login_required
