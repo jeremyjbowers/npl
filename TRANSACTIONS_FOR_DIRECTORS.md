@@ -33,7 +33,7 @@ The form covers:
 - Restricted list, including the list type (restricted, domestic violence, PED, betting, paternity, family medical, bereavement, or pending a suspension)
 - Foreign list, retirement, and death
 
-A trade stays **Awaiting agreement** until the other club agrees or declines. The other owner does that from My Submissions. Everyone else lands as **Proposed** and waits for the Monday window.
+A trade stays **Awaiting agreement** until every other club agrees or one of them declines. That includes a three-team trade: each of the other two clubs has to agree from My Submissions, and the deal names who sends each player, pick, or sum of cash and who receives it. A two-club trade is unchanged. Everyone else lands as **Proposed** and waits for the Monday window.
 
 A club can withdraw its own proposal while it is still open. The other club can decline a trade. A declined trade is **Rejected**. A withdrawn one is **Withdrawn**.
 

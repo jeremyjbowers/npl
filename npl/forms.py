@@ -662,8 +662,24 @@ class LimboAssignmentForm(BaseTransactionForm):
     )
 
 
+class ClubPlayerChoice(forms.ModelChoiceField):
+    def label_from_instance(self, obj):
+        club = obj.team.short_name if obj.team_id else "Free agent"
+        return f"{obj.name} ({club})"
+
+
 class TradeProposalForm(BaseTransactionForm):
-    """Propose a trade. The other club has to agree before it can be posted."""
+    """Propose a trade. Every other club, including a third club, has to agree."""
+
+    SEND_TO = [
+        ("counterparty", "The other club"),
+        ("third", "The third club"),
+    ]
+    RECEIVE_TO = [
+        ("us", "My club"),
+        ("counterparty", "The other club"),
+        ("third", "The third club"),
+    ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -672,16 +688,108 @@ class TradeProposalForm(BaseTransactionForm):
             widget=forms.Select(attrs={'class': 'select'}),
             label="Other team",
         )
+        self.fields['third_team'] = forms.ModelChoiceField(
+            queryset=Team.objects.all(),
+            required=False,
+            widget=forms.Select(attrs={'class': 'select'}),
+            label="Third team (optional)",
+            help_text="A three-team trade stays open until both other clubs agree.",
+        )
         self.setup_player_field(
-            label="Player (optional)",
-            help_text="A player your team is sending. Add picks and money in the fields below.",
+            label="Player your club is sending (optional)",
+            help_text="Add picks and money in the fields below. Name where they go if a third club is involved.",
         )
         self.fields['player'].required = False
+        self.fields['send_to'] = forms.ChoiceField(
+            choices=self.SEND_TO,
+            required=False,
+            initial="counterparty",
+            widget=forms.Select(attrs={'class': 'select'}),
+            label="Your club sends those pieces to",
+        )
+        owned = Player.objects.filter(team__isnull=False, active=True).select_related("team")
+        self.fields['incoming_player'] = ClubPlayerChoice(
+            queryset=owned,
+            required=False,
+            widget=forms.Select(attrs={'class': 'select'}),
+            label="A player another club is sending",
+        )
+        self.fields['incoming_to'] = forms.ChoiceField(
+            choices=self.RECEIVE_TO,
+            required=False,
+            initial="us",
+            widget=forms.Select(attrs={'class': 'select'}),
+            label="That player goes to",
+        )
+        self.fields['second_player'] = ClubPlayerChoice(
+            queryset=owned,
+            required=False,
+            widget=forms.Select(attrs={'class': 'select'}),
+            label="Another player in the deal",
+        )
+        self.fields['second_to'] = forms.ChoiceField(
+            choices=self.RECEIVE_TO,
+            required=False,
+            initial="us",
+            widget=forms.Select(attrs={'class': 'select'}),
+            label="That player goes to",
+        )
+        self.order_fields([
+            "team",
+            "counterparty",
+            "third_team",
+            "player",
+            "pick_label",
+            "cash_amount",
+            "ifa_amount",
+            "send_to",
+            "incoming_player",
+            "incoming_to",
+            "second_player",
+            "second_to",
+            "notes",
+        ])
 
     def get_player_queryset(self):
         if self.user_team:
             return Player.objects.filter(team=self.user_team, active=True)
         return Player.objects.none()
+
+    def _club_pk(self, value):
+        if value is None or value == "":
+            return None
+        if hasattr(value, "pk"):
+            return value.pk
+        return int(value)
+
+    def _destination(self, which, counterparty, third_team):
+        if which == "third":
+            if third_team is None:
+                raise forms.ValidationError("Name the third club before sending anything there.")
+            return third_team
+        if which == "us":
+            return self.cleaned_data.get("team")
+        return counterparty
+
+    def _check_incoming(self, player, dest_key, allowed):
+        if player is None:
+            return
+        if player.team_id not in allowed:
+            raise forms.ValidationError(
+                f"{player.name} is on a club that is not part of this trade."
+            )
+        if player.team_id == self._club_pk(self.cleaned_data.get("team")):
+            raise forms.ValidationError(
+                f"Use the first player field for {player.name}. That field is for players your club is sending."
+            )
+        dest = self.cleaned_data.get(dest_key) or "us"
+        if dest == "third" and self.cleaned_data.get("third_team") is None:
+            raise forms.ValidationError("Name the third club before sending a player there.")
+        if dest == "us" and player.team_id == self._club_pk(self.cleaned_data.get("team")):
+            raise forms.ValidationError(f"{player.name} cannot be sent to his own club.")
+        dest_pk = self._club_pk(self._destination(dest, self.cleaned_data.get("counterparty"), self.cleaned_data.get("third_team")))
+        if dest_pk == player.team_id:
+            raise forms.ValidationError(f"{player.name} cannot be sent to the club that already has him.")
 
     pick_label = forms.CharField(
         required=False,
@@ -709,16 +817,45 @@ class TradeProposalForm(BaseTransactionForm):
 
     def clean(self):
         cleaned = super().clean()
+        counterparty = cleaned.get("counterparty")
+        third_team = cleaned.get("third_team")
+        our_pk = self._club_pk(cleaned.get("team"))
+        if counterparty is not None and counterparty.pk == our_pk:
+            raise forms.ValidationError("The other club has to be a different club.")
+        if third_team is not None and third_team.pk in {our_pk, getattr(counterparty, "pk", None)}:
+            raise forms.ValidationError("The third club has to be a different club.")
+        if cleaned.get("send_to") == "third" and third_team is None:
+            raise forms.ValidationError("Name the third club, or send your pieces to the other club.")
+        allowed = {pk for pk in (our_pk, getattr(counterparty, "pk", None), getattr(third_team, "pk", None)) if pk is not None}
+        self._check_incoming(cleaned.get("incoming_player"), "incoming_to", allowed)
+        self._check_incoming(cleaned.get("second_player"), "second_to", allowed)
         has_asset = any([
             isinstance(cleaned.get("player"), Player),
             (cleaned.get("pick_label") or "").strip(),
             cleaned.get("cash_amount") not in (None, ""),
             cleaned.get("ifa_amount") not in (None, ""),
+            cleaned.get("incoming_player"),
+            cleaned.get("second_player"),
         ])
         if not has_asset:
             raise forms.ValidationError(
                 "Add a player, a draft pick, cash reserves, or IFA cap space."
             )
+        if third_team is not None:
+            touched = set()
+            if cleaned.get("send_to") == "third":
+                touched.add(third_team.pk)
+            for key in ("incoming_player", "second_player"):
+                player = cleaned.get(key)
+                if player is not None and player.team_id == third_team.pk:
+                    touched.add(third_team.pk)
+                dest_key = "incoming_to" if key == "incoming_player" else "second_to"
+                if player is not None and cleaned.get(dest_key) == "third":
+                    touched.add(third_team.pk)
+            if not touched:
+                raise forms.ValidationError(
+                    "The third club has to send or receive a player, a pick, or money."
+                )
         return cleaned
 
 
