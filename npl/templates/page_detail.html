@@ -1,12 +1,13 @@
-{% extends "base.html" %} 
+{% extends "base.html" %}
 
-{% block content %} 
-<section class="hero">
-    <h1 class="title is-2">{{ page.title }}
-        {% if user.is_staff %}<small><a target="_blank" href="/admin/npl/page/{{ page.id }}/change/"><span class="icon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></span></a></small>{% endif %}
-    </h1>
-    <div class="content">
-        {{ page.body.html|safe }}
-    </div>
-</section>
+{% block title %}{{ page.title }} — The NPL{% endblock %}
+
+{% block content %}
+<article class="max-w-3xl">
+    <header class="mb-4">
+        <h1 class="text-2xl font-bold">{{ page.title }}</h1>
+        {% if user.is_staff %}<p><a href="/admin/npl/page/{{ page.id }}/change/">Edit</a></p>{% endif %}
+    </header>
+    <div class="copy">{{ page.body.html|safe }}</div>
+</article>
 {% endblock %}

@@ -1,177 +1,18 @@
 {% extends "base.html" %}
 
-{% block extra_head %}
-<style>
-/* Dark theme hero section */
-.hero {
-    background-color: var(--npl-bg-primary) !important;
-}
-
-.hero-body {
-    background-color: var(--npl-bg-primary) !important;
-}
-
-/* Dark theme login box */
-.box {
-    background-color: var(--npl-bg-secondary) !important;
-    color: var(--npl-text-primary) !important;
-    border: 1px solid var(--npl-border) !important;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-}
-
-/* Dark theme titles */
-.title {
-    color: var(--npl-text-primary) !important;
-}
-
-/* Dark theme form elements */
-.label {
-    color: var(--npl-text-primary) !important;
-}
-
-.input {
-    background-color: var(--npl-bg-tertiary) !important;
-    color: var(--npl-text-primary) !important;
-    border-color: var(--npl-border) !important;
-}
-
-.input:focus {
-    border-color: var(--npl-primary) !important;
-    box-shadow: 0 0 0 0.125em rgba(79, 195, 247, 0.25) !important;
-}
-
-.input::placeholder {
-    color: var(--npl-text-secondary) !important;
-}
-
-/* Dark theme buttons */
-.button.is-primary {
-    background-color: var(--npl-primary) !important;
-    color: var(--npl-bg-primary) !important;
-    border-color: var(--npl-primary) !important;
-}
-
-.button.is-primary:hover {
-    background-color: #42a5f5 !important;
-    border-color: #42a5f5 !important;
-}
-
-/* Dark theme notifications */
-.notification.is-danger {
-    background-color: rgba(239, 83, 80, 0.2) !important;
-    border: 1px solid var(--npl-danger) !important;
-    color: var(--npl-text-primary) !important;
-}
-
-.notification.is-success {
-    background-color: rgba(102, 187, 106, 0.2) !important;
-    border: 1px solid var(--npl-success) !important;
-    color: var(--npl-text-primary) !important;
-}
-
-.notification.is-info {
-    background-color: rgba(66, 165, 245, 0.2) !important;
-    border: 1px solid var(--npl-info) !important;
-    color: var(--npl-text-primary) !important;
-}
-
-/* Dark theme help text */
-.help {
-    color: var(--npl-text-secondary) !important;
-}
-
-/* Dark theme text elements */
-.has-text-grey {
-    color: var(--npl-text-secondary) !important;
-}
-
-/* Dark theme hr */
-hr {
-    background-color: var(--npl-border) !important;
-    border: none;
-    height: 1px;
-}
-
-/* Mobile responsiveness */
-@media screen and (max-width: 768px) {
-    .column.is-half {
-        padding: 1rem;
-    }
-    
-    .box {
-        margin: 0 1rem;
-    }
-    
-    .title {
-        font-size: 1.5rem;
-    }
-}
-</style>
-{% endblock %}
+{% block title %}Sign in — The NPL{% endblock %}
 
 {% block content %}
-<section class="hero" style="padding-top: 25px;">
-    <div class="hero-body">
-        <div class="container">
-            <div class="columns is-centered">
-                <div class="column is-half">
-                    <div class="box">
-                        <h1 class="title">Sign in to The NPL</h1>
-                        
-                        {% if messages %}
-                            {% for message in messages %}
-                                <div class="notification {% if message.tags == 'error' %}is-danger{% elif message.tags == 'success' %}is-success{% else %}is-info{% endif %}">
-                                    {{ message }}
-                                </div>
-                            {% endfor %}
-                        {% endif %}
-
-                        <form method="post">
-                            {% csrf_token %}
-                            
-                            <div class="field">
-                                <label class="label">Email</label>
-                                <div class="control">
-                                    <input class="input" type="email" name="email" placeholder="Enter your email address" required>
-                                </div>
-                            </div>
-
-                            <div class="field">
-                                <label class="label">Password <small>(optional)</small></label>
-                                <div class="control">
-                                    <input class="input" type="password" name="password" placeholder="Enter password or leave blank for magic link">
-                                </div>
-                                <p class="help">Leave password blank to receive a magic link via email</p>
-                            </div>
-
-                            <div class="field">
-                                <div class="control">
-                                    <button class="button is-primary is-fullwidth" type="submit">
-                                        Sign In
-                                    </button>
-                                </div>
-                            </div>
-                        </form>
-
-                        <hr>
-
-                        <div class="has-text-centered">
-                            <p class="has-text-grey">
-                                <strong>Magic Link Authentication:</strong><br>
-                                Enter your email and leave the password blank to receive a secure login link that's valid for 30 days.
-                            </p>
-                        </div>
-
-                        <div class="has-text-centered" style="margin-top: 1rem;">
-                            <p class="has-text-grey">
-                                Don't have an account? Contact your league administrator.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+<section class="mx-auto max-w-md">
+    <h1 class="mb-2 text-2xl font-bold">Sign in to The NPL</h1>
+    <p class="mb-4 text-sm">Enter your email. We'll send a sign-in link that lasts 30 days.</p>
+    <form method="post" class="space-y-3">
+        {% csrf_token %}
+        <div>
+            <label class="mb-1 block text-xs font-bold" for="login-email">Email</label>
+            <input id="login-email" type="email" name="email" required autocomplete="email" class="w-full">
         </div>
-    </div>
+        <button type="submit" class="btn">Send magic link</button>
+    </form>
 </section>
-{% endblock %} 
+{% endblock %}

@@ -1,0 +1,22 @@
+<tr>
+    <th scope="col">Player</th>
+    <th scope="col">Pos</th>
+    <th scope="col">Roster</th>
+    <th scope="col">Age</th>
+    <th scope="col">MLB</th>
+    <th scope="col">MLS</th>
+    <th scope="col">Opt</th>
+    <th scope="col">Status</th>
+    {% if team %}
+    <th scope="col">2026</th>
+    <th scope="col">2027</th>
+    <th scope="col">2028</th>
+    <th scope="col">2029</th>
+    <th scope="col">2030</th>
+    <th scope="col">2031</th>
+    <th scope="col">2032</th>
+    <th scope="col">2033</th>
+    {% elif user.is_authenticated %}
+    <th scope="col">Nominate</th>
+    {% endif %}
+</tr>

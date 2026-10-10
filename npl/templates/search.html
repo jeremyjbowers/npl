@@ -1,607 +1,114 @@
 {% extends "base.html" %}
 
-{% block title %}Player Search - The NPL{% endblock %}
-
-{% block extra_head %}
-<style>
-/* Dark theme search form */
-form.box {
-    background-color: var(--npl-bg-secondary) !important;
-    color: var(--npl-text-primary) !important;
-    border: 1px solid var(--npl-border) !important;
-}
-
-form.box .label {
-    color: var(--npl-text-primary) !important;
-}
-
-form.box .input,
-form.box .select select {
-    background-color: var(--npl-bg-tertiary) !important;
-    color: var(--npl-text-primary) !important;
-    border-color: var(--npl-border) !important;
-}
-
-form.box .input:focus,
-form.box .select select:focus {
-    border-color: var(--npl-primary) !important;
-    box-shadow: 0 0 0 0.125em rgba(79, 195, 247, 0.25) !important;
-}
-
-form.box .button.is-info {
-    background-color: var(--npl-info) !important;
-    color: var(--npl-bg-primary) !important;
-}
-
-/* Dark theme position count navigation */
-.position-count {
-    background-color: var(--npl-bg-secondary) !important;
-    border: 1px solid var(--npl-border) !important;
-}
-
-.position-count .heading {
-    color: var(--npl-text-secondary) !important;
-}
-
-.position-count .title {
-    color: var(--npl-text-primary) !important;
-}
-
-.position-count .title a {
-    color: var(--npl-text-primary) !important;
-}
-
-.position-count .title a:hover {
-    color: var(--npl-primary) !important;
-}
-
-/* Dark theme section titles */
-h1.title, h2.title, h3.title {
-    color: var(--npl-text-primary) !important;
-}
-
-/* Dark theme buttons */
-.button.is-light {
-    background-color: var(--npl-bg-tertiary) !important;
-    color: var(--npl-text-primary) !important;
-    border-color: var(--npl-border) !important;
-}
-
-.button.is-light:hover {
-    background-color: var(--npl-bg-primary) !important;
-}
-
-.button.is-success {
-    background-color: var(--npl-success) !important;
-    color: var(--npl-bg-primary) !important;
-}
-
-/* Dark theme tables - ensure they override base styles */
-.table {
-    background-color: var(--npl-bg-secondary) !important;
-    border: 1px solid var(--npl-border) !important;
-    color: var(--npl-text-primary) !important;
-}
-
-.table thead th {
-    background-color: var(--npl-bg-tertiary) !important;
-    color: var(--npl-text-primary) !important;
-    border-bottom: 2px solid var(--npl-border) !important;
-}
-
-.table tbody td {
-    background-color: var(--npl-bg-secondary) !important;
-    color: var(--npl-text-primary) !important;
-    border-bottom: 1px solid var(--npl-border) !important;
-}
-
-.table tbody tr:hover td {
-    background-color: var(--npl-bg-tertiary) !important;
-}
-
-/* Force text color for all table content */
-.table tbody tr, .table tbody tr td, .table tbody tr a {
-    color: var(--npl-text-primary) !important;
-}
-
-.table tbody tr a:hover {
-    color: var(--npl-primary) !important;
-}
-
-/* Dark theme modal */
-.modal-card {
-    background-color: var(--npl-bg-secondary) !important;
-    border: 1px solid var(--npl-border) !important;
-}
-
-.modal-card-head {
-    background-color: var(--npl-bg-tertiary) !important;
-    border-bottom: 1px solid var(--npl-border) !important;
-}
-
-.modal-card-title {
-    color: var(--npl-text-primary) !important;
-}
-
-.modal-card-body {
-    background-color: var(--npl-bg-secondary) !important;
-    color: var(--npl-text-primary) !important;
-}
-
-.modal-card-foot {
-    background-color: var(--npl-bg-tertiary) !important;
-    border-top: 1px solid var(--npl-border) !important;
-}
-
-/* Dark theme notifications */
-.notification.is-info {
-    background-color: rgba(66, 165, 245, 0.2) !important;
-    border: 1px solid var(--npl-info) !important;
-    color: var(--npl-text-primary) !important;
-}
-
-/* Dark theme form elements in modal */
-.textarea {
-    background-color: var(--npl-bg-tertiary) !important;
-    color: var(--npl-text-primary) !important;
-    border-color: var(--npl-border) !important;
-}
-
-.textarea:focus {
-    border-color: var(--npl-primary) !important;
-    box-shadow: 0 0 0 0.125em rgba(79, 195, 247, 0.25) !important;
-}
-
-.help {
-    color: var(--npl-text-secondary) !important;
-}
-
-.label {
-    color: var(--npl-text-primary) !important;
-}
-
-/* Dark theme buttons in modal */
-.button {
-    background-color: var(--npl-bg-tertiary) !important;
-    color: var(--npl-text-primary) !important;
-    border-color: var(--npl-border) !important;
-}
-
-.button:hover {
-    background-color: var(--npl-bg-primary) !important;
-}
-
-/* Nominate button styling for better readability */
-.button.is-info {
-    background-color: var(--npl-info) !important;
-    color: white !important;
-    border-color: var(--npl-info) !important;
-}
-
-.button.is-info:hover {
-    background-color: #2980b9 !important;
-    color: white !important;
-    border-color: #2980b9 !important;
-}
-
-/* Search addon styling for dark theme */
-.search-addon {
-    align-items: stretch !important;
-}
-
-.search-addon .control {
-    margin: 0 !important;
-    padding: 0 !important;
-    display: flex !important;
-    align-items: stretch !important;
-}
-
-.search-addon .input,
-.search-addon .button {
-    height: 2.5em !important;
-    border-radius: 0 !important;
-    margin: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-}
-
-.search-addon .control:first-child .input {
-    border-top-left-radius: 4px !important;
-    border-bottom-left-radius: 4px !important;
-}
-
-.search-addon .control:last-child .button {
-    border-top-right-radius: 4px !important;
-    border-bottom-right-radius: 4px !important;
-}
-
-/* Mobile table responsiveness */
-@media screen and (max-width: 768px) {
-    .table-container {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-    }
-    
-    .table {
-        min-width: 900px;
-        font-size: 0.8rem;
-    }
-    
-    .table th,
-    .table td {
-        padding: 0.3rem 0.2rem;
-        white-space: nowrap;
-    }
-    
-    .table th {
-        font-size: 0.7rem;
-    }
-    
-    /* Adjust button sizes for mobile */
-    .button.is-small {
-        font-size: 0.65rem;
-        padding: 0.2rem 0.4rem;
-    }
-}
-
-/* Position count mobile improvements */
-@media screen and (max-width: 768px) {
-    .position-count {
-        padding: 1rem !important;
-    }
-    
-    .position-count .level-item {
-        margin-bottom: 0.5rem;
-    }
-    
-    .position-count .title {
-        font-size: 1.5rem;
-    }
-    
-    .position-count .heading {
-        font-size: 0.7rem;
-    }
-}
-
-@media screen and (max-width: 480px) {
-    .position-count .title {
-        font-size: 1.25rem;
-    }
-    
-    .position-count .heading {
-        font-size: 0.65rem;
-    }
-}
-</style>
-{% endblock %}
+{% block title %}Player Search — The NPL{% endblock %}
 
 {% block content %}
-<div class="block">
-    {% include "includes/search_bar.html" %}
+<header class="mb-4">
+    <h1 class="text-2xl font-bold">Players</h1>
+</header>
 
-    {% if players %}
-    <!-- Pagination info and page count -->
-    {% if players_page %}
-    <div class="level">
-        <div class="level-left">
-            <div class="level-item">
-                <p class="subtitle is-6">
-                    Showing {{ players_page.start_index }} - {{ players_page.end_index }} of {{ players_page.paginator.count }} players
-                </p>
-            </div>
-        </div>
-        <div class="level-right">
-            <div class="level-item">
-                <p class="subtitle is-6">
-                    Page {{ players_page.number }} of {{ players_page.paginator.num_pages }}
-                </p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Pagination (top) -->
-    {% if players_page.has_other_pages %}
-    <nav class="pagination is-centered mb-4" role="navigation" aria-label="pagination">
-        {% if players_page.has_previous %}
-            <a href="?{% if name %}name={{ name }}&{% endif %}{% if position %}position={{ position }}&{% endif %}{% if owned %}owned={{ owned }}&{% endif %}{% if roster_status %}roster_status={{ roster_status }}&{% endif %}page=1" class="pagination-previous" style="background-color: var(--npl-bg-secondary); color: var(--npl-text-primary); border-color: var(--npl-border);">
-                First
-            </a>
-            <a href="?{% if name %}name={{ name }}&{% endif %}{% if position %}position={{ position }}&{% endif %}{% if owned %}owned={{ owned }}&{% endif %}{% if roster_status %}roster_status={{ roster_status }}&{% endif %}page={{ players_page.previous_page_number }}" class="pagination-previous" style="background-color: var(--npl-bg-secondary); color: var(--npl-text-primary); border-color: var(--npl-border);">
-                Previous
-            </a>
-        {% else %}
-            <span class="pagination-previous" style="background-color: var(--npl-bg-tertiary); color: var(--npl-text-secondary); border-color: var(--npl-border);" disabled>
-                Previous
-            </span>
-        {% endif %}
-
-        {% if players_page.has_next %}
-            <a href="?{% if name %}name={{ name }}&{% endif %}{% if position %}position={{ position }}&{% endif %}{% if owned %}owned={{ owned }}&{% endif %}{% if roster_status %}roster_status={{ roster_status }}&{% endif %}page={{ players_page.next_page_number }}" class="pagination-next" style="background-color: var(--npl-bg-secondary); color: var(--npl-text-primary); border-color: var(--npl-border);">
-                Next
-            </a>
-            <a href="?{% if name %}name={{ name }}&{% endif %}{% if position %}position={{ position }}&{% endif %}{% if owned %}owned={{ owned }}&{% endif %}{% if roster_status %}roster_status={{ roster_status }}&{% endif %}page={{ players_page.paginator.num_pages }}" class="pagination-next" style="background-color: var(--npl-bg-secondary); color: var(--npl-text-primary); border-color: var(--npl-border);">
-                Last
-            </a>
-        {% else %}
-            <span class="pagination-next" style="background-color: var(--npl-bg-tertiary); color: var(--npl-text-secondary); border-color: var(--npl-border);" disabled>
-                Next
-            </span>
-        {% endif %}
-
-        <ul class="pagination-list">
-            {% for num in players_page.paginator.page_range %}
-                {% if players_page.number == num %}
-                    <li>
-                        <span class="pagination-link is-current" style="background-color: var(--npl-primary); color: var(--npl-bg-primary); border-color: var(--npl-primary);">
-                            {{ num }}
-                        </span>
-                    </li>
-                {% elif num > players_page.number|add:'-3' and num < players_page.number|add:'3' %}
-                    <li>
-                        <a href="?{% if name %}name={{ name }}&{% endif %}{% if position %}position={{ position }}&{% endif %}{% if owned %}owned={{ owned }}&{% endif %}{% if roster_status %}roster_status={{ roster_status }}&{% endif %}page={{ num }}" class="pagination-link" style="background-color: var(--npl-bg-secondary); color: var(--npl-text-primary); border-color: var(--npl-border);">
-                            {{ num }}
-                        </a>
-                    </li>
-                {% elif num == 1 or num == players_page.paginator.num_pages %}
-                    <li>
-                        <a href="?{% if name %}name={{ name }}&{% endif %}{% if position %}position={{ position }}&{% endif %}{% if owned %}owned={{ owned }}&{% endif %}{% if roster_status %}roster_status={{ roster_status }}&{% endif %}page={{ num }}" class="pagination-link" style="background-color: var(--npl-bg-secondary); color: var(--npl-text-primary); border-color: var(--npl-border);">
-                            {{ num }}
-                        </a>
-                    </li>
-                {% elif num == players_page.number|add:'-4' or num == players_page.number|add:'4' %}
-                    <li>
-                        <span class="pagination-ellipsis" style="color: var(--npl-text-secondary);">&hellip;</span>
-                    </li>
-                {% endif %}
-            {% endfor %}
-        </ul>
-    </nav>
-    {% endif %}
-    {% endif %}
-    {% endif %}
-</div>
+{% include "includes/pagination.html" %}
 
 {% if players %}
-<div class="block">
-    <div class="table-container">
-        <table class="table is-fullwidth is-striped is-hoverable">
-            <thead>
-                <tr>
-                    <th>Player</th>
-                    <th></th>
-                    <th>Roster</th>
-                    <th>Position</th>
-                    <th>Age</th>
-                    <th>MLB</th>
-                    <th>MLS</th>
-                    <th>Opt</th>
-                    <th>Status</th>
-                    {% if user.is_authenticated %}<th>Nominate</th>{% endif %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for p in players %}{% include "includes/player_row.html" %}{% endfor %}
-            </tbody>
-        </table>
-    </div>
+<div class="overflow-x-auto">
+    <table class="sheet">
+        <thead>
+            {% include "includes/player_columns.html" %}
+        </thead>
+        <tbody>
+            {% for p in players %}
+            {% include "includes/player_row.html" %}
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
+{% else %}
+<p>No players matched.</p>
 {% endif %}
 
-<!-- Pagination (bottom) -->
-{% if players_page and players_page.has_other_pages %}
-<nav class="pagination is-centered mt-5" role="navigation" aria-label="pagination">
-    {% if players_page.has_previous %}
-        <a href="?{% if name %}name={{ name }}&{% endif %}{% if position %}position={{ position }}&{% endif %}{% if owned %}owned={{ owned }}&{% endif %}{% if roster_status %}roster_status={{ roster_status }}&{% endif %}page=1" class="pagination-previous" style="background-color: var(--npl-bg-secondary); color: var(--npl-text-primary); border-color: var(--npl-border);">
-            First
-        </a>
-        <a href="?{% if name %}name={{ name }}&{% endif %}{% if position %}position={{ position }}&{% endif %}{% if owned %}owned={{ owned }}&{% endif %}{% if roster_status %}roster_status={{ roster_status }}&{% endif %}page={{ players_page.previous_page_number }}" class="pagination-previous" style="background-color: var(--npl-bg-secondary); color: var(--npl-text-primary); border-color: var(--npl-border);">
-            Previous
-        </a>
-    {% else %}
-        <span class="pagination-previous" style="background-color: var(--npl-bg-tertiary); color: var(--npl-text-secondary); border-color: var(--npl-border);" disabled>
-            Previous
-        </span>
-    {% endif %}
+{% include "includes/pagination.html" %}
 
-    {% if players_page.has_next %}
-        <a href="?{% if name %}name={{ name }}&{% endif %}{% if position %}position={{ position }}&{% endif %}{% if owned %}owned={{ owned }}&{% endif %}{% if roster_status %}roster_status={{ roster_status }}&{% endif %}page={{ players_page.next_page_number }}" class="pagination-next" style="background-color: var(--npl-bg-secondary); color: var(--npl-text-primary); border-color: var(--npl-border);">
-            Next
-        </a>
-        <a href="?{% if name %}name={{ name }}&{% endif %}{% if position %}position={{ position }}&{% endif %}{% if owned %}owned={{ owned }}&{% endif %}{% if roster_status %}roster_status={{ roster_status }}&{% endif %}page={{ players_page.paginator.num_pages }}" class="pagination-next" style="background-color: var(--npl-bg-secondary); color: var(--npl-text-primary); border-color: var(--npl-border);">
-            Last
-        </a>
-    {% else %}
-        <span class="pagination-next" style="background-color: var(--npl-bg-tertiary); color: var(--npl-text-secondary); border-color: var(--npl-border);" disabled>
-            Next
-        </span>
-    {% endif %}
-
-    <ul class="pagination-list">
-        {% for num in players_page.paginator.page_range %}
-            {% if players_page.number == num %}
-                <li>
-                    <span class="pagination-link is-current" style="background-color: var(--npl-primary); color: var(--npl-bg-primary); border-color: var(--npl-primary);">
-                        {{ num }}
-                    </span>
-                </li>
-            {% elif num > players_page.number|add:'-3' and num < players_page.number|add:'3' %}
-                <li>
-                    <a href="?{% if name %}name={{ name }}&{% endif %}{% if position %}position={{ position }}&{% endif %}{% if owned %}owned={{ owned }}&{% endif %}{% if roster_status %}roster_status={{ roster_status }}&{% endif %}page={{ num }}" class="pagination-link" style="background-color: var(--npl-bg-secondary); color: var(--npl-text-primary); border-color: var(--npl-border);">
-                        {{ num }}
-                    </a>
-                </li>
-            {% elif num == 1 or num == players_page.paginator.num_pages %}
-                <li>
-                    <a href="?{% if name %}name={{ name }}&{% endif %}{% if position %}position={{ position }}&{% endif %}{% if owned %}owned={{ owned }}&{% endif %}{% if roster_status %}roster_status={{ roster_status }}&{% endif %}page={{ num }}" class="pagination-link" style="background-color: var(--npl-bg-secondary); color: var(--npl-text-primary); border-color: var(--npl-border);">
-                        {{ num }}
-                    </a>
-                </li>
-            {% elif num == players_page.number|add:'-4' or num == players_page.number|add:'4' %}
-                <li>
-                    <span class="pagination-ellipsis" style="color: var(--npl-text-secondary);">&hellip;</span>
-                </li>
-            {% endif %}
-        {% endfor %}
-    </ul>
-</nav>
-{% endif %}
-
-<!-- Nomination Modal -->
 {% if user.is_authenticated %}
-<div id="nomination-modal" class="modal">
-    <div class="modal-background"></div>
-    <div class="modal-card">
-        <header class="modal-card-head">
-            <p class="modal-card-title">
-                <span class="icon-text">
-                    <span class="icon">
-                        <i class="fas fa-gavel"></i>
-                    </span>
-                    <span>Nominate Player for Auction</span>
-                </span>
-            </p>
-            <button class="delete" aria-label="close" onclick="closeNominationModal()"></button>
-        </header>
-        <section class="modal-card-body">
-            <div class="content">
-                <p>You are nominating <strong id="nominee-name"></strong> for auction.</p>
-                <div class="notification is-info is-light">
-                    <span class="icon">
-                        <i class="fas fa-info-circle"></i>
-                    </span>
-                    This will create a nomination that administrators can review and choose to activate as an auction.
-                </div>
-                
-                <div class="field">
-                    <label class="label">Reason for Nomination (Optional)</label>
-                    <div class="control">
-                        <textarea id="nomination-reason" class="textarea" placeholder="Why do you think this player should be auctioned? (e.g., recently called up, interesting prospect, etc.)" maxlength="500"></textarea>
-                    </div>
-                    <p class="help">Help admins understand why this player would be a good auction candidate.</p>
-                </div>
-            </div>
-        </section>
-        <footer class="modal-card-foot">
-            <button id="confirm-nomination" class="button is-success">
-                <span class="icon">
-                    <i class="fas fa-check"></i>
-                </span>
-                <span>Submit Nomination</span>
-            </button>
-            <button class="button" onclick="closeNominationModal()">Cancel</button>
-        </footer>
-    </div>
-</div>
+<dialog id="nomination-modal" class="w-full max-w-md border border-gray-300 p-4">
+    <form method="dialog">
+        <h2 class="mb-2 text-lg font-bold">Nominate <span id="nominee-name"></span></h2>
+        <p class="mb-3 text-sm">This asks an administrator to review the player for auction.</p>
+        <label class="mb-1 block text-xs font-bold" for="nomination-reason">Reason (optional)</label>
+        <textarea id="nomination-reason" maxlength="500" rows="4" class="mb-3 w-full" placeholder="Why should this player be auctioned?"></textarea>
+        <div class="flex gap-2">
+            <button type="button" id="confirm-nomination" class="btn">Submit nomination</button>
+            <button type="submit" value="cancel" class="btn-line">Cancel</button>
+        </div>
+    </form>
+</dialog>
 {% endif %}
-
 {% endblock %}
 
 {% block extrascript %}
-<script type="text/javascript">
-let currentNominationPlayerId = null;
+{% if user.is_authenticated %}
+<script>
+var currentNominationPlayerId = null;
 
 function openNominationModal(playerId, playerName) {
     currentNominationPlayerId = playerId;
-    document.getElementById('nominee-name').textContent = playerName;
-    document.getElementById('nomination-reason').value = '';
-    document.getElementById('nomination-modal').classList.add('is-active');
+    document.getElementById("nominee-name").textContent = playerName;
+    document.getElementById("nomination-reason").value = "";
+    document.getElementById("nomination-modal").showModal();
 }
 
 function closeNominationModal() {
-    document.getElementById('nomination-modal').classList.remove('is-active');
+    var dialog = document.getElementById("nomination-modal");
+    if (dialog.open) dialog.close();
     currentNominationPlayerId = null;
 }
 
-function submitNomination() {
-    if (!currentNominationPlayerId) return;
-    
-    const reason = document.getElementById('nomination-reason').value.trim();
-    const button = document.getElementById('confirm-nomination');
-    
-    button.classList.add('is-loading');
-    button.disabled = true;
-    
-    const url = `/api/v1/players/${currentNominationPlayerId}/nominate/?reason=${encodeURIComponent(reason)}`;
-    
-    fetch(url, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken'),
-        },
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Show success notification
-            const notification = document.createElement('div');
-            notification.className = 'notification is-success is-light';
-            notification.innerHTML = `
-                <span class="icon">
-                    <i class="fas fa-check-circle"></i>
-                </span>
-                ${data.message}
-            `;
-            document.querySelector('.container').insertBefore(notification, document.querySelector('.container').firstChild);
-            
-            closeNominationModal();
-            
-            // Disable nomination button
-            const nominateBtn = document.querySelector(`[data-player-id="${currentNominationPlayerId}"]`);
-            if (nominateBtn) {
-                nominateBtn.disabled = true;
-                nominateBtn.innerHTML = '<span class="icon"><i class="fas fa-check"></i></span><span>Nominated</span>';
-                nominateBtn.classList.remove('is-primary');
-                nominateBtn.classList.add('is-light');
-            }
-            
-            // Auto-hide notification after 5 seconds
-            setTimeout(() => {
-                notification.remove();
-            }, 5000);
-        } else {
-            alert('Error: ' + data.message);
-        }
-    })
-    .catch(error => {
-        alert('Error submitting nomination. Please try again.');
-        console.error('Error:', error);
-    })
-    .finally(() => {
-        button.classList.remove('is-loading');
-        button.disabled = false;
-    });
-}
-
-// Helper function to get CSRF token
 function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
+    var cookies = document.cookie ? document.cookie.split(";") : [];
+    for (var i = 0; i < cookies.length; i++) {
+        var cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === name + "=") {
+            return decodeURIComponent(cookie.substring(name.length + 1));
         }
     }
-    return cookieValue;
+    return null;
 }
 
-// Event listeners
-document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('confirm-nomination').addEventListener('click', submitNomination);
-    
-    // Close modal when clicking background
-    document.querySelector('.modal-background').addEventListener('click', closeNominationModal);
-    
-    // Close modal on escape key
-    document.addEventListener('keydown', function(event) {
-        if (event.key === 'Escape') {
+document.addEventListener("DOMContentLoaded", function () {
+    var confirmButton = document.getElementById("confirm-nomination");
+    if (!confirmButton) return;
+    confirmButton.addEventListener("click", function () {
+        if (!currentNominationPlayerId) return;
+        var reason = document.getElementById("nomination-reason").value.trim();
+        confirmButton.disabled = true;
+        fetch("/api/v1/players/" + currentNominationPlayerId + "/nominate/?reason=" + encodeURIComponent(reason), {
+            method: "POST",
+            headers: { "X-CSRFToken": getCookie("csrftoken") }
+        })
+        .then(function (response) { return response.json(); })
+        .then(function (data) {
+            if (!data.success) {
+                alert(data.message || "Nomination failed.");
+                return;
+            }
+            var note = document.createElement("p");
+            note.className = "note mb-4";
+            note.textContent = data.message;
+            document.getElementById("content").insertBefore(note, document.getElementById("content").firstChild);
+            var button = document.querySelector('[data-player-id="' + currentNominationPlayerId + '"]');
+            if (button) {
+                button.disabled = true;
+                button.textContent = "Nominated";
+            }
             closeNominationModal();
-        }
+        })
+        .catch(function () {
+            alert("Error submitting nomination. Please try again.");
+        })
+        .finally(function () {
+            confirmButton.disabled = false;
+        });
     });
 });
 </script>
+{% endif %}
 {% endblock %}

@@ -5,7 +5,7 @@ from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 
 from django.shortcuts import render, get_object_or_404, redirect
-from django.db.models import Count, Avg, Sum, Max, Min, Q
+from django.db.models import Count, Avg, Sum, Max, Min, Prefetch, Q
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.http import JsonResponse
 from django.conf import settings
@@ -19,7 +19,7 @@ import ujson as json
 from datetime import datetime, timedelta
 import pytz
 
-from npl import models, utils
+from npl import models, rosters, utils
 from .forms import TransactionTypeForm, TRANSACTION_FORM_MAP
 from npl.transactions.service import (
     TransactionError,
@@ -40,7 +40,7 @@ def auction_bid_api(request, auctionid):
             "player": None
         },
     }
-    context = utils.build_context(request)
+    context = utils.build_context(request, with_teams=False)
     context['time'] = now
 
     # return a 404 if there's no matching auction
@@ -113,135 +113,95 @@ def auction_bid_api(request, auctionid):
 
     return JsonResponse(payload)
 
+def _auction_queryset():
+    bids = models.MLBAuctionBid.objects.select_related("team").order_by("-max_bid")
+    return (
+        models.Auction.objects.select_related("player")
+        .defer("player__stats", "player__scoresheet_defense", "player__scoresheet_offense")
+        .prefetch_related(Prefetch("mlbauctionbid_set", queryset=bids))
+    )
+
+
 def auction_list(request):
     context = utils.build_context(request)
     context['time'] = datetime.now(pytz.timezone('US/Eastern'))
+    owner_team = context.get("owner_team")
+
+    active_auctions = (
+        _auction_queryset()
+        .filter(closes__gte=context['time'], active=True)
+        .exclude(is_nomination=True)
+    )
+
     context['auctions'] = []
-    
-    # Get active auctions (not expired)
-    active_auctions = models.Auction.objects.filter(
-        closes__gte=context['time'], 
-        active=True
-    ).exclude(is_nomination=True)  # Exclude nomination-only auctions
-    
-    for a in active_auctions:
-        # Check if user can bid
-        try:
-            existing_bid = models.MLBAuctionBid.objects.get(auction=a, team=context['owner_team'])
-            a.can_bid = False
-            a.your_bid = existing_bid.max_bid
-        except models.MLBAuctionBid.DoesNotExist:
-            a.can_bid = True
-            a.your_bid = None
-        except (AttributeError, TypeError):
-            # No owner_team (not logged in or no team)
-            a.can_bid = False
-            a.your_bid = None
-        
-        # Set minimum bid for display
-        a.minimum_bid_price = a.min_bid
-        
-        # For blind auctions, only show minimal info
-        a.total_bids = models.MLBAuctionBid.objects.filter(auction=a).count()
-        
-        # Add leading bid info (will be hidden for active auctions)
-        leading_bid_info = a.leading_bid()
-        a.leading_bid_display = leading_bid_info
-        
-        context['auctions'].append(a)
-    
-    # Also show recent expired auctions with results
-    context['recent_expired'] = []
-    recent_expired = models.Auction.objects.filter(
-        closes__lt=context['time'],
-        active=True,
-        closes__gte=context['time'] - timedelta(days=7)  # Last 7 days
-    ).order_by('-closes')[:10]
-    
-    for a in recent_expired:
-        winning_bid = a.winning_bid()
-        a.winning_info = winning_bid
-        context['recent_expired'].append(a)
-    
+    for auction in active_auctions:
+        mine = None
+        if owner_team is not None:
+            mine = next(
+                (bid for bid in auction.mlbauctionbid_set.all() if bid.team_id == owner_team.id),
+                None,
+            )
+        auction.can_bid = owner_team is not None and mine is None
+        auction.your_bid = mine.max_bid if mine else None
+        auction.minimum_bid_price = auction.min_bid
+        auction.total_bids = auction.bid_count()
+        auction.leading_bid_display = auction.leading_bid()
+        context['auctions'].append(auction)
+
     return render(request, "auction_list.html", context)
 
 def npl_page_list(request):
     context = utils.build_context(request)
-    context['pages'] = models.Page.objects.filter(active=True).order_by('-collection__name, title')
+    context['pages'] = (
+        models.Page.objects.filter(active=True)
+        .select_related("collection")
+        .order_by("-collection__name", "title")
+    )
     return render(request, "page_list.html", context)
 
 def npl_page_detail(request, slug):
     context = utils.build_context(request)
-    context['page'] = get_object_or_404(models.Page, slug=slug)
+    context['page'] = get_object_or_404(
+        models.Page.objects.select_related("collection"),
+        slug=slug,
+    )
     return render(request, "page_detail.html", context)
 
 def index(request):
-    context = utils.build_context(request)
+    context = utils.build_context(request, with_owners=True)
+    utils.attach_position_counts(context["all_teams"])
     return render(request, "index.html", context)
 
 def player_detail(request, playerid):
     context = utils.build_context(request)
-    context['p'] = get_object_or_404(models.Player, mlb_id=playerid)
+    context['p'] = get_object_or_404(
+        models.Player.objects.select_related("team"),
+        mlb_id=playerid,
+    )
     return render(request, "player.html", context)
 
 def team_detail(request, short_name):
     context = utils.build_context(request)
-    context["team"] = get_object_or_404(models.Team, short_name__icontains=short_name)
+    context["team"] = get_object_or_404(
+        models.Team.objects.select_related("league", "division").prefetch_related("owners"),
+        short_name__iexact=short_name,
+    )
+    team = context["team"]
+    context["owners"] = list(team.owners.all())
 
-    team_players = models.Player.objects.filter(team=context["team"])
-    context['total_count'] = team_players.count()
-    context['roster_40_man_count'] = team_players.filter(roster_40man=True).count()
-    context['roster_30_man_count'] = team_players.filter(roster_30man=True).count()
-    context['hitters'] = team_players.exclude(simple_position="P").order_by('simple_position','-mls_time', 'mls_year')
-    context['pitchers'] = team_players.filter(simple_position="P").order_by('-mls_time', 'mls_year')
-    # MLB roster should only show active MLB players (40-man roster but not in AAA, IL, or other inactive statuses)
-    mlb_exclusions = {
-        'roster_tripleA': True,
-        'roster_tripleA_option': True,
-        'roster_7dayIL': True,
-        'roster_56dayIL': True,
-        'roster_eosIL': True,
-        'roster_restricted': True,
-        'roster_outrighted': True,
-        'roster_foreign': True,
-        'roster_retired': True,
-        'roster_nonroster': True,
-        'roster_doubleA': True,
-        'roster_singleA': True,
-    }
-    
-    mlb_players = team_players.filter(roster_40man=True)
-    for field, value in mlb_exclusions.items():
-        mlb_players = mlb_players.exclude(**{field: value})
-    
-    context['mlb_hitters'] = mlb_players.exclude(simple_position="P").order_by('simple_position','-mls_time', 'mls_year')
-    context['mlb_pitchers'] = mlb_players.filter(simple_position="P").order_by('-mls_time', 'mls_year')
-    """
-    ("7-DAY INJURED LIST", "roster_7dayIL"),
-    ("56-DAY INJURED LIST", "roster_56dayIL"),
-    ("END OF SEASON INJURED LIST", "roster_eosIL"),
-    ("RESTRICTED LIST", "roster_restricted"),
-    ("TRIPLE-A", "roster_tripleA"),
-    ("DOUBLE-A", "roster_doubleA"),
-    ("SINGLE-A", "roster_singleA"),
-    ("ON OPTION", "roster_tripleA_option"),
-    ("ASSIGNED OUTRIGHT", "roster_outrighted"),
-    ("FOREIGN", "roster_foreign"),
-    ("RETIRED", "roster_retired"),
-    ("NON-ROSTER", "roster_nonroster")
-    """
-    context['roster_7dayIL'] = team_players.filter(roster_7dayIL=True).order_by('-mls_time', 'mls_year')
-    context['roster_56dayIL'] = team_players.filter(roster_56dayIL=True).order_by('-mls_time', 'mls_year')
-    context['roster_eosIL'] = team_players.filter(roster_eosIL=True).order_by('-mls_time', 'mls_year')
-    context['roster_restricted'] = team_players.filter(roster_restricted=True).order_by('-mls_time', 'mls_year')
-    context['roster_outrighted'] = team_players.filter(roster_outrighted=True).order_by('-mls_time', 'mls_year')
-    context['roster_foreign'] = team_players.filter(roster_foreign=True).order_by('-mls_time', 'mls_year')
-    context['roster_retired'] = team_players.filter(roster_retired=True).order_by('-mls_time', 'mls_year')
-    context['roster_nonroster'] = team_players.filter(roster_nonroster=True).order_by('-mls_time', 'mls_year')
-    context['roster_tripleA'] = team_players.filter(roster_tripleA=True).order_by('-mls_time', 'mls_year', 'last_name')
-    context['roster_tripleA_option'] = team_players.filter(roster_tripleA_option=True).order_by('-mls_time', 'mls_year', 'last_name')
-    context['roster_doubleA'] = team_players.filter(roster_doubleA=True).order_by('-mls_time', 'mls_year', 'last_name')
-    context['roster_singleA'] = team_players.filter(roster_singleA=True).order_by('-mls_time', 'mls_year')
+    contracts = models.Contract.objects.filter(team=team).prefetch_related(
+        Prefetch(
+            "contractyear_set",
+            queryset=models.ContractYear.objects.order_by("pk"),
+        )
+    )
+    players = list(
+        models.Player.objects.filter(team=team)
+        .defer("stats", "scoresheet_defense", "scoresheet_offense")
+        .prefetch_related(Prefetch("contract_set", queryset=contracts))
+    )
+    context.update(rosters.summarize(players))
+    context["roster_sections"] = rosters.build_sections(players)
     return render(request, "team.html", context)
 
 def get_next_processing_deadline():
@@ -417,7 +377,7 @@ def transaction_list(request):
     context.update({
         'submissions': models.TransactionSubmission.objects.filter(
             user=request.user
-        ).order_by('-created'),
+        ).select_related("team").order_by('-created'),
         'proposals': proposals,
         'respondable_ids': respondable_ids,
     })
@@ -452,7 +412,9 @@ def search(request):
 
     context = utils.build_context(request)
 
-    query = models.Player.objects.all()
+    query = models.Player.objects.select_related("team").defer(
+        "stats", "scoresheet_defense", "scoresheet_offense"
+    )
 
     if request.GET.get("name", None):
         name = request.GET["name"]
@@ -483,8 +445,6 @@ def search(request):
             query = query.filter(roster_status=roster_status.upper())
             context['roster_status'] = roster_status
 
-    context['total_count'] = query.count()
-    
     # Apply explicit ordering to match Player model's Meta ordering
     # Level priority, then position priority, then last name
     query = query.order_by(
@@ -520,7 +480,8 @@ def search(request):
     
     # Pass all players as one unified list
     context["players"] = players_page
-    context["players_page"] = players_page  # For pagination controls
+    context["players_page"] = players_page
+    context["page_obj"] = players_page
     
     return render(request, "search.html", context)
 
@@ -532,9 +493,18 @@ def my_wishlist(request):
     # context['my_open_picks'] = models.DraftPick.objects.filter(team=context['team'], year=2025, season="offseason", draft_type="open")
     # context['all_open_picks'] = models.DraftPick.objects.filter(year=2025, season="offseason", draft_type="open").values('overall_pick_number', 'team__abbreviation')
  
-    context["players"] = models.WishlistPlayer.objects.filter(
-        wishlist=context["wishlist"], player__is_owned=False
-    ).order_by("rank", "interesting")
+    context["players"] = (
+        models.WishlistPlayer.objects.filter(
+            wishlist=context["wishlist"], player__is_owned=False
+        )
+        .select_related("player", "player__team")
+        .defer(
+            "player__stats",
+            "player__scoresheet_defense",
+            "player__scoresheet_offense",
+        )
+        .order_by("rank", "interesting")
+    )
 
     context['my_picks'] = [37, 59, 107, 131, 155]
 
@@ -553,7 +523,7 @@ def my_wishlist(request):
 @csrf_exempt
 @login_required
 def wishlist_bulk(request):
-    context = utils.build_context(request)
+    context = utils.build_context(request, with_teams=False)
     wishlist = None
     wl = models.Wishlist.objects.filter(team=context["owner_team"])
     if len(wl) > 0:
@@ -571,7 +541,7 @@ def wishlist_bulk(request):
 @csrf_exempt
 @login_required
 def interesting_action(request, playerid):
-    context = utils.build_context(request)
+    context = utils.build_context(request, with_teams=False)
     wl = models.Wishlist.objects.get(team=context["owner_team"])
     pl = models.Player.objects.get(mlb_id=playerid)
     w = models.WishlistPlayer.objects.get(wishlist=wl, player=pl)
@@ -597,7 +567,7 @@ def auction_test_view(request):
     if not request.user.is_staff:
         return JsonResponse({"error": "Access denied"}, status=403)
     
-    context = utils.build_context(request)
+    context = utils.build_context(request, with_teams=False)
     
     # Get test auction data
     test_results = {}
@@ -742,7 +712,7 @@ def nominate_player_api(request, playerid):
     API endpoint to nominate a player for auction.
     Creates an inactive auction that admins can review and activate.
     """
-    context = utils.build_context(request)
+    context = utils.build_context(request, with_teams=False)
     payload = {
         "success": False,
         "message": None,
@@ -831,45 +801,37 @@ def nominate_player_api(request, playerid):
 def nominations_list(request):
     """View to show current player nominations"""
     context = utils.build_context(request)
-    
-    # Get all pending nominations (inactive auctions that are nominations)
-    pending_nominations = models.Auction.objects.filter(
-        is_nomination=True,
-        active=False
-    ).select_related('player', 'nomination_details__nominating_team').order_by('-created')
-    
-    # Get recently approved nominations (active auctions that were nominations)
-    approved_nominations = models.Auction.objects.filter(
-        is_nomination=False,
-        active=True,
-        nomination_details__isnull=False
-    ).select_related('player', 'nomination_details__nominating_team').order_by('-created')[:10]
-    
-    # Add nomination details to each auction
-    for auction in pending_nominations:
-        try:
-            nomination = models.PlayerNomination.objects.get(auction=auction)
-            auction.nomination_info = nomination
-        except models.PlayerNomination.DoesNotExist:
-            auction.nomination_info = None
-    
-    for auction in approved_nominations:
-        try:
-            nomination = models.PlayerNomination.objects.get(auction=auction)
-            auction.nomination_info = nomination
-        except models.PlayerNomination.DoesNotExist:
-            auction.nomination_info = None
-    
-    context['pending_nominations'] = pending_nominations
-    context['approved_nominations'] = approved_nominations
-    
+
+    nomination_qs = (
+        models.Auction.objects.select_related(
+            "player", "nomination_details", "nomination_details__nominating_team"
+        )
+        .defer("player__stats", "player__scoresheet_defense", "player__scoresheet_offense")
+    )
+
+    context["pending_nominations"] = list(
+        nomination_qs.filter(is_nomination=True, active=False).order_by("-created")
+    )
+    context["approved_nominations"] = list(
+        nomination_qs.filter(
+            is_nomination=False,
+            active=True,
+            nomination_details__isnull=False,
+        ).order_by("-created")[:10]
+    )
+
     return render(request, "nominations_list.html", context)
 
 def transactions(request):
     context = utils.build_context(request)
     
-    # Get all transactions ordered by date (newest first)
-    transactions_list = models.Transaction.objects.all().order_by('-date', '-id')
+    transactions_list = (
+        models.Transaction.objects.select_related(
+            "player", "team", "acquiring_team", "transaction_type"
+        )
+        .defer("player__stats", "player__scoresheet_defense", "player__scoresheet_offense")
+        .order_by("-date", "-id")
+    )
     
     # Set up pagination (250 transactions per page)
     paginator = Paginator(transactions_list, 250)
@@ -885,6 +847,7 @@ def transactions(request):
         transactions_page = paginator.page(paginator.num_pages)
     
     context['transactions'] = transactions_page
+    context['page_obj'] = transactions_page
     
     return render(request, 'transactions.html', context)
 

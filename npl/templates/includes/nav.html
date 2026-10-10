@@ -1,278 +1,110 @@
-<style>
-/* Default styles for dropdown items */
-.navbar .navbar-dropdown .navbar-item,
-.navbar .navbar-dropdown a.navbar-item {
-    color: var(--npl-text-primary) !important;
-    background-color: transparent !important;
-}
+<nav class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2" aria-label="Primary">
+    <div class="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+        <a href="/" class="text-lg font-bold no-underline">THE NPL</a>
+        <button type="button" id="mobile-menu-button" class="btn-line sm:hidden" aria-controls="mobile-menu" aria-expanded="false">Menu</button>
 
-/* Override Bulma navbar hover styles to respect theme variables */
-.navbar .navbar-dropdown .navbar-item:hover,
-.navbar .navbar-dropdown a.navbar-item:hover {
-    background-color: var(--npl-bg-tertiary) !important;
-    color: var(--npl-primary) !important;
-}
+        <div class="hidden flex-wrap items-center gap-x-3 gap-y-1 sm:flex">
+            <a href="https://tbb.quarto.pub/npl-rules/" class="underline">Rules</a>
 
-/* Also target any child spans that might have different colors */
-.navbar .navbar-dropdown .navbar-item:hover span,
-.navbar .navbar-dropdown a.navbar-item:hover span {
-    color: var(--npl-primary) !important;
-}
+            <div class="nav-dropdown">
+                <button type="button" class="underline" aria-haspopup="true">Teams ▼</button>
+                <div class="nav-dropdown-panel wide">
+                    {% regroup all_teams by division_label as division_groups %}
+                    {% for division in division_groups %}
+                    <div class="mb-2 break-inside-avoid">
+                        <p class="text-xs font-bold text-gray-600">{{ division.grouper }}</p>
+                        {% for team in division.list %}
+                        <a href="/teams/{{ team.short_name|lower }}/" class="block py-0.5 text-sm underline">{{ team.abbreviation|default:team.short_name }}</a>
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
 
-/* Fix dropdown trigger hover (Teams, Auctions, Transactions links) */
-.navbar .navbar-link:hover {
-    background-color: var(--npl-bg-tertiary) !important;
-    color: var(--npl-primary) !important;
-}
+            <div class="nav-dropdown">
+                <button type="button" class="underline" aria-haspopup="true">Auctions ▼</button>
+                <div class="nav-dropdown-panel">
+                    <a href="/auctions/" class="block py-0.5 text-sm underline">Auctions</a>
+                    <a href="/nominations/" class="block py-0.5 text-sm underline">Nominations</a>
+                    <a href="https://docs.google.com/spreadsheets/d/1M9oFg6jL5cJudu44AlUBkepooy3Ww6WVjqnXeSJf1a8/edit?gid=0#gid=0" class="block py-0.5 text-sm underline">Old auctions</a>
+                </div>
+            </div>
 
-/* Ensure dropdown backgrounds use theme variables */
-.navbar .navbar-dropdown {
-    background-color: var(--npl-bg-secondary) !important;
-}
-</style>
+            <div class="nav-dropdown">
+                <button type="button" class="underline" aria-haspopup="true">Transactions ▼</button>
+                <div class="nav-dropdown-panel">
+                    {% if user.is_authenticated %}
+                    <a href="/transactions/form/" class="block py-0.5 text-sm underline">Submit</a>
+                    <a href="/transactions/list/" class="block py-0.5 text-sm underline">My submissions</a>
+                    {% endif %}
+                    <a href="/transactions/" class="block py-0.5 text-sm underline">All transactions</a>
+                    <a href="https://docs.google.com/spreadsheets/d/1UQv_vnBBWUT8BiFRd7tAbvW4COWJ61BNkme7iyzf5po/" class="block py-0.5 text-sm underline">Google sheet</a>
+                </div>
+            </div>
 
-<nav class="navbar" role="navigation" aria-label="main navigation" style="position: fixed; top: 0; left: 0; right: 0; z-index: 30; background-color: var(--npl-bg-secondary); border-bottom: 1px solid var(--npl-border);">
-    <div class="navbar-brand">
-        <a class="navbar-item" href="/" style="color: var(--npl-primary) !important;">
-            <strong>NPL</strong>
-        </a>
+            <a href="https://docs.google.com/spreadsheets/d/1On6uRXLRQ3pzl2FHYRgWKCedsCdl6UNbNaSF6pwlGiw/" class="underline">Rosters</a>
+            <a href="https://npldash.onrender.com/" class="underline">Season Stats</a>
 
-        <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarMain" style="color: var(--npl-text-primary);">
-            <span aria-hidden="true"></span>
-            <span aria-hidden="true"></span>
-            <span aria-hidden="true"></span>
-        </a>
+            <form action="/players/search/" method="get">
+                <label class="sr-only" for="nav-search">Find a player</label>
+                <input id="nav-search" type="text" name="name" value="{{ request.GET.name }}" placeholder="find a player" class="w-40 text-xs">
+            </form>
+        </div>
     </div>
 
-    <div id="navbarMain" class="navbar-menu">
-        <div class="navbar-start">
-            <div class="navbar-item has-dropdown is-hoverable">
-                <a class="navbar-link" style="color: var(--npl-text-primary) !important;">Teams</a>
-                <div class="navbar-dropdown" style="width: 600px; max-width: 90vw; border: 1px solid var(--npl-border); box-shadow: 0 8px 16px rgba(0,0,0,0.3);">
-
-                    <div style="display: flex; gap: 2rem; padding: 0.5rem;">
-                        <!-- AL Column -->
-                        <div style="flex: 1;">
-                            {% regroup all_teams by division.name as division_groups %}
-                            {% for division in division_groups %}
-                                {% if division.list.0.league.name and 'AL' in division.list.0.league.name or 'American' in division.list.0.league.name %}
-                                <div style="margin-bottom: 1rem;">
-                                    <div style="margin-bottom: 0.5rem;">
-                                        <span class="has-text-weight-bold is-size-6" style="color: #ef5350;">
-                                            AL - {{ division.grouper }}
-                                        </span>
-                                    </div>
-                                    <div style="margin-left: 1rem;">
-                                        {% for team in division.list %}
-                                        <div style="margin-bottom: 0.25rem;">
-                                            <a href="/teams/{{ team.short_name|lower }}/" 
-                                               style="color: var(--npl-text-primary); text-decoration: none; font-size: 0.875rem; display: block;"
-                                               onmouseover="this.style.color='var(--npl-primary)';"
-                                               onmouseout="this.style.color='var(--npl-text-primary)';">
-                                                {{ team.full_name }}
-                                            </a>
-                                        </div>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                                {% endif %}
-                            {% endfor %}
-                        </div>
-                        
-                        <!-- NL Column -->
-                        <div style="flex: 1;">
-                            {% regroup all_teams by division.name as division_groups %}
-                            {% for division in division_groups %}
-                                {% if division.list.0.league.name and 'NL' in division.list.0.league.name or 'National' in division.list.0.league.name %}
-                                <div style="margin-bottom: 1rem;">
-                                    <div style="margin-bottom: 0.5rem;">
-                                        <span class="has-text-weight-bold is-size-6" style="color: #42a5f5;">
-                                            NL - {{ division.grouper }}
-                                        </span>
-                                    </div>
-                                    <div style="margin-left: 1rem;">
-                                        {% for team in division.list %}
-                                        <div style="margin-bottom: 0.25rem;">
-                                            <a href="/teams/{{ team.short_name|lower }}/" 
-                                               style="color: var(--npl-text-primary); text-decoration: none; font-size: 0.875rem; display: block;"
-                                               onmouseover="this.style.color='var(--npl-primary)';"
-                                               onmouseout="this.style.color='var(--npl-text-primary)';">
-                                                {{ team.full_name }}
-                                            </a>
-                                        </div>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                                {% endif %}
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <a class="navbar-item" href="https://tbb.quarto.pub/npl-rules/" target="_blank" style="color: var(--npl-text-primary) !important;">
-                Rules
-                <span class="icon ml-1">
-                    <i class="fas fa-external-link-alt is-size-7"></i>
-                </span>
-            </a>
-            
-            <div class="navbar-item has-dropdown is-hoverable">
-                <a class="navbar-link" style="color: var(--npl-text-primary) !important;">Auctions</a>
-                <div class="navbar-dropdown" style="border: 1px solid var(--npl-border);">
-                    <a href="/auctions/" class="navbar-item">
-                        <span class="icon">
-                            <i class="fas fa-gavel"></i>
-                        </span>
-                        <span>New Auctions</span>
-                    </a>
-                    <a href="https://docs.google.com/spreadsheets/d/1M9oFg6jL5cJudu44AlUBkepooy3Ww6WVjqnXeSJf1a8/edit?gid=0#gid=0" target="_blank" class="navbar-item">
-                        <span class="icon">
-                            <i class="fas fa-external-link-alt"></i>
-                        </span>
-                        <span>Old Auctions</span>
-                    </a>
-                </div>
-            </div>
-            
-            <div class="navbar-item has-dropdown is-hoverable">
-                <a class="navbar-link" style="color: var(--npl-text-primary) !important;">Transactions</a>
-                <div class="navbar-dropdown" style="border: 1px solid var(--npl-border);">
-                    {% if user.is_authenticated %}
-                    <a href="/transactions/form/" class="navbar-item">
-                        <span class="icon">
-                            <i class="fas fa-plus"></i>
-                        </span>
-                        <span>Submit Transaction</span>
-                    </a>
-                    <a href="/transactions/list/" class="navbar-item">
-                        <span class="icon">
-                            <i class="fas fa-list"></i>
-                        </span>
-                        <span>My Submissions</span>
-                    </a>
-                    <hr class="navbar-divider" style="background-color: var(--npl-border);">
-                    {% endif %}
-                    <a href="/transactions/" class="navbar-item">
-                        <span class="icon">
-                            <i class="fas fa-history"></i>
-                        </span>
-                        <span>All Transactions</span>
-                    </a>
-                    <a href="https://docs.google.com/spreadsheets/d/1UQv_vnBBWUT8BiFRd7tAbvW4COWJ61BNkme7iyzf5po/" target="_blank" class="navbar-item">
-                        <span class="icon">
-                            <i class="fas fa-external-link-alt"></i>
-                        </span>
-                        <span>Google Sheets</span>
-                    </a>
-                </div>
-            </div>
-            
-            <a class="navbar-item" href="https://docs.google.com/spreadsheets/d/1On6uRXLRQ3pzl2FHYRgWKCedsCdl6UNbNaSF6pwlGiw/" target="_blank" style="color: var(--npl-text-primary) !important;">
-                Rosters
-                <span class="icon ml-1">
-                    <i class="fas fa-external-link-alt is-size-7"></i>
-                </span>
-            </a>
-            
-            <a class="navbar-item" href="https://npldash.onrender.com/" target="_blank" style="color: var(--npl-text-primary) !important;">
-                Season Stats
-                <span class="icon ml-1">
-                    <i class="fas fa-external-link-alt is-size-7"></i>
-                </span>
-            </a>
-        </div>
-
-        <div class="navbar-end">
-            <div class="navbar-item">
-                {% if user.is_authenticated %}
-                    <div class="buttons">
-                        <span class="button is-static is-small" style="background-color: var(--npl-bg-tertiary) !important; color: var(--npl-text-secondary) !important; border-color: var(--npl-border) !important;">
-                            {{ user.email|truncatechars:20 }}
-                        </span>
-                        <button class="button is-small theme-toggle" onclick="toggleTheme()" title="Toggle theme">
-                            <span class="icon">
-                                <i class="fas fa-moon theme-icon-dark"></i>
-                                <i class="fas fa-sun theme-icon-light" style="display: none;"></i>
-                            </span>
-                            <span class="theme-text">Dark</span>
-                        </button>
-                        {% if user.is_staff %}
-                        <a class="button is-info is-small" href="/admin/" style="background-color: var(--npl-info) !important; color: var(--npl-bg-primary) !important;">
-                            Admin
-                        </a>
-                        {% endif %}
-                        <a class="button is-light is-small" href="/accounts/logout/" style="background-color: var(--npl-bg-tertiary) !important; color: var(--npl-text-primary) !important; border-color: var(--npl-border) !important;">
-                            Log out
-                        </a>
-                    </div>
-                {% else %}
-                    <div class="buttons">
-                        <button class="button is-small theme-toggle" onclick="toggleTheme()" title="Toggle theme">
-                            <span class="icon">
-                                <i class="fas fa-moon theme-icon-dark"></i>
-                                <i class="fas fa-sun theme-icon-light" style="display: none;"></i>
-                            </span>
-                            <span class="theme-text">Dark</span>
-                        </button>
-                        <a class="button is-primary is-small" href="/accounts/login/" style="background-color: var(--npl-primary) !important; color: var(--npl-bg-primary) !important;">
-                            Log in
-                        </a>
-                    </div>
-                {% endif %}
+    <div class="hidden items-center gap-3 sm:flex">
+        {% if user.is_authenticated and user.is_staff %}
+        <div class="nav-dropdown">
+            <button type="button" class="underline" aria-haspopup="true">Utilities ▼</button>
+            <div class="nav-dropdown-panel">
+                <a href="/admin/" class="block py-0.5 text-sm underline">Django admin</a>
+                <a href="/auctions/test/" class="block py-0.5 text-sm underline">Auction test</a>
             </div>
         </div>
+        {% endif %}
+        {% if owner_team %}
+        <a href="/teams/{{ owner_team.short_name|lower }}/" class="font-bold underline">My Team</a>
+        {% endif %}
+        {% if user.is_authenticated %}
+        <a href="/accounts/logout/" class="underline">Log out</a>
+        {% else %}
+        <a href="/accounts/login/" class="underline">Log in</a>
+        {% endif %}
     </div>
 </nav>
 
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    // Mobile menu toggle
-    const $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
-    if ($navbarBurgers.length > 0) {
-        $navbarBurgers.forEach(el => {
-            el.addEventListener('click', () => {
-                const target = el.dataset.target;
-                const $target = document.getElementById(target);
-                el.classList.toggle('is-active');
-                $target.classList.toggle('is-active');
-            });
-        });
-    }
-    
-    // Theme management
-    initializeTheme();
-});
-
-function initializeTheme() {
-    // Check for saved theme or default to light
-    const savedTheme = localStorage.getItem('npl-theme') || 'light';
-    applyTheme(savedTheme);
-}
-
-function toggleTheme() {
-    const currentTheme = document.body.classList.contains('theme-dark') ? 'dark' : 'light';
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    applyTheme(newTheme);
-    localStorage.setItem('npl-theme', newTheme);
-}
-
-function applyTheme(theme) {
-    const body = document.body;
-    const darkIcon = document.querySelector('.theme-icon-dark');
-    const lightIcon = document.querySelector('.theme-icon-light');
-    const themeText = document.querySelector('.theme-text');
-    
-    if (theme === 'dark') {
-        body.classList.add('theme-dark');
-        if (darkIcon) darkIcon.style.display = 'none';
-        if (lightIcon) lightIcon.style.display = 'inline';
-        if (themeText) themeText.textContent = 'Light';
-    } else {
-        body.classList.remove('theme-dark');
-        if (darkIcon) darkIcon.style.display = 'inline';
-        if (lightIcon) lightIcon.style.display = 'none';
-        if (themeText) themeText.textContent = 'Dark';
-    }
-}
-</script>
+<div id="mobile-menu" class="fixed inset-0 z-50 hidden overflow-y-auto bg-white" role="dialog" aria-label="Menu">
+    <div class="space-y-4 p-4">
+        <div class="flex items-center justify-between">
+            <p class="text-lg font-bold">Menu</p>
+            <button type="button" id="mobile-menu-close" class="btn-line">Close</button>
+        </div>
+        <a href="https://tbb.quarto.pub/npl-rules/" class="block underline">Rules</a>
+        <a href="/auctions/" class="block underline">Auctions</a>
+        <a href="/nominations/" class="block underline">Nominations</a>
+        <a href="/transactions/" class="block underline">Transactions</a>
+        {% if user.is_authenticated %}
+        <a href="/transactions/form/" class="block underline">Submit a transaction</a>
+        {% endif %}
+        <div>
+            <p class="mb-1 font-bold">Teams</p>
+            <div class="grid grid-cols-4 gap-2 text-sm">
+                {% for team in all_teams %}
+                <a href="/teams/{{ team.short_name|lower }}/" class="underline">{{ team.abbreviation|default:team.short_name }}</a>
+                {% endfor %}
+            </div>
+        </div>
+        <form action="/players/search/" method="get">
+            <label class="mb-1 block text-xs font-bold" for="mobile-search">Find a player</label>
+            <input id="mobile-search" type="text" name="name" placeholder="find a player" class="w-full">
+        </form>
+        <p>
+            {% if owner_team %}<a href="/teams/{{ owner_team.short_name|lower }}/" class="mr-4 font-bold underline">My Team</a>{% endif %}
+            {% if user.is_authenticated %}
+            <a href="/accounts/logout/" class="underline">Log out</a>
+            {% else %}
+            <a href="/accounts/login/" class="underline">Log in</a>
+            {% endif %}
+        </p>
+    </div>
+</div>

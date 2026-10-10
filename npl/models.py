@@ -456,11 +456,21 @@ class Player(BaseModel):
 
     @property
     def contract(self):
+        if not self.team_id:
+            return None
+        # Team pages prefetch contract_set. Use that cache instead of a
+        # query per row; fall back to the lookup when nothing was prefetched.
+        prefetched = getattr(self, "_prefetched_objects_cache", None) or {}
+        if "contract_set" in prefetched:
+            matches = [c for c in self.contract_set.all() if c.team_id == self.team_id]
+            if len(matches) == 1:
+                return matches[0]
+            if not matches:
+                return None
         try:
-            return Contract.objects.get(player=self, team=self.team)
+            return Contract.objects.get(player=self, team_id=self.team_id)
         except Contract.DoesNotExist:
-            pass
-        return None
+            return None
 
     def update_mlb_info(self):
         r = requests.get(self.mlb_api_url + "?hydrate=currentTeam,team")
@@ -766,11 +776,14 @@ class Contract(BaseModel):
         return f"Contract: {self.player.name} to {self.team.nickname} — {self.total_years}y, ${self.total_amount}"
 
     def years(self):
-        base_years = 8
-        contract_years = [p for p in ContractYear.objects.filter(contract=self)]
+        prefetched = getattr(self, "_prefetched_objects_cache", None) or {}
+        if "contractyear_set" in prefetched:
+            contract_years = list(self.contractyear_set.all())
+        else:
+            contract_years = list(ContractYear.objects.filter(contract=self))
         extra_years = 8 - len(contract_years)
-        for year in range(1, extra_years+1):
-            contract_years.append({"amount": "-"})
+        if extra_years > 0:
+            contract_years.extend({"amount": "-"} for _ in range(extra_years))
         return contract_years
 
 
@@ -893,33 +906,54 @@ class Auction(BaseModel):
         now = datetime.datetime.now(pytz.timezone('US/Eastern'))
         return self.closes < now
 
+    def _bids(self):
+        """Bids high to low, loaded once per auction instance.
+
+        Pages that prefetch mlbauctionbid_set pay nothing extra here.
+        """
+        cached = getattr(self, "_bid_cache", None)
+        if cached is not None:
+            return cached
+        prefetched = getattr(self, "_prefetched_objects_cache", None) or {}
+        if "mlbauctionbid_set" in prefetched:
+            bids = list(self.mlbauctionbid_set.all())
+            bids.sort(key=lambda bid: bid.max_bid or 0, reverse=True)
+        else:
+            bids = list(
+                MLBAuctionBid.objects.filter(auction=self)
+                .select_related("team")
+                .order_by("-max_bid")
+            )
+        self._bid_cache = bids
+        return bids
+
     def has_bids(self):
         """Check if auction has any valid bids"""
-        return MLBAuctionBid.objects.filter(auction=self).exists()
+        return bool(self._bids())
 
     def max_bid(self):
         """Get the highest bid - for internal use only (blind auction)"""
-        bids = MLBAuctionBid.objects.filter(auction=self).order_by('-max_bid')
-        if len(bids) > 0:
+        bids = self._bids()
+        if bids:
             return {"team_id": bids[0].team.pk, "bid": bids[0].max_bid}
         return {"team_id": None, "bid": 0}
 
     def winning_bid(self):
         """Calculate the winning bid amount (second highest + $1, or max if only one bid)"""
-        bids = MLBAuctionBid.objects.filter(auction=self).order_by('-max_bid')
+        bids = self._bids()
         if len(bids) == 0:
             return {"team_id": None, "bid": 0, "winning_amount": 0}
         elif len(bids) == 1:
             # Only one bid - they win at their bid amount
             return {
-                "team_id": bids[0].team.pk, 
+                "team_id": bids[0].team.pk,
                 "bid": bids[0].max_bid,
                 "winning_amount": bids[0].max_bid
             }
         else:
             # Multiple bids - winner pays second highest + $1
             return {
-                "team_id": bids[0].team.pk, 
+                "team_id": bids[0].team.pk,
                 "bid": bids[0].max_bid,
                 "winning_amount": bids[1].max_bid + 1
             }
@@ -941,17 +975,19 @@ class Auction(BaseModel):
 
     def bid_count(self):
         """Get total number of bids on this auction"""
-        return MLBAuctionBid.objects.filter(auction=self).count()
+        return len(self._bids())
 
     def winning_team(self):
         """Get the winning team object if auction is expired and has bids"""
-        if self.is_expired() and self.has_bids():
-            winning_info = self.winning_bid()
-            if winning_info['team_id']:
-                try:
-                    return Team.objects.get(pk=winning_info['team_id'])
-                except Team.DoesNotExist:
-                    pass
+        if not self.is_expired():
+            return None
+        winning_info = self.winning_bid()
+        team_id = winning_info.get("team_id")
+        if not team_id:
+            return None
+        for bid in self._bids():
+            if bid.team_id == team_id:
+                return bid.team
         return None
 
     def current_min_bid(self):
@@ -997,31 +1033,26 @@ class Auction(BaseModel):
                 return time_str
         return "Unknown"
 
+    def _team_for_user(self, user):
+        if not user.is_authenticated:
+            return None
+        return Team.objects.filter(owners__user=user).only("id").first()
+
     def user_has_bid(self, user):
         """Check if user has already placed a bid on this auction"""
-        if not user.is_authenticated:
+        team = self._team_for_user(user)
+        if team is None:
             return False
-        
-        try:
-            owner = Owner.objects.get(user=user)
-            team = Team.objects.get(owners=owner)
-            return MLBAuctionBid.objects.filter(auction=self, team=team).exists()
-        except (Owner.DoesNotExist, Team.DoesNotExist):
-            pass
-        return False
+        return any(bid.team_id == team.id for bid in self._bids())
 
     def user_bid_amount(self, user):
         """Get the bid amount for a specific user's team"""
-        if not user.is_authenticated:
+        team = self._team_for_user(user)
+        if team is None:
             return None
-        
-        try:
-            owner = Owner.objects.get(user=user)
-            team = Team.objects.get(owners=owner)
-            bid = MLBAuctionBid.objects.get(auction=self, team=team)
-            return bid.max_bid
-        except (Owner.DoesNotExist, Team.DoesNotExist, MLBAuctionBid.DoesNotExist):
-            pass
+        for bid in self._bids():
+            if bid.team_id == team.id:
+                return bid.max_bid
         return None
 
     def user_can_bid(self, user):

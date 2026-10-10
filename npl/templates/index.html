@@ -3,322 +3,36 @@
 
 {% block title %}The NPL{% endblock %}
 
-{% block extra_head %}
-<style>
-/* Dark theme search form */
-form.box {
-    background-color: var(--npl-bg-secondary) !important;
-    color: var(--npl-text-primary) !important;
-    border: 1px solid var(--npl-border) !important;
-}
-
-form.box .label {
-    color: var(--npl-text-primary) !important;
-}
-
-form.box .input,
-form.box .select select {
-    background-color: var(--npl-bg-tertiary) !important;
-    color: var(--npl-text-primary) !important;
-    border-color: var(--npl-border) !important;
-}
-
-form.box .input:focus,
-form.box .select select:focus {
-    border-color: var(--npl-primary) !important;
-    box-shadow: 0 0 0 0.125em rgba(79, 195, 247, 0.25) !important;
-}
-
-form.box .button.is-info {
-    background-color: var(--npl-info) !important;
-    color: var(--npl-bg-primary) !important;
-}
-
-/* AL Division Colors (Red Shades) - Theme Aware */
-.division-al { 
-    border-left: 4px solid #ef5350; 
-    background-color: var(--npl-bg-secondary);
-    color: var(--npl-text-primary);
-}
-.division-american { 
-    border-left: 4px solid #ef5350; 
-    background-color: var(--npl-bg-secondary);
-    color: var(--npl-text-primary);
-}
-
-/* NL Division Colors (Blue Shades) - Theme Aware */
-.division-nl { 
-    border-left: 4px solid #42a5f5; 
-    background-color: var(--npl-bg-secondary);
-    color: var(--npl-text-primary);
-}
-.division-national { 
-    border-left: 4px solid #42a5f5; 
-    background-color: var(--npl-bg-secondary);
-    color: var(--npl-text-primary);
-}
-
-/* Division header styling */
-.division-header {
-    padding: 0.75rem 1rem;
-    border-radius: 6px;
-    margin-bottom: 1rem;
-    background-color: var(--npl-bg-secondary);
-    border: 1px solid var(--npl-border);
-}
-
-.division-header .title {
-    color: var(--npl-text-primary) !important;
-}
-
-/* Dark theme team cards */
-.team-card {
-    background-color: var(--npl-bg-secondary) !important;
-    color: var(--npl-text-primary) !important;
-    border: 1px solid var(--npl-border) !important;
-    text-decoration: none !important;
-}
-
-.team-card:hover {
-    background-color: var(--npl-bg-tertiary) !important;
-    color: var(--npl-text-primary) !important;
-}
-
-.team-card .has-text-weight-medium,
-.team-card .has-text-dark {
-    color: var(--npl-text-primary) !important;
-}
-
-.team-card .has-text-grey,
-.team-card .is-size-7 {
-    color: var(--npl-text-secondary) !important;
-}
-
-/* Ensure all text elements are white */
-h1.title, h2.title, h3.title {
-    color: var(--npl-text-primary) !important;
-}
-
-/* Financial percentile graphics */
-.financial-chart {
-    margin-top: 0.5rem;
-}
-
-.metric-row {
-    display: flex;
-    align-items: center;
-    margin-bottom: 0.25rem;
-    font-size: 0.75rem;
-}
-
-.metric-label {
-    width: 65px;
-    text-align: left;
-    font-weight: 500;
-    color: var(--npl-text-secondary);
-}
-
-.percentile-bar {
-    flex: 1;
-    height: 8px;
-    background-color: var(--npl-bg-tertiary);
-    overflow: hidden;
-    margin: 0 0.5rem;
-    position: relative;
-}
-
-.percentile-fill {
-    height: 100%;
-    transition: width 0.3s ease;
-}
-
-.cap-space-fill {
-    background-color: #66bb6a;
-}
-
-.cash-fill {
-    background-color: #66bb6a;
-}
-
-.percentile-value {
-    width: 30px;
-    text-align: right;
-    color: var(--npl-text-secondary);
-    font-size: 0.7rem;
-}
-
-/* Percentile markers */
-.marker-25,
-.marker-50,
-.marker-75 {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 1px;
-    z-index: 1;
-}
-
-.marker-25 {
-    left: 25%;
-    background-color: var(--npl-text-secondary);
-}
-
-.marker-50 {
-    left: 50%;
-    background-color: var(--npl-text-secondary);
-}
-
-.marker-75 {
-    left: 75%;
-    background-color: var(--npl-text-secondary);
-}
-
-/* Search addon styling for dark theme */
-.search-addon {
-    align-items: stretch !important;
-}
-
-.search-addon .control {
-    margin: 0 !important;
-    padding: 0 !important;
-    display: flex !important;
-    align-items: stretch !important;
-}
-
-.search-addon .input,
-.search-addon .button {
-    height: 2.5em !important;
-    border-radius: 0 !important;
-    margin: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-}
-
-.search-addon .control:first-child .input {
-    border-top-left-radius: 4px !important;
-    border-bottom-left-radius: 4px !important;
-}
-
-.search-addon .control:last-child .button {
-    border-top-right-radius: 4px !important;
-    border-bottom-right-radius: 4px !important;
-}
-
-/* Mobile responsiveness for financial charts */
-@media screen and (max-width: 480px) {
-    .metric-row {
-        font-size: 0.65rem;
-    }
-    
-    .metric-label {
-        width: 50px;
-        font-size: 0.6rem;
-    }
-    
-    .percentile-bar {
-        margin: 0 0.25rem;
-        height: 6px;
-    }
-    
-    .percentile-value {
-        width: 25px;
-        font-size: 0.6rem;
-    }
-}
-
-/* Team card mobile improvements */
-@media screen and (max-width: 768px) {
-    .team-card {
-        margin-bottom: 1rem;
-    }
-    
-    .team-card .content {
-        padding: 1rem;
-    }
-    
-    .team-card .has-text-weight-medium {
-        font-size: 0.9rem;
-        line-height: 1.2;
-    }
-    
-    .financial-chart {
-        margin-top: 0.75rem;
-    }
-}
-
-/* Division header mobile improvements */
-@media screen and (max-width: 768px) {
-    .division-header {
-        padding: 0.5rem 0.75rem;
-        margin-bottom: 0.75rem;
-    }
-    
-    .division-header .title {
-        font-size: 1rem;
-    }
-}
-</style>
-{% endblock %}
-
 {% block content %}
-<div class="block">
-    <h1 class="title is-3">Player Search</h1>
-    {% include "includes/search_bar.html" %}
-</div>
+<h1 class="mb-4 text-2xl font-bold">League Overview</h1>
 
-<div class="block">
-    <h2 class="title is-4">Teams</h2>
-    {% regroup all_teams by division.name as division_groups %}
-    {% for division in division_groups %}
-    <div class="block">
-        <div class="division-header {% if division.list.0.league.name and 'AL' in division.list.0.league.name or 'American' in division.list.0.league.name %}division-al{% elif division.list.0.league.name and 'NL' in division.list.0.league.name or 'National' in division.list.0.league.name %}division-nl{% endif %}">
-            <h3 class="title is-5 mb-0">
-                {% if division.list.0.league.name %}
-                    {% if 'American' in division.list.0.league.name %}AL{% elif 'National' in division.list.0.league.name %}NL{% else %}{{ division.list.0.league.name }}{% endif %} - {{ division.grouper }}
-                {% else %}
-                    {{ division.grouper }}
-                {% endif %}
-            </h3>
-        </div>
-        <div class="columns is-multiline">
-            {% for team in division.list %}
-            <div class="column is-half-mobile is-half-tablet is-one-quarter-desktop is-one-quarter-widescreen">
-                <a href="/teams/{{ team.short_name|lower }}/" class="box has-text-centered team-card" style="text-decoration: none; color: inherit;">
-                    <div class="content">
-                        <p class="has-text-weight-medium has-text-dark">{{ team.full_name }}</p>
-                        <div class="is-size-7 has-text-grey">
-                            <div>Cap Space: ${{ team.cap_space|default:0|floatformat:0|intcomma }}M</div>
-                            <div>Cash: ${{ team.cash|default:0|floatformat:0|intcomma }}M</div>
-                        </div>
-                        
-                        <div class="financial-chart">
-                            <div class="metric-row">
-                                <span class="metric-label">Cap Space</span>
-                                <div class="percentile-bar">
-                                    <span class="marker-25"></span>
-                                    <span class="marker-50"></span>
-                                    <span class="marker-75"></span>
-                                    <div class="percentile-fill cap-space-fill" style="width: {{ team.cap_space_percentile|floatformat:0 }}%"></div>
-                                </div>
-                                <span class="percentile-value">{{ team.cap_space_percentile|floatformat:0 }}%</span>
-                            </div>
-                            <div class="metric-row">
-                                <span class="metric-label">Cash</span>
-                                <div class="percentile-bar">
-                                    <span class="marker-25"></span>
-                                    <span class="marker-50"></span>
-                                    <span class="marker-75"></span>
-                                    <div class="percentile-fill cash-fill" style="width: {{ team.cash_percentile|floatformat:0 }}%"></div>
-                                </div>
-                                <span class="percentile-value">{{ team.cash_percentile|floatformat:0 }}%</span>
-                            </div>
-                        </div>
-                    </div>
-                </a>
-            </div>
+{% regroup all_teams by division_label as division_groups %}
+{% for division in division_groups %}
+<section class="mb-8">
+    <h2 class="mb-3 border-b border-gray-300 pb-1 text-lg font-bold">{{ division.grouper }}</h2>
+    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {% for team in division.list %}
+        <article class="border border-gray-300 p-3">
+            <h3 class="font-bold"><a href="/teams/{{ team.short_name|lower }}/">{{ team.full_name }}</a></h3>
+            {% for owner in team.owners.all %}
+            <p>{{ owner.name }}</p>
+            {% if owner.email %}<p><a href="mailto:{{ owner.email }}">{{ owner.email }}</a></p>{% endif %}
             {% endfor %}
-        </div>
+            <dl class="mt-2 grid grid-cols-2 gap-x-4 text-xs">
+                <div><dt class="inline">C</dt> <dd class="inline">{{ team.pos_counts.C }}</dd></div>
+                <div><dt class="inline">Cap</dt> <dd class="inline">${{ team.cap_space|default:0|intcomma }}M</dd></div>
+                <div><dt class="inline">IF</dt> <dd class="inline">{{ team.pos_counts.IF }}</dd></div>
+                <div><dt class="inline">Cash</dt> <dd class="inline">${{ team.cash|default:0|intcomma }}M</dd></div>
+                <div><dt class="inline">OF</dt> <dd class="inline">{{ team.pos_counts.OF }}</dd></div>
+                <div><dt class="inline">UT</dt> <dd class="inline">{{ team.pos_counts.UT }}</dd></div>
+                <div><dt class="inline">P</dt> <dd class="inline">{{ team.pos_counts.P }}</dd></div>
+                <div><dt class="inline">Roster</dt> <dd class="inline">{{ team.pos_counts.total }}</dd></div>
+            </dl>
+        </article>
+        {% endfor %}
     </div>
-    {% endfor %}
-</div>
+</section>
+{% empty %}
+<p>No clubs are loaded yet.</p>
+{% endfor %}
 {% endblock %}
