@@ -63,7 +63,12 @@
                                 <td><span class="tag is-light">#{{ proposal.id }}</span></td>
                                 <td>{{ proposal.originating_team.short_name }}</td>
                                 <td>{{ proposal.kind_label }}</td>
-                                <td>{{ proposal.get_status_display }}</td>
+                                <td>
+                                    {{ proposal.get_status_display }}
+                                    {% if proposal.flagged %}
+                                    <span class="tag is-warning ml-1">Needs a fix</span>
+                                    {% endif %}
+                                </td>
                                 <td>
                                     {% for party in proposal.parties.all %}
                                         {% if party.role == 'counterparty' %}
@@ -81,6 +86,15 @@
                                     {% endif %}
                                 </td>
                             </tr>
+                            {% if proposal.flagged and proposal.flag_note %}
+                            <tr>
+                                <td colspan="6">
+                                    <div class="notification is-warning is-light mb-0 py-2">
+                                        <strong>Director note:</strong> {{ proposal.flag_note }}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endif %}
                             {% endfor %}
                         </tbody>
                     </table>

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load humanize %}
 
 {% block title %}{{ team.name }} - The NPL{% endblock %}
 
@@ -129,6 +130,20 @@ h1.title, h2.title, h3.title {
     color: var(--npl-primary) !important;
 }
 
+.table tbody tr.is-pending td,
+.table tbody tr.is-pending td a {
+    color: var(--npl-text-secondary) !important;
+}
+
+.table tbody tr.is-pending td a.pending-proposal {
+    text-decoration: underline;
+}
+
+.pending-money {
+    color: var(--npl-text-secondary);
+    font-size: 0.85rem;
+}
+
 /* Mobile responsiveness for team tables */
 @media screen and (max-width: 768px) {
     .table-container {
@@ -223,6 +238,50 @@ h1.title, h2.title, h3.title {
         {% endif %}
     </div>
 </div>
+
+<div class="block">
+    <nav class="level position-count p-4" style="border-radius: 8px;">
+        <div class="level-item has-text-centered">
+            <div>
+                <p class="heading">Cap space</p>
+                <p class="title">${{ team.cap_space|default:0|intcomma }}</p>
+                {% if team.pending_cap_after != None %}
+                <p class="pending-money">If pending proposals clear: ${{ team.pending_cap_after|intcomma }}</p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="level-item has-text-centered">
+            <div>
+                <p class="heading">Cash</p>
+                <p class="title">${{ team.cash|default:0|intcomma }}</p>
+                {% if team.pending_cash_after != None %}
+                <p class="pending-money">If pending proposals clear: ${{ team.pending_cash_after|intcomma }}</p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="level-item has-text-centered">
+            <div>
+                <p class="heading">IFA pool</p>
+                <p class="title">${{ team.ifa|default:0|intcomma }}</p>
+                {% if team.pending_ifa_after != None %}
+                <p class="pending-money">If pending proposals clear: ${{ team.pending_ifa_after|intcomma }}</p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="level-item has-text-centered">
+            <div>
+                <p class="heading">Luxury cap space</p>
+                <p class="title">${{ team.luxury_cap_space|default:0|intcomma }}</p>
+            </div>
+        </div>
+    </nav>
+</div>
+
+{% if pending_player_count %}
+<div class="notification is-light">
+    Grey rows are in a proposal that has not been processed. They are still on the club until Monday.
+</div>
+{% endif %}
 
 <div class="block">
     <nav class="level position-count p-4" style="border-radius: 8px;">

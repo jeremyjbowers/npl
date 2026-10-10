@@ -246,12 +246,19 @@ class ProposalServiceTests(TestCase):
         )
         self.assertEqual((limbo.limbo.deadline - limbo.limbo.placed_on), datetime.timedelta(days=7))
 
+        other_player = Player.objects.create(
+            mlb_id="607209",
+            name="Second Player",
+            first_name="Second",
+            last_name="Player",
+            team=self.team,
+        )
         restricted = create_proposal(
             user=self.user,
             team=self.team,
             code="restricted_place",
             rl_type="PED",
-            assets=[{"asset_type": "player", "player": self.player}],
+            assets=[{"asset_type": "player", "player": other_player}],
         )
         stint = restricted.restricted_stints.get()
         self.assertEqual(stint.rl_type, "PED")
@@ -314,3 +321,297 @@ class TransactionApiTests(TestCase):
         self.assertIn("create_transaction_proposal", names)
         self.assertIn("claim_waiver", names)
         self.assertIn("submit_draft_pick", names)
+        self.assertEqual(tools.json()["auth"]["type"], "bearer")
+
+
+class ApiTokenTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(email="token@example.com", password="secret")
+        self.other = User.objects.create_user(email="other-token@example.com", password="secret")
+        self.owner = Owner.objects.create(name="Token", user=self.user)
+        self.team = Team.objects.create(full_name="Token Club", short_name="Tok", abbreviation="TOK")
+        self.team.owners.add(self.owner)
+        self.player = Player.objects.create(
+            mlb_id="100001",
+            name="Token Player",
+            first_name="Token",
+            last_name="Player",
+            team=self.team,
+        )
+        self.client = Client()
+
+    def _proposal_body(self):
+        return json.dumps(
+            {
+                "team": self.team.id,
+                "code": "release",
+                "assets": [{"asset_type": "player", "player": self.player.mlb_id}],
+            }
+        )
+
+    def test_owner_can_mint_and_revoke_a_token(self):
+        self.client.force_login(self.user)
+        created = self.client.post(
+            "/account/tokens/",
+            {"action": "create", "name": "Trade agent", "scope": "read_write"},
+        )
+        self.assertEqual(created.status_code, 302)
+        shown = self.client.get("/account/tokens/")
+        self.assertEqual(shown.status_code, 200)
+        secret = shown.context["revealed"]["secret"]
+        self.assertTrue(secret.startswith("npl_"))
+        self.assertContains(shown, secret)
+        again = self.client.get("/account/tokens/")
+        self.assertIsNone(again.context["revealed"])
+        self.assertNotContains(again, secret)
+
+        token = self.user.api_tokens.get()
+        revoked = self.client.post("/account/tokens/", {"action": "revoke", "token_id": token.id})
+        self.assertEqual(revoked.status_code, 302)
+        token.refresh_from_db()
+        self.assertIsNotNone(token.revoked_at)
+
+        denied = self.client.get(
+            "/api/v1/transactions/kinds/",
+            HTTP_AUTHORIZATION=f"Bearer {secret}",
+        )
+        self.assertEqual(denied.status_code, 401)
+
+    def test_read_token_cannot_write_and_write_token_can(self):
+        from npl.api_tokens import generate_token
+
+        read_token, read_secret = generate_token(self.user, "reader", "read")
+        write_token, write_secret = generate_token(self.user, "writer", "read_write")
+
+        anonymous = self.client.get("/api/v1/transactions/kinds/")
+        self.assertEqual(anonymous.status_code, 401)
+
+        listed = self.client.get(
+            "/api/v1/transactions/kinds/",
+            HTTP_AUTHORIZATION=f"Bearer {read_secret}",
+        )
+        self.assertEqual(listed.status_code, 200)
+        read_token.refresh_from_db()
+        self.assertIsNotNone(read_token.last_used_at)
+
+        blocked = self.client.post(
+            "/api/v1/transactions/proposals/",
+            data=self._proposal_body(),
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {read_secret}",
+        )
+        self.assertEqual(blocked.status_code, 403)
+
+        created = self.client.post(
+            "/api/v1/transactions/proposals/",
+            data=self._proposal_body(),
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {write_secret}",
+        )
+        self.assertEqual(created.status_code, 201, created.content)
+        self.assertEqual(created.json()["team_id"], self.team.id)
+
+        stolen = self.client.get(
+            "/api/v1/transactions/proposals/",
+            HTTP_AUTHORIZATION="Bearer npl_not-a-real-token",
+        )
+        self.assertEqual(stolen.status_code, 401)
+
+        other_client = Client()
+        other_client.force_login(self.other)
+        cannot_revoke = other_client.post(
+            "/account/tokens/",
+            {"action": "revoke", "token_id": write_token.id},
+        )
+        self.assertEqual(cannot_revoke.status_code, 404)
+        write_token.refresh_from_db()
+        self.assertIsNone(write_token.revoked_at)
+
+
+class ProposalFlagTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(email="flag@example.com", password="secret")
+        self.director = User.objects.create_superuser(email="director@example.com", password="secret")
+        self.owner = Owner.objects.create(name="Flag", user=self.user)
+        self.team = Team.objects.create(full_name="Flag Club", short_name="Flg", abbreviation="FLG")
+        self.team.owners.add(self.owner)
+        self.player = Player.objects.create(
+            mlb_id="100002",
+            name="Flag Player",
+            first_name="Flag",
+            last_name="Player",
+            team=self.team,
+        )
+
+    def test_flag_requires_a_note_and_reaches_the_club(self):
+        from django.core.exceptions import ValidationError
+        from django.contrib.admin.sites import AdminSite
+        from django.test import RequestFactory
+
+        from npl.admin import TransactionProposalAdmin
+
+        proposal = create_proposal(
+            user=self.user,
+            team=self.team,
+            code="release",
+            assets=[{"asset_type": "player", "player": self.player}],
+        )
+        proposal.flagged = True
+        proposal.flag_note = ""
+        with self.assertRaises(ValidationError):
+            proposal.full_clean()
+
+        proposal.flag_note = "Name the player being released."
+        proposal.full_clean()
+        request = RequestFactory().post("/admin/npl/transactionproposal/")
+        request.user = self.director
+
+        class Changed:
+            changed_data = ["flagged", "flag_note"]
+
+        TransactionProposalAdmin(TransactionProposal, AdminSite()).save_model(
+            request, proposal, Changed(), change=True
+        )
+        proposal.refresh_from_db()
+        self.assertTrue(proposal.flagged)
+        self.assertEqual(proposal.flagged_by, self.director)
+        self.assertIsNotNone(proposal.flagged_at)
+
+        self.client.force_login(self.user)
+        page = self.client.get("/transactions/list/")
+        self.assertContains(page, "Name the player being released.")
+
+        detail = self.client.get(f"/api/v1/transactions/proposals/{proposal.id}/")
+        self.assertEqual(detail.status_code, 200)
+        self.assertTrue(detail.json()["flagged"])
+        self.assertEqual(detail.json()["flag_note"], "Name the player being released.")
+
+
+class ProposalRulesAndHintsTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(email="rules@example.com", password="secret")
+        self.other = User.objects.create_user(email="rules-b@example.com", password="secret")
+        self.owner = Owner.objects.create(name="Rules", user=self.user)
+        self.other_owner = Owner.objects.create(name="Rules B", user=self.other)
+        self.team = Team.objects.create(
+            full_name="Rules Club",
+            short_name="Rules",
+            abbreviation="RUL",
+            cash=1_000_000,
+            cap_space=5_000_000,
+            ifa=400_000,
+        )
+        self.other_team = Team.objects.create(full_name="Other Club", short_name="Other", abbreviation="OTH")
+        self.team.owners.add(self.owner)
+        self.other_team.owners.add(self.other_owner)
+        self.player = Player.objects.create(
+            mlb_id="200001",
+            name="Roster Player",
+            first_name="Roster",
+            last_name="Player",
+            team=self.team,
+            roster_40man=True,
+            options=1,
+        )
+
+    def test_illegal_filings_are_rejected(self):
+        stranger = Player.objects.create(
+            mlb_id="200002",
+            name="Their Player",
+            first_name="Their",
+            last_name="Player",
+            team=self.other_team,
+        )
+        with self.assertRaises(TransactionError):
+            create_proposal(
+                user=self.user,
+                team=self.team,
+                code="trade",
+                counterparty_team=self.other_team,
+                assets=[{"asset_type": "player", "player": stranger}],
+            )
+        self.player.roster_40man = False
+        self.player.save(update_fields=["roster_40man"])
+        with self.assertRaises(TransactionError):
+            create_proposal(
+                user=self.user,
+                team=self.team,
+                code="option_minors",
+                assets=[{"asset_type": "player", "player": self.player}],
+            )
+        self.player.roster_40man = True
+        self.player.options = 99
+        self.player.save(update_fields=["roster_40man", "options"])
+        with self.assertRaises(TransactionError):
+            create_proposal(
+                user=self.user,
+                team=self.team,
+                code="option_minors",
+                assets=[{"asset_type": "player", "player": self.player}],
+            )
+        with self.assertRaises(TransactionError):
+            create_proposal(
+                user=self.user,
+                team=self.team,
+                code="trade",
+                counterparty_team=self.other_team,
+                assets=[{"asset_type": "cash", "amount": 5_000_000}],
+            )
+
+        create_proposal(
+            user=self.user,
+            team=self.team,
+            code="release",
+            assets=[{"asset_type": "player", "player": self.player}],
+        )
+        with self.assertRaises(TransactionError):
+            create_proposal(
+                user=self.user,
+                team=self.team,
+                code="release",
+                assets=[{"asset_type": "player", "player": self.player}],
+            )
+
+    def test_forty_man_limit_counts_open_proposals(self):
+        Player.objects.bulk_create(
+            [
+                Player(
+                    mlb_id=str(300000 + i),
+                    name=f"Man {i}",
+                    first_name="Man",
+                    last_name=str(i),
+                    team=self.team,
+                    roster_40man=True,
+                )
+                for i in range(39)
+            ]
+        )
+        self.assertEqual(Player.objects.filter(team=self.team, roster_40man=True).count(), 40)
+        with self.assertRaises(TransactionError):
+            create_proposal(
+                user=self.user,
+                team=self.team,
+                code="mlb_signing",
+                contract_terms={"years": 1, "total": 1_000_000},
+                assets=[{"asset_type": "player", "raw_label": "Free Agent"}],
+            )
+
+    def test_club_page_greys_a_pending_departure_and_shows_cash(self):
+        create_proposal(
+            user=self.user,
+            team=self.team,
+            code="trade",
+            counterparty_team=self.other_team,
+            assets=[
+                {"asset_type": "player", "player": self.player},
+                {"asset_type": "cash", "amount": 250_000},
+            ],
+        )
+        page = self.client.get("/teams/rules/")
+        self.assertEqual(page.status_code, 200)
+        self.assertContains(page, "Pending trade")
+        self.assertContains(page, "If pending proposals clear: $750,000")
+        self.assertContains(page, "They are still on the club until Monday.")
+
+        home = self.client.get("/")
+        self.assertContains(home, "If pending proposals clear: $750,000")

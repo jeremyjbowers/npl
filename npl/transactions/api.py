@@ -7,8 +7,11 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
 from npl import models
+from npl.api_tokens import authenticate, mark_used
 from npl.transactions import service
 from npl.transactions.mcp import tool_manifest
+
+_READ_METHODS = {"GET", "HEAD", "OPTIONS"}
 
 
 def _body(request):
@@ -21,8 +24,28 @@ def _body(request):
 
 
 def _auth(request):
+    """Accept a bearer token, or a signed-in session.
+
+    A bearer token acts as its owner. Read tokens can use GET. Read-write
+    tokens can also submit and respond. An invalid token is rejected even
+    when a session cookie is also present.
+    """
+    header = request.META.get("HTTP_AUTHORIZATION", "")
+    if header:
+        scheme, _, raw = header.partition(" ")
+        if scheme.lower() != "bearer" or not raw.strip():
+            return JsonResponse({"error": "Send Authorization: Bearer <token>."}, status=401)
+        token = authenticate(raw.strip())
+        if token is None:
+            return JsonResponse({"error": "Invalid or revoked token."}, status=401)
+        if request.method not in _READ_METHODS and token.scope != models.ApiToken.READ_WRITE:
+            return JsonResponse({"error": "This token is read-only."}, status=403)
+        request.user = token.user
+        request.api_token = token
+        mark_used(token)
+        return None
     if not request.user.is_authenticated:
-        return JsonResponse({"error": "Sign in to submit a transaction."}, status=401)
+        return JsonResponse({"error": "Sign in or send a bearer token."}, status=401)
     return None
 
 
@@ -183,4 +206,16 @@ def mcp_tools(request):
     denied = _auth(request)
     if denied:
         return denied
-    return JsonResponse({"tools": tool_manifest()})
+    return JsonResponse(
+        {
+            "auth": {
+                "type": "bearer",
+                "header": "Authorization",
+                "scopes": [
+                    {"scope": models.ApiToken.READ, "methods": ["GET"]},
+                    {"scope": models.ApiToken.READ_WRITE, "methods": ["GET", "POST"]},
+                ],
+            },
+            "tools": tool_manifest(),
+        }
+    )

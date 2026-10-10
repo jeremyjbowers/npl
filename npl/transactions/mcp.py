@@ -2,7 +2,9 @@
 
 An MCP server can advertise these tools and forward each call to the matching
 function in npl.transactions.service. The HTTP API under /api/v1/ is the same
-surface. This module does not depend on an MCP library.
+surface. Callers authenticate with Authorization: Bearer and an owner token
+from /account/tokens/. Read tokens can list. Read-write tokens can submit.
+This module does not depend on an MCP library.
 """
 
 from npl.transactions.catalog import ASSET_TYPES, KINDS
