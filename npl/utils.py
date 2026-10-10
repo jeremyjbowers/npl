@@ -90,6 +90,12 @@ def build_context(request, *, with_teams=True, with_owners=False):
         for team in context["all_teams"]:
             team.division_label = division_label(team)
 
+        from npl.transactions.pending import attach_money, money_for_teams, open_proposals
+
+        pending_money = money_for_teams(open_proposals())
+        for team in context["all_teams"]:
+            attach_money(team, pending_money)
+
     return context
 
 

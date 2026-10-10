@@ -1,8 +1,12 @@
 {% load humanize %}
-<tr{% if p.player_level == "MLB" %} class="majors"{% endif %}>
+<tr class="{% if p.player_level == 'MLB' %}majors{% endif %}{% if p.pending_hint %} pending{% endif %}">
     <td>
         {% if not team and p.is_owned %}<span title="Owned">✓</span> {% endif %}
         <a href="/players/{{ p.mlb_id }}/">{{ p.name }}</a>
+        {% if p.pending_hint %}
+        <br>
+        <a class="pending-proposal" href="{{ p.pending_hint.url }}">{{ p.pending_hint.label }}</a>
+        {% endif %}
         {% if not team and p.team %}
         <span class="ml-1 text-gray-600">@ <a href="/teams/{{ p.team.short_name|lower }}/">{{ p.team.short_name }}</a></span>
         {% endif %}

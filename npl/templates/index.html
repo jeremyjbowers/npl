@@ -20,14 +20,20 @@
             {% endfor %}
             <dl class="mt-2 grid grid-cols-2 gap-x-4 text-xs">
                 <div><dt class="inline">C</dt> <dd class="inline">{{ team.pos_counts.C }}</dd></div>
-                <div><dt class="inline">Cap</dt> <dd class="inline">${{ team.cap_space|default:0|intcomma }}M</dd></div>
+                <div><dt class="inline">Cap</dt> <dd class="inline">${{ team.cap_space|default:0|intcomma }}</dd></div>
                 <div><dt class="inline">IF</dt> <dd class="inline">{{ team.pos_counts.IF }}</dd></div>
-                <div><dt class="inline">Cash</dt> <dd class="inline">${{ team.cash|default:0|intcomma }}M</dd></div>
+                <div><dt class="inline">Cash</dt> <dd class="inline">${{ team.cash|default:0|intcomma }}</dd></div>
                 <div><dt class="inline">OF</dt> <dd class="inline">{{ team.pos_counts.OF }}</dd></div>
                 <div><dt class="inline">UT</dt> <dd class="inline">{{ team.pos_counts.UT }}</dd></div>
                 <div><dt class="inline">P</dt> <dd class="inline">{{ team.pos_counts.P }}</dd></div>
                 <div><dt class="inline">Roster</dt> <dd class="inline">{{ team.pos_counts.total }}</dd></div>
             </dl>
+            {% if team.pending_cap_after != None %}
+            <p class="mt-2 text-xs text-gray-600">Cap if pending proposals clear: ${{ team.pending_cap_after|floatformat:0|intcomma }}</p>
+            {% endif %}
+            {% if team.pending_cash_after != None %}
+            <p class="text-xs text-gray-600">Cash if pending proposals clear: ${{ team.pending_cash_after|floatformat:0|intcomma }}</p>
+            {% endif %}
         </article>
         {% endfor %}
     </div>

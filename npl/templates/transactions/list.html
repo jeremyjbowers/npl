@@ -42,7 +42,10 @@
                     <td>#{{ proposal.id }}</td>
                     <td>{{ proposal.originating_team.short_name }}</td>
                     <td>{{ proposal.kind_label }}</td>
-                    <td>{{ proposal.get_status_display }}</td>
+                    <td>
+                        {{ proposal.get_status_display }}
+                        {% if proposal.flagged %}<span class="ml-1 text-xs">Needs a fix</span>{% endif %}
+                    </td>
                     <td>
                         {% for party in proposal.parties.all %}
                             {% if party.role == 'counterparty' %}
@@ -60,6 +63,11 @@
                         {% endif %}
                     </td>
                 </tr>
+                {% if proposal.flagged and proposal.flag_note %}
+                <tr class="band">
+                    <td colspan="6">Director note: {{ proposal.flag_note }}</td>
+                </tr>
+                {% endif %}
                 {% endfor %}
             </tbody>
         </table>

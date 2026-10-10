@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Proposal #{{ proposal.id }} — The NPL{% endblock %}
+
+{% block content %}
+<article class="max-w-2xl">
+    <header class="mb-4 border-b border-gray-300 pb-3">
+        <h1 class="text-2xl font-bold">Proposal #{{ proposal.id }}</h1>
+        <p class="mt-1">{{ proposal.kind_label }} · {{ proposal.originating_team.short_name }} · {{ proposal.get_status_display }}</p>
+    </header>
+
+    {% if proposal.status != 'executed' and proposal.status != 'rejected' and proposal.status != 'withdrawn' and proposal.status != 'voided' %}
+    <p class="note mb-4">This has not been processed. The club's roster and books stay as they are until Monday.</p>
+    {% endif %}
+
+    {% if proposal.flagged and can_see_terms %}
+    <p class="note mb-4"><strong>Director note:</strong> {{ proposal.flag_note }}</p>
+    {% endif %}
+
+    <section class="mb-6">
+        <h2 class="mb-2 text-lg font-bold">Clubs</h2>
+        <ul>
+            {% for party in proposal.parties.all %}
+            <li>{{ party.team.short_name }} — {{ party.get_role_display }}, {{ party.get_agreement_status_display }}</li>
+            {% endfor %}
+        </ul>
+    </section>
+
+    <section>
+        <h2 class="mb-2 text-lg font-bold">What would move</h2>
+        <ul>
+            {% for asset in proposal.assets.all %}
+            <li>
+                {% if asset.player %}{{ asset.player.name }}{% else %}{{ asset.raw_label|default:asset.asset_type }}{% endif %}
+                {% if asset.from_team %} from {{ asset.from_team.short_name }}{% endif %}
+                {% if asset.to_team %} to {{ asset.to_team.short_name }}{% endif %}
+                {% if asset.amount %} · ${{ asset.amount|intcomma }}{% endif %}
+            </li>
+            {% empty %}
+            <li>No assets listed.</li>
+            {% endfor %}
+        </ul>
+        {% if can_see_terms and proposal.notes %}
+        <p class="mt-3">{{ proposal.notes }}</p>
+        {% endif %}
+    </section>
+</article>
+{% endblock %}

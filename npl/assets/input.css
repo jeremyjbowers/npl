@@ -81,6 +81,14 @@
     font-weight: 700;
   }
 
+  .sheet tr.pending td {
+    color: #6b7280;
+  }
+
+  .sheet tr.pending td a.pending-proposal {
+    color: #111;
+  }
+
   .btn {
     display: inline-block;
     background: #111;

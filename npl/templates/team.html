@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load humanize %}
 
 {% block title %}{{ team.name }} — The NPL{% endblock %}
 
@@ -28,6 +29,18 @@
             · P {{ pos_counts.P }}
             {% if pos_counts.UT %}· UT {{ pos_counts.UT }}{% endif %}
         </p>
+        <p class="mt-2 text-xs">
+            Cap ${{ team.cap_space|default:0|intcomma }}
+            {% if team.pending_cap_after != None %}(if pending clear ${{ team.pending_cap_after|intcomma }}){% endif %}
+            · Cash ${{ team.cash|default:0|intcomma }}
+            {% if team.pending_cash_after != None %}(if pending clear ${{ team.pending_cash_after|intcomma }}){% endif %}
+            · IFA ${{ team.ifa|default:0|intcomma }}
+            {% if team.pending_ifa_after != None %}(if pending clear ${{ team.pending_ifa_after|intcomma }}){% endif %}
+            · Luxury ${{ team.luxury_cap_space|default:0|intcomma }}
+        </p>
+        {% if pending_player_count %}
+        <p class="mt-2 text-xs text-gray-600">Grey rows are in a proposal that has not been processed. They stay on the club until Monday.</p>
+        {% endif %}
     </header>
 
     {% for section in roster_sections %}

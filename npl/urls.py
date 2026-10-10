@@ -5,6 +5,7 @@ from django.shortcuts import redirect
 from npl import views
 from npl import auth
 from npl.transactions import api as transaction_api
+from npl.token_views import api_tokens
 
 def admin_login_redirect(request):
     """Redirect admin login to our magic link login"""
@@ -49,7 +50,9 @@ urlpatterns = [
     path("transactions/success/", views.transaction_success, name='transaction_success'),
     path("transactions/list/", views.transaction_list, name='transaction_list'),
     path("transactions/proposals/<int:proposal_id>/respond/", views.proposal_respond, name='proposal_respond'),
+    path("transactions/proposals/<int:proposal_id>/", views.proposal_detail_page, name='proposal_detail'),
     path("transactions/", views.transactions),
+    path("account/tokens/", api_tokens, name="api_tokens"),
     
     path("players/search/", views.search),
     path("players/<str:playerid>/", views.player_detail),

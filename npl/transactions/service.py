@@ -184,6 +184,10 @@ def create_proposal(
         if not limbo_players:
             raise TransactionError("An in-limbo assignment needs a player on your team.")
 
+    from npl.transactions.rules import assert_legal
+
+    assert_legal(team, code, normalized, contract_terms=contract_terms)
+
     if kind["requires_agreement"]:
         status = models.TransactionProposal.AWAITING
     else:
@@ -533,6 +537,8 @@ def proposal_to_dict(proposal):
         "processing_week": _iso(proposal.processing_week),
         "notes": proposal.notes,
         "contract_terms": proposal.contract_terms,
+        "flagged": proposal.flagged,
+        "flag_note": proposal.flag_note if proposal.flagged else "",
         "parties": [
             {
                 "team_id": party.team_id,

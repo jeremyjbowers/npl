@@ -189,6 +189,14 @@ def team_detail(request, short_name):
     team = context["team"]
     context["owners"] = list(team.owners.all())
 
+    from npl.transactions.pending import (
+        annotate_players,
+        attach_money,
+        hints_for_team,
+        money_for_teams,
+        open_proposals,
+    )
+
     contracts = models.Contract.objects.filter(team=team).prefetch_related(
         Prefetch(
             "contractyear_set",
@@ -200,6 +208,10 @@ def team_detail(request, short_name):
         .defer("stats", "scoresheet_defense", "scoresheet_offense")
         .prefetch_related(Prefetch("contract_set", queryset=contracts))
     )
+    proposals = open_proposals()
+    players = annotate_players(players, hints_for_team(team, proposals))
+    attach_money(team, money_for_teams(proposals))
+    context["pending_player_count"] = sum(1 for player in players if getattr(player, "pending_hint", None))
     context.update(rosters.summarize(players))
     context["roster_sections"] = rosters.build_sections(players)
     return render(request, "team.html", context)
@@ -383,6 +395,26 @@ def transaction_list(request):
     })
     
     return render(request, 'transactions/list.html', context)
+
+
+def proposal_detail_page(request, proposal_id):
+    """Public summary of a filing that has not been processed yet."""
+    proposal = get_object_or_404(
+        models.TransactionProposal.objects.select_related("originating_team").prefetch_related(
+            "parties__team", "assets__player", "assets__from_team", "assets__to_team"
+        ),
+        pk=proposal_id,
+    )
+    involved = teams_for_user(request.user) if request.user.is_authenticated else models.Team.objects.none()
+    can_see_terms = request.user.is_authenticated and (
+        request.user.is_staff or proposal.parties.filter(team__in=involved).exists()
+    )
+    context = utils.build_context(request)
+    context.update({
+        "proposal": proposal,
+        "can_see_terms": can_see_terms,
+    })
+    return render(request, "transactions/proposal.html", context)
 
 
 @login_required

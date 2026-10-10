@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django import forms
 from django.contrib.postgres.fields import JSONField
+from django.utils import timezone
 from reversion.admin import VersionAdmin
 
 from npl.models import (
@@ -22,6 +23,7 @@ from npl.models import (
     Division,
     Wishlist,
     WishlistPlayer,
+    ApiToken,
     TransactionProposal,
     TransactionParty,
     TransactionAsset,
@@ -309,11 +311,78 @@ class TransactionPartyInline(admin.TabularInline):
 
 @admin.register(TransactionProposal)
 class TransactionProposalAdmin(admin.ModelAdmin):
-    list_display = ['id', 'kind', 'status', 'originating_team', 'source', 'created']
-    list_filter = ['status', 'kind', 'source']
-    search_fields = ['kind', 'notes', 'originating_team__short_name']
+    list_display = ['id', 'kind', 'status', 'originating_team', 'submitted_by', 'is_flagged', 'fix_note', 'source', 'created']
+    list_filter = ['flagged', 'status', 'kind', 'source']
+    search_fields = ['kind', 'notes', 'flag_note', 'originating_team__short_name', 'submitted_by__email']
     autocomplete_fields = ['originating_team', 'transaction_type']
+    readonly_fields = ['submitted_by', 'flagged_by', 'flagged_at', 'executed_at', 'created']
     inlines = [TransactionPartyInline, TransactionAssetInline]
+    save_on_top = True
+    fieldsets = (
+        (
+            None,
+            {
+                "fields": (
+                    "kind",
+                    "status",
+                    "originating_team",
+                    "submitted_by",
+                    "source",
+                    "effective_date",
+                    "processing_week",
+                    "notes",
+                    "contract_terms",
+                    "executed_at",
+                    "created",
+                ),
+            },
+        ),
+        (
+            "Director review",
+            {
+                "description": "Flag a proposal that is improper and say what the club needs to change. The note shows on their submissions page and in the API.",
+                "fields": ("flagged", "flag_note", "flagged_by", "flagged_at"),
+            },
+        ),
+    )
+
+    @admin.display(boolean=True, description="Flagged")
+    def is_flagged(self, obj):
+        return obj.flagged
+
+    @admin.display(description="What to fix")
+    def fix_note(self, obj):
+        if not obj.flagged:
+            return ""
+        note = obj.flag_note or ""
+        return note if len(note) <= 80 else note[:77] + "..."
+
+    def save_model(self, request, obj, form, change):
+        if obj.flagged and ("flagged" in form.changed_data or "flag_note" in form.changed_data):
+            obj.flagged_by = request.user
+            obj.flagged_at = timezone.now()
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(ApiToken)
+class ApiTokenAdmin(admin.ModelAdmin):
+    list_display = ['name', 'user', 'scope', 'token_prefix', 'created', 'last_used_at', 'revoked_at']
+    list_filter = ['scope']
+    search_fields = ['name', 'user__email', 'token_prefix']
+    fields = ['user', 'name', 'scope', 'token_prefix', 'created', 'last_used_at', 'revoked_at']
+    readonly_fields = ['user', 'name', 'scope', 'token_prefix', 'created', 'last_used_at', 'revoked_at']
+    actions = ['revoke_tokens']
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    @admin.action(description="Revoke selected tokens")
+    def revoke_tokens(self, request, queryset):
+        updated = queryset.filter(revoked_at__isnull=True).update(revoked_at=timezone.now())
+        self.message_user(request, f"Revoked {updated} token{'s' if updated != 1 else ''}.")
 
 
 @admin.register(Waiver)

@@ -36,6 +36,7 @@
                     {% if user.is_authenticated %}
                     <a href="/transactions/form/" class="block py-0.5 text-sm underline">Submit</a>
                     <a href="/transactions/list/" class="block py-0.5 text-sm underline">My submissions</a>
+                    <a href="/account/tokens/" class="block py-0.5 text-sm underline">API tokens</a>
                     {% endif %}
                     <a href="/transactions/" class="block py-0.5 text-sm underline">All transactions</a>
                     <a href="https://docs.google.com/spreadsheets/d/1UQv_vnBBWUT8BiFRd7tAbvW4COWJ61BNkme7iyzf5po/" class="block py-0.5 text-sm underline">Google sheet</a>
@@ -58,6 +59,7 @@
             <button type="button" class="underline" aria-haspopup="true">Utilities ▼</button>
             <div class="nav-dropdown-panel">
                 <a href="/admin/" class="block py-0.5 text-sm underline">Django admin</a>
+                <a href="/admin/npl/transactionproposal/" class="block py-0.5 text-sm underline">Review proposals</a>
                 <a href="/auctions/test/" class="block py-0.5 text-sm underline">Auction test</a>
             </div>
         </div>
@@ -85,6 +87,10 @@
         <a href="/transactions/" class="block underline">Transactions</a>
         {% if user.is_authenticated %}
         <a href="/transactions/form/" class="block underline">Submit a transaction</a>
+        <a href="/account/tokens/" class="block underline">API tokens</a>
+        {% endif %}
+        {% if user.is_staff %}
+        <a href="/admin/npl/transactionproposal/" class="block underline">Review proposals</a>
         {% endif %}
         <div>
             <p class="mb-1 font-bold">Teams</p>
