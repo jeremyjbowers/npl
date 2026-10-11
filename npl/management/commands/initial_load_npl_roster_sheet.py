@@ -1,19 +1,31 @@
-import time
-
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from django.conf import settings
-
-import requests
 
 from npl import models, utils
 
 
 class Command(BaseCommand):
-    def handle(self, *args, **options):
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--only",
+            action="append",
+            dest="only",
+            help="Load one club, by full name or tab id. Repeat for more than one. Leaves every other club in place.",
+        )
 
-        models.Player.objects.filter(team__isnull=False).update(team=None)
-        models.Player.objects.all().update(roster_30man=False)
-        models.Player.objects.all().update(roster_40man=False)
+    def handle(self, *args, **options):
+        teams = models.Team.objects.all().order_by("full_name")
+        if options.get("only"):
+            wanted = {name.strip().lower() for name in options["only"]}
+            teams = [
+                team for team in teams
+                if team.full_name.lower() in wanted or (team.tab_id or "").lower() in wanted
+            ]
+            models.Player.objects.filter(team__in=teams).update(team=None)
+        else:
+            models.Player.objects.filter(team__isnull=False).update(team=None)
+            models.Player.objects.all().update(roster_30man=False)
+            models.Player.objects.all().update(roster_40man=False)
 
         ROSTER_HEADERS = [
             ("7-DAY INJURED LIST", "roster_7dayIL"),
@@ -31,6 +43,7 @@ class Command(BaseCommand):
         ]
 
         CROSSWALK = {}
+        touched = []
 
         # CROSSWALK = {
         #     "Duno, Alfredo": "806957",
@@ -59,30 +72,35 @@ class Command(BaseCommand):
         #     "Di Turi, Filippo": "806995",
         # }
 
-        for t in models.Team.objects.all():
-            sheet = utils.get_sheet(settings.ROSTER_SHEET_ID, f"{t.tab_id}!A:V", value_cutoff=None)
+        for t in teams:
+            if not t.tab_id:
+                self.stdout.write(f"No tab for {t.full_name}")
+                continue
+            sheet = utils.get_sheet(settings.ROSTER_SHEET_ID, f"{t.tab_id}!A:V", value_cutoff=None) or []
             current_header = None
             players = []
-            print(t)
+            self.stdout.write(t.full_name)
+            self.stdout.flush()
 
-            # Luxury cap only on team detail pages
-            lux_cap_space = int(sheet[3][11].split('$')[1].strip().replace(',', ''))
-            t.luxury_cap_space = lux_cap_space
-
-            # Team founded only on team detail pages
-            founded = int(sheet[0][10].split('f. ')[1].strip())
-            t.initial_season = founded
-
-            t.save()
+            try:
+                lux_cap_space = int(sheet[3][11].split('$')[1].strip().replace(',', ''))
+                t.luxury_cap_space = lux_cap_space
+                founded = int(sheet[0][10].split('f. ')[1].strip())
+                t.initial_season = founded
+                t.save()
+            except (IndexError, ValueError, AttributeError):
+                self.stdout.write(f"  could not read founded year or luxury cap for {t.full_name}")
 
             for row in sheet:
-                if row == []:
+                if not row:
+                    continue
+                if len(row) < 2:
                     continue
 
-                if row == ['', 'FINANCIALS']:
+                if row[0] == '' and row[1] == 'FINANCIALS':
                     current_header = None
                     break
-                for header,x in ROSTER_HEADERS:
+                for header, x in ROSTER_HEADERS:
                     if header in row[1]:
                         current_header = header
 
@@ -148,55 +166,26 @@ class Command(BaseCommand):
 
                         player_obj.team = t
                         player_obj.save()
-                        # print(f"* {player_obj}")
+                        touched.append(player_obj.pk)
 
                 except models.Player.DoesNotExist:
                     pass
 
                 if not player_obj:
-                    if p.get('mlb_id', None):
-                        p['mlb_id'] = int(p['mlb_id'])
+                    if p.get("mlb_id"):
+                        p["mlb_id"] = str(p["mlb_id"])
                         player_obj = models.Player(**p)
                         player_obj.save()
-                        print(f"+ {player_obj}")
-
+                        touched.append(player_obj.pk)
+                        self.stdout.write(f"+ {player_obj}")
                     else:
-                        player_obj = models.Player(**p)
-                        player_obj.set_name()
+                        self.stdout.write(f'\tno mlb id: "{p.get("raw_name", "")}"')
 
-                        search_url = f"https://statsapi.mlb.com/api/v1/people/search?names={player_obj.name}&sportIds=11,12,13,14,15,5442,16&active=true&hydrate=currentTeam,team"
-                        # print(search_url)
+        for player in models.Player.objects.filter(pk__in=touched, last_name=""):
+            if not player.raw_name or ", " not in player.raw_name:
+                continue
+            player.first_name = player.raw_name.split(", ")[1].strip()
+            player.last_name = player.raw_name.split(", ")[0].strip()
+            player.save()
 
-                        r = requests.get(search_url, timeout=5)
-                        results = r.json().get('people', None)
-
-                        if len(results) == 1:
-                            pl = results[0]
-
-                            player_obj.mlb_id = pl['id']
-                            player_obj.birthdate = pl['birthDate']
-
-                            try:
-                                npl_obj = models.Player.objects.get(mlb_id=pl['id'])
-
-                            except models.Player.DoesNotExist:
-                                player_obj.save()
-                                print(f"+ {player_obj}")
-
-                        else:
-                            print(f'\t"{p["raw_name"]}": "",')
-
-        for p in models.Player.objects.filter(last_name=""):
-            p.first_name = p.raw_name.split(', ')[1].strip()
-            p.last_name = p.raw_name.split(', ')[0].strip()
-            p.save()
-
-        for p in models.Player.objects.all():
-            try:
-                p.first_name = p.first_name.strip()
-                p.last_name = p.last_name.strip()
-                p.name = p.name.strip()
-                p.save()
-
-            except AttributeError:
-                pass
+        self.stdout.write(self.style.SUCCESS(f"Placed {len(touched)} players onto {len(teams)} clubs."))
