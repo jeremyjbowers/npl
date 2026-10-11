@@ -146,9 +146,9 @@ SESSION_SAVE_EVERY_REQUEST = True
 
 EMAIL_BACKEND = 'django_mailgun_mime.backends.MailgunMIMEBackend'
 MAILGUN_API_KEY = os.environ.get("MAILGUN_API_KEY", None)
-MAILGUN_DOMAIN_NAME = 'mail.theulmg.com'
-DEFAULT_FROM_EMAIL = 'postmaster@mail.theulmg.com'
-SERVER_EMAIL = 'admin@mail.theulmg.com'
+MAILGUN_DOMAIN_NAME = os.environ.get("MAILGUN_DOMAIN") or "mail.theulmg.com"
+DEFAULT_FROM_EMAIL = f"postmaster@{MAILGUN_DOMAIN_NAME}"
+SERVER_EMAIL = f"admin@{MAILGUN_DOMAIN_NAME}"
 
 # PAGES
 QUILL_CONFIGS = {
