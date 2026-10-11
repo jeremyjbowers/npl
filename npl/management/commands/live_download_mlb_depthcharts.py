@@ -5,6 +5,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from npl import models, utils
+from npl.management.commands.load_mlb_rosters import MLB_HEADERS, fetch_roster
 
 
 class Command(BaseCommand):
@@ -43,10 +44,15 @@ class Command(BaseCommand):
     
     def get_rosters(self):
         models.Player.objects.all().update(roster_status="MINORS")
-        team_list_url = "https://statsapi.mlb.com/api/v1/teams/"
-
-        r = requests.get(team_list_url)
-        team_list = r.json()['teams']
+        season = getattr(settings, "LEAGUE_YEAR", 2026)
+        r = requests.get(
+            "https://statsapi.mlb.com/api/v1/teams",
+            params={"season": season, "sportIds": "1,11,12,13,14,15,16"},
+            headers=MLB_HEADERS,
+            timeout=30,
+        )
+        r.raise_for_status()
+        team_list = r.json()["teams"]
 
         mlb_teams = [self.parse_players(t) for t in team_list if t['sport']['id'] == 1]
         aaa_teams = [self.parse_players(t) for t in team_list if t['sport']['id'] == 11]
@@ -57,10 +63,8 @@ class Command(BaseCommand):
         rookie_teams = [self.parse_players(t) for t in team_list if t['sport']['id'] == 16]            
 
     def parse_players(self, t):
-        # 40-man is the MLB roster. Affiliate pages are the full-season roster.
-        roster_type = "40Man" if t["sport"]["id"] == 1 else "fullSeason"
-        roster_link = f"https://statsapi.mlb.com/api/v1/teams/{t['id']}/roster/{roster_type}"
-        tr = requests.get(roster_link).json()
+        roster_types = ("40Man", "active") if t["sport"]["id"] == 1 else ("fullSeason", "active", "fullRoster")
+        tr = fetch_roster(t["id"], roster_types)
 
         if tr.get('roster', None):
 
