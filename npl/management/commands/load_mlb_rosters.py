@@ -197,18 +197,20 @@ class Command(BaseCommand):
 
         records = {}
         failed_levels = []
+        affiliates = None
         for sport_id, label in self.SPORT_LEVELS:
-            response = mlb_get(
-                f"https://statsapi.mlb.com/api/v1/sports/{sport_id}/players",
-                params={"season": season},
-            )
-            if response is None or response.status_code != 200:
-                status = getattr(response, "status_code", "no response")
-                failed_levels.append(f"{label} ({status})")
-                self.stdout.write(f"Skipped {label}: {status}")
-                continue
-            people = response.json().get("people") or []
-            self.stdout.write(f"{label}: {len(people)} players")
+            people, source, status = self.players_for_level(season, sport_id)
+            if people is None:
+                if affiliates is None:
+                    affiliates = self.affiliate_teams(season)
+                people = self.players_from_affiliates(season, sport_id, affiliates)
+                if people:
+                    source = "affiliate rosters"
+                else:
+                    failed_levels.append(f"{label} ({status})")
+                    self.stdout.write(f"Skipped {label}: {status}")
+                    continue
+            self.stdout.write(f"{label}: {len(people)} players from {source}")
             for person in people:
                 mlb_id = str(person.get("id") or "").strip()
                 if not mlb_id:
@@ -241,6 +243,62 @@ class Command(BaseCommand):
         )
         if failed_levels:
             self.stdout.write("Levels MLB refused: " + ", ".join(failed_levels))
+
+    def players_for_level(self, season, sport_id):
+        response = mlb_get(
+            f"https://statsapi.mlb.com/api/v1/sports/{sport_id}/players",
+            params={"season": season},
+        )
+        if response is not None and response.status_code == 200:
+            return response.json().get("people") or [], "season list", 200
+        status = getattr(response, "status_code", "no response")
+        return None, None, status
+
+    def affiliate_teams(self, season):
+        found = []
+        for org_id in self.mlb_lookup:
+            response = mlb_get(
+                f"https://statsapi.mlb.com/api/v1/teams/{org_id}/affiliates",
+                params={"season": season},
+            )
+            if response is None or response.status_code != 200:
+                continue
+            for team in response.json().get("teams") or []:
+                sport_id = (team.get("sport") or {}).get("id")
+                if sport_id in {11, 12, 13, 14, 16}:
+                    found.append(team)
+        return found
+
+    def players_from_affiliates(self, season, sport_id, affiliates):
+        people = []
+        seen = set()
+        for team in affiliates:
+            if (team.get("sport") or {}).get("id") != sport_id:
+                continue
+            response = mlb_get(
+                f"https://statsapi.mlb.com/api/v1/teams/{team['id']}/roster/fullSeason",
+                params={"season": season},
+            )
+            if response is None or response.status_code != 200:
+                response = mlb_get(
+                    f"https://statsapi.mlb.com/api/v1/teams/{team['id']}/roster",
+                    params={"season": season, "rosterType": "active"},
+                )
+            if response is None or response.status_code != 200:
+                continue
+            for row in response.json().get("roster") or []:
+                person = dict(row.get("person") or {})
+                mlb_id = str(person.get("id") or "").strip()
+                if not mlb_id or mlb_id in seen:
+                    continue
+                seen.add(mlb_id)
+                person["primaryPosition"] = row.get("position") or person.get("primaryPosition")
+                person["currentTeam"] = {
+                    "id": team.get("id"),
+                    "parentOrgId": team.get("parentOrgId"),
+                }
+                people.append(person)
+        return people
 
     def player_record(self, person, sport_id, teams):
         position = (person.get("primaryPosition") or {}).get("abbreviation")
