@@ -20,6 +20,7 @@ from npl.models import (
     PlayerNomination,
     TeamSeason,
     Season,
+    ClubLedgerEntry,
     League,
     Division,
     Wishlist,
@@ -295,6 +296,8 @@ class SeasonAdmin(admin.ModelAdmin):
                     "year_start",
                     "year_end",
                     "opening_day",
+                    "end_of_season",
+                    "ifa_deadline",
                     "term_pay_1",
                     "term_pay_2",
                     "league_min",
@@ -317,6 +320,13 @@ class SeasonAdmin(admin.ModelAdmin):
 @admin.register(TeamSeason)
 class TeamSeasonAdmin(admin.ModelAdmin):
     model = TeamSeason
+    list_display = ["team", "season", "mlb_payroll", "cap_space", "cash", "ifa"]
+
+@admin.register(ClubLedgerEntry)
+class ClubLedgerEntryAdmin(admin.ModelAdmin):
+    list_display = ["team", "year", "book", "label", "detail", "amount"]
+    list_filter = ["book", "year", "team"]
+    search_fields = ["label", "detail"]
 
 @admin.register(League)
 class LeagueAdmin(admin.ModelAdmin):

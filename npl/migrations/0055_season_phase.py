@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('npl', '0053_api_tokens_and_proposal_flags'),
+        ('npl', '0054_financials_and_contracts'),
     ]
 
     operations = [
