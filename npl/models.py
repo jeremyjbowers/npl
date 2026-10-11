@@ -1,6 +1,7 @@
 import datetime
 import os
 
+from dateutil import parser
 from dateutil.relativedelta import *
 from django.db import models
 from django.contrib.postgres.fields import JSONField, ArrayField
@@ -730,25 +731,15 @@ class Transaction(BaseModel):
 
     def set_team(self):
         if self.raw_team and not self.team:
-            team = self.raw_team
-            if self.raw_team == "Hyperjets":
-                team = "DockHounds"
-            try:
-                self.team = Team.objects.get(short_name__icontains=team)
+            from npl.transactions.clubs import team_for_label
 
-            except Team.DoesNotExist:
-                pass 
+            self.team = team_for_label(self.raw_team)
 
     def set_acquiring_team(self):
         if self.raw_acquiring_team and not self.acquiring_team:
-            team = self.raw_acquiring_team
-            if self.raw_team == "Hyperjets":
-                team = "DockHounds"
-            try:
-                self.acquiring_team = Team.objects.get(short_name__icontains=team)
+            from npl.transactions.clubs import team_for_label
 
-            except Team.DoesNotExist:
-                pass
+            self.acquiring_team = team_for_label(self.raw_acquiring_team)
 
     def save(self, *args, **kwargs):
         if self.raw_date and not self.date:

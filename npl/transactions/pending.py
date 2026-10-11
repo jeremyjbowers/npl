@@ -27,6 +27,7 @@ OPEN_STATUSES = (
 DEPARTURE_KINDS = {
     "trade": "Pending trade",
     "release": "Pending release",
+    "contract_amnesty": "Pending contract amnesty",
     "non_tender": "Pending non-tender",
     "waiver_request_outright": "Pending outright waivers",
     "waiver_request_trade": "Pending trade waivers",
@@ -39,6 +40,7 @@ DEPARTURE_KINDS = {
 FORTY_MAN_ADDS = {"purchase_contract", "mlb_signing", "in_season_fa"}
 FORTY_MAN_DROPS = {
     "release",
+    "contract_amnesty",
     "non_tender",
     "retirement",
     "death",
@@ -116,7 +118,9 @@ def money_moves(code, team, assets, contract_terms=None):
         bonus = _signing_cap_hit(assets, contract_terms)
         if bonus and team is not None:
             moves.append((team.id, "ifa", -bonus))
-    if code in ("release", "non_tender") and team is not None:
+    # A release and an amnesty both take the salary off the books. Amnesty
+    # does not add a penalty on top of voiding the contract.
+    if code in ("release", "contract_amnesty", "non_tender") and team is not None:
         for asset in assets:
             player = asset.get("player")
             if player is None:

@@ -4,6 +4,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 
 from npl import models, utils
+from npl.transactions.clubs import franchise_number, tab_id_for
 
 
 class Command(BaseCommand):
@@ -84,6 +85,9 @@ class Command(BaseCommand):
             team_dict = {}
             team_dict['short_name'] = t[0].split()[-1].strip()
             team_dict['full_name'] = t[0].strip()
+            number = franchise_number(team_dict['full_name'])
+            if number:
+                team_dict['tab_id'] = tab_id_for(number)
             team_dict['roster_85_man'] = int(t[2])
             team_dict['roster_40_man'] = int(t[3])
             team_dict['roster_30_man'] = int(t[4])
