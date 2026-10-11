@@ -10,7 +10,7 @@ A club submission used to be a form dropped in a pile. It is now a proposal with
 
 - **Who filed it**, and which club it belongs to.
 - **Who else is involved.** A trade names the other club and waits until that club agrees. A roster move, signing, or waiver does not need a second club.
-- **What changes hands.** Each piece in a trade names the club that gives it and the club that gets it. A piece can be a player, a draft pick, cash, cap space, IFA pool space, carried salary, or a player to be named later. Signings also carry the contract terms (years, dollars, points).
+- **What changes hands.** Each piece in a trade names the club that gives it and the club that gets it. Under rule 8.7.1 a piece can be a player under contract, a player to be named later, cash, carried salary, a draft pick for the next draft, or IFA cap space. Signings also carry the contract terms (years, dollars, points).
 
 The same proposal is what you see in the admin, what the club sees under My Submissions, and what an agent sees if the club is using the API.
 
@@ -66,12 +66,24 @@ The proposal itself says it has not been processed.
 A proposal is rejected, with a reason, when it cannot be true on the current roster:
 
 - The player is not on that club, or a signing names a player who already has a club.
-- An option names someone off the 40-man, already on option, or out of options. A recall names someone who is not on option. A contract purchase names someone already on the 40-man.
+- An option names someone off the 40-man, already on option, or out of options on the active roster (rules 8.3.1 and 8.3.3). A recall names someone who is not on option. A contract purchase names someone already on the 40-man.
 - The same player is already in another proposal that has not been processed.
 - The filing would put the club over 40 players on the 40-man, counting other open proposals.
-- The filing would spend cash, cap space, or IFA pool space the club does not have, again counting other open proposals.
+- The filing would spend cash or IFA pool space the club does not have, again counting other open proposals (rules 8.7.5.1 and 8.7.4).
 
-A release that frees a known salary adds that salary back to cap space in the preview. A signing subtracts its total. Cash and IFA pool space move with those assets. Directors still decide the close calls the roster data cannot see.
+Section 8 of the rules also blocks a filing before it is stored, and the message names the section:
+
+- Injured-list placement in the offseason, a backdated IL date, or a 56-day IL when the 40-man is not full (8.2, 8.2.1).
+- An option in September or the offseason, or of a player who is on the injured list (8.3.2.1, 8.2).
+- A nontender during the season (8.4.2).
+- A major-league contract traded in the postseason (8.7.2). Directors set that phase when the July 31 deadline passes, and move back to the offseason after the World Series.
+- Cap space itself, a draft pick more than one draft ahead, or a 40-man player named as the player to be named later (8.7.1).
+- Outright waivers for a player who is not on the 40-man (8.8.2.1).
+- A minor-league player placed on the foreign list (8.1.2).
+
+A release that frees a known salary adds that salary back to cap space in the preview. A signing subtracts its total. Cash, IFA pool space, and carried salary move with those assets. Directors still decide the close calls the roster data cannot see, including whether an injury is real, whether a contract is guaranteed, and whether the World Series is over.
+
+Directors set the phase on the current season in the admin. The rules name three phases: offseason, regular season, and postseason. Spring training, roster freezes, Winter Meetings, and the October quiet period sit inside those phases. They are not separate settings.
 
 ## What you still do yourselves
 

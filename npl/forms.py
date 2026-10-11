@@ -681,12 +681,11 @@ class TradeProposalForm(BaseTransactionForm):
         ("player", "Player"),
         ("draft_pick", "Draft pick"),
         ("cash", "Cash"),
-        ("cap_space", "Cap space"),
         ("ifa_pool", "IFA pool space"),
         ("carried_salary", "Carried salary"),
         ("future_considerations", "Player to be named later"),
     ]
-    MONEY_KINDS = {"cash", "cap_space", "ifa_pool", "carried_salary"}
+    MONEY_KINDS = {"cash", "ifa_pool", "carried_salary"}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

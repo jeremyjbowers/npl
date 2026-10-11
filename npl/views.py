@@ -259,7 +259,9 @@ def transaction_form_step1(request):
         'step': 1,
         'total_steps': 2,
         'processing_info': 'Transactions are processed Mondays at 1 PM EST.',
-        'next_deadline': get_next_processing_deadline()
+        'next_deadline': get_next_processing_deadline(),
+        'league_phase': models.Season.league_phase(),
+        'league_phase_label': dict(models.Season.PHASE_CHOICES).get(models.Season.league_phase(), ""),
     })
     
     return render(request, 'transactions/form_step1.html', context)
