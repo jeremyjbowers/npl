@@ -144,52 +144,10 @@ class Command(BaseCommand):
                         players.append(utils.format_player_row(row, t, player_dict))
 
                 
-            self.stdout.write(f"  {len(players)} players")
+            placed = self.place_players(t, players)
+            touched.extend(placed)
+            self.stdout.write(f"  {len(players)} players, saved {len(placed)}")
             self.stdout.flush()
-            for idx, p in enumerate(players):
-                """
-                debug
-                """
-                player_obj = None
-                try:
-
-                    if not p['mlb_id'] and not p['scoresheet_id']:
-                        if CROSSWALK.get(p['raw_name'], None):
-                            p['mlb_id'] = CROSSWALK.get(p['raw_name'], None)
-                    
-                    if p['mlb_id'] and p['mlb_id'] != "-":
-                        player_obj = models.Player.objects.get(mlb_id=p['mlb_id'])
-
-                    elif p['scoresheet_id'] and p['scoresheet_id'] != "-":
-                        player_obj = models.Player.objects.get(scoresheet_id=p['scoresheet_id'])
-
-                    if player_obj:
-                        for k,v in p.items():
-                            if k != "mlb_id":
-                                setattr(player_obj, k, v)
-
-                        player_obj.team = t
-                        player_obj.save()
-                        touched.append(player_obj.pk)
-
-                except models.Player.DoesNotExist:
-                    pass
-                except Exception as exc:
-                    self.stdout.write(f"  could not update {p.get('raw_name')}: {exc}")
-                    player_obj = None
-
-                if not player_obj:
-                    if not p.get("mlb_id"):
-                        continue
-                    p["mlb_id"] = str(p["mlb_id"])
-                    try:
-                        player_obj = models.Player(**p)
-                        player_obj.save()
-                    except Exception as exc:
-                        self.stdout.write(f"  could not save {p.get('raw_name')}: {exc}")
-                        continue
-                    touched.append(player_obj.pk)
-                    self.stdout.write(f"+ {player_obj}")
 
         for player in models.Player.objects.filter(pk__in=touched, last_name=""):
             if not player.raw_name or ", " not in player.raw_name:
@@ -198,4 +156,67 @@ class Command(BaseCommand):
             player.last_name = player.raw_name.split(", ")[0].strip()
             player.save()
 
-        self.stdout.write(self.style.SUCCESS(f"Placed {len(touched)} players onto {len(teams)} clubs."))
+        self.stdout.write(self.style.SUCCESS(f"Placed {len(touched)} players onto {len(list(teams))} clubs."))
+
+    def place_players(self, team, players):
+        by_id = {}
+        for payload in players:
+            mlb_id = str(payload.get("mlb_id") or "").strip()
+            if not mlb_id.isdigit():
+                continue
+            if payload.get("scoresheet_id") not in (None, ""):
+                payload["scoresheet_id"] = str(payload["scoresheet_id"])
+            if payload.get("mls_time") not in (None, ""):
+                payload["mls_time"] = str(payload["mls_time"])
+            if payload.get("mls_year") not in (None, ""):
+                payload["mls_year"] = str(payload["mls_year"])
+            by_id[mlb_id] = payload
+        if not by_id:
+            return []
+
+        update_fields = [
+            "team", "raw_name", "first_name", "last_name", "name",
+            "scoresheet_id", "position", "simple_position", "mlb_org",
+            "mls_time", "mls_year", "options", "status", "is_owned", "player_level",
+            "roster_85man", "roster_40man", "roster_30man",
+            "roster_7dayIL", "roster_56dayIL", "roster_eosIL",
+            "roster_restricted", "roster_tripleA", "roster_tripleA_option",
+            "roster_outrighted", "roster_foreign", "roster_retired",
+            "roster_nonroster", "roster_doubleA", "roster_singleA",
+            "roster_owaivers", "roster_r5waivers",
+            "recall_eligible", "activation_eligible", "waiver_clear", "is_r5",
+        ]
+        fields = set(update_fields)
+        existing = {
+            player.mlb_id: player
+            for player in models.Player.objects.filter(mlb_id__in=by_id).defer(
+                "stats", "scoresheet_defense", "scoresheet_offense"
+            )
+        }
+        to_create = []
+        to_update = []
+        for mlb_id, payload in by_id.items():
+            player = existing.get(mlb_id)
+            created = player is None
+            if created:
+                player = models.Player(mlb_id=mlb_id)
+            for key, value in payload.items():
+                if key in fields and key != "mlb_id":
+                    setattr(player, key, value)
+            player.team = team
+            if player.options is None:
+                player.options = 3
+            player.set_name()
+            player.set_owned()
+            player.set_simple_position()
+            player.set_options()
+            player.player_level = player.set_player_level()
+            if created:
+                to_create.append(player)
+            else:
+                to_update.append(player)
+        if to_create:
+            models.Player.objects.bulk_create(to_create, batch_size=200)
+        if to_update:
+            models.Player.objects.bulk_update(to_update, update_fields, batch_size=200)
+        return [player.mlb_id for player in to_create + to_update]
