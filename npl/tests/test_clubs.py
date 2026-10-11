@@ -17,6 +17,8 @@ class FranchiseNumberTests(TestCase):
         self.assertEqual(franchise_number("Rats"), 8)
         self.assertEqual(franchise_number("Ryne"), 11)
         self.assertEqual(franchise_number("Chicago Orphans"), 11)
+        self.assertEqual(franchise_number("Gatherers"), 11)
+        self.assertEqual(franchise_number("Hunter Gatherers"), 11)
         self.assertEqual(franchise_number("Defenestrations"), 13)
         self.assertEqual(franchise_number("Rabbits"), 13)
         self.assertEqual(franchise_number("Nuremberg, GmbH"), 13)
@@ -26,7 +28,6 @@ class FranchiseNumberTests(TestCase):
     def test_blank_and_non_clubs_do_not_match(self):
         self.assertIsNone(franchise_number("-"))
         self.assertIsNone(franchise_number("PHI"))
-        self.assertIsNone(franchise_number("Gatherers"))
 
     def test_tab_id_uses_the_current_nickname(self):
         self.assertEqual(tab_id_for(13), "GmbH #13")

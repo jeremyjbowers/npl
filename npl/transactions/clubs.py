@@ -39,7 +39,7 @@ FRANCHISES = {
         "New Ulm Eagles",
         "New York Appleaters",
     ],
-    11: ["Orphans", "Chicago Orphans", "Ryne", "Non, Je Ne Regrette Ryne"],
+    11: ["Orphans", "Chicago Orphans", "Ryne", "Non, Je Ne Regrette Ryne", "Gatherers", "Hunter Gatherers"],
     12: ["Ducksnorts", "Midwest Ducksnorts", "California Billy Goats", "Up For Grabs", "Good Wood", "Win One For The Chipper"],
     13: [
         "GmbH",
