@@ -44,6 +44,9 @@
         {% if pending_player_count %}
         <p class="mt-2 text-xs text-gray-600">Grey rows are in a proposal that has not been processed. They stay on the club until Monday.</p>
         {% endif %}
+        {% if viewer_owns %}
+        <p class="mt-2 text-xs"><a class="underline" href="/transactions/form/">File a transaction</a></p>
+        {% endif %}
     </header>
 
     {% for section in roster_sections %}

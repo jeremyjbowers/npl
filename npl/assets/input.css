@@ -77,6 +77,30 @@
     max-width: 36rem;
   }
 
+  main form.space-y-4 input[type="radio"] {
+    width: auto;
+    max-width: none;
+  }
+
+  .choice-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .choice {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    border: 1px solid #d1d5db;
+    padding: 0.4rem 0.55rem;
+    cursor: pointer;
+  }
+
+  .choice:hover {
+    background: #f9fafb;
+  }
+
   .sheet tr.majors td {
     font-weight: 700;
   }
