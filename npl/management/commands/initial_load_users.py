@@ -1,74 +1,68 @@
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from django.conf import settings
 
 from npl import models, utils
+from npl.transactions.clubs import team_for_label
 from users.models import User
 
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
+        rows = utils.get_sheet(settings.LEAGUE_SHEET_ID, "Team Owners!A:H", value_cutoff=None) or []
+        header = 0
+        for index, row in enumerate(rows):
+            if row and row[0].strip().lower() == "team":
+                header = index
+                break
 
-        owners = []
+        current_team = ""
+        attached = 0
+        for row in rows[header + 1:]:
+            if not row or not any(str(cell).strip() for cell in row):
+                continue
+            team_name = row[0].strip() if row[0].strip() else current_team
+            if row[0].strip():
+                current_team = team_name
+            name = row[1].strip() if len(row) > 1 else ""
+            if not name:
+                continue
 
-        def is_owner(row):
-            return True
+            year_joined = None
+            if len(row) > 2 and row[2].strip().isdigit():
+                year_joined = int(row[2].strip())
+            email = row[3].strip() if len(row) > 3 else ""
+            twitter = row[4].strip() if len(row) > 4 else ""
+            phone = row[5].strip() if len(row) > 5 else ""
+            hometown = row[6].strip() if len(row) > 6 else ""
+            bio = row[7].strip() if len(row) > 7 else ""
 
-        owners = utils.get_sheet(settings.LEAGUE_SHEET_ID, f"Team Owners!A:H", value_cutoff=None)
-        owners = [o for o in owners[8:] if is_owner(o)]
+            user = None
+            if email:
+                user = User.objects.filter(email__iexact=email).first()
+                if user is None:
+                    user = User(email=email)
+                    user.set_unusable_password()
+                    user.save()
 
-        for o in owners:
+            owner = models.Owner.objects.filter(name=name).first()
+            if owner is None:
+                owner = models.Owner(name=name)
+            owner.year_joined = year_joined
+            owner.email = email or owner.email
+            owner.twitter = twitter or owner.twitter
+            owner.phone = phone or owner.phone
+            owner.hometown = hometown or owner.hometown
+            owner.bio = bio or owner.bio
+            if user:
+                owner.user = user
+            owner.save()
 
-            owner_dict = {}
-            user_dict = {"email": None}
-            team_name = o[0].strip()
-            owner_dict['name'] = o[1].strip()
-            owner_dict['first_year'] = int(o[2].strip())
+            team = models.Team.objects.filter(full_name__iexact=team_name).first() or team_for_label(team_name)
+            if team is None:
+                self.stdout.write(f"No club for {name} ({team_name})")
+                continue
+            team.owners.add(owner)
+            attached += 1
+            self.stdout.write(f"{owner.name} -> {team.full_name}")
 
-            if len(o) > 3:
-                user_dict['email'] = o[3].strip()
-
-            if len(o) > 6:
-                if o[4] != "":
-                    owner_dict['twitter'] = o[4].strip()
-
-                if o[5] != "":
-                    owner_dict['phone'] = o[5].strip()
-
-                if o[6] != "":
-                    owner_dict['hometown'] = o[6].strip()
-            if len(o) > 7:
-                if o[7] != "":
-                    owner_dict['bio'] = o[7].strip()
-
-            user_obj = None
-            owner_obj = None
-            team_obj = None
-
-            if user_dict['email']:
-                try:
-                    user_obj = User.objects.get(email=user_dict['email'])
-                except:
-                    user_obj = User(email=user_dict['email'])
-                    user_obj.save()
-                    print(user_obj)
-
-            try:
-                owner_obj = models.Owner.objects.get(name=owner_dict['name'])
-                for k,v in owner_dict.items():
-                    setattr(owner_obj, k, v)
-                if user_obj:
-                    owner_obj.user = user_obj
-                owner_obj.save()
-                print(f"* {owner_obj}")
-
-            except:
-                owner_obj = models.Owner(**owner_dict)
-                if user_obj:
-                    owner_obj.user = user_obj
-                owner_obj.save()
-                print(f"+ {owner_obj}")
-
-            if owner_obj:
-                team_obj = models.Team.objects.get(name=team_name)
-                team_obj.owners.add(owner_obj)
-                team_obj.save()
+        self.stdout.write(self.style.SUCCESS(f"Attached {attached} owners."))
