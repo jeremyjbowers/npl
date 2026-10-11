@@ -84,6 +84,7 @@ def proposals(request):
             code=data.get("code"),
             assets=data.get("assets") or [],
             counterparty_team=data.get("counterparty_team"),
+            counterparty_teams=data.get("counterparty_teams"),
             notes=data.get("notes") or "",
             source=source,
             effective_date=_date(data.get("effective_date")),

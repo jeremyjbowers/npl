@@ -9,6 +9,7 @@ agents) decide which fields each kind carries.
 ASSET_PLAYER = "player"
 ASSET_DRAFT_PICK = "draft_pick"
 ASSET_CASH = "cash"
+ASSET_CAP = "cap_space"
 ASSET_IFA = "ifa_pool"
 ASSET_CARRIED_SALARY = "carried_salary"
 ASSET_FUTURE = "future_considerations"
@@ -17,10 +18,21 @@ ASSET_TYPES = (
     ASSET_PLAYER,
     ASSET_DRAFT_PICK,
     ASSET_CASH,
+    ASSET_CAP,
     ASSET_IFA,
     ASSET_CARRIED_SALARY,
     ASSET_FUTURE,
 )
+
+ASSET_LABELS = {
+    ASSET_PLAYER: "Player",
+    ASSET_DRAFT_PICK: "Draft pick",
+    ASSET_CASH: "Cash",
+    ASSET_CAP: "Cap space",
+    ASSET_IFA: "IFA pool space",
+    ASSET_CARRIED_SALARY: "Carried salary",
+    ASSET_FUTURE: "PTBNL",
+}
 
 # Categories used by the catalog. Auction results stay on /auctions/;
 # the kind exists so the category is addressable from the API.
@@ -34,6 +46,9 @@ SHEET_ASSET_LABELS = {
     "ifa": ASSET_IFA,
     "ifa pool $": ASSET_IFA,
     "ifa pool space": ASSET_IFA,
+    "cap space": ASSET_CAP,
+    "cap": ASSET_CAP,
+    "payroll cap": ASSET_CAP,
     "draft pick": ASSET_DRAFT_PICK,
     "r5 draft pick": ASSET_DRAFT_PICK,
     "future considerations": ASSET_FUTURE,

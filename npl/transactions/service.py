@@ -12,10 +12,13 @@ from django.utils import timezone
 
 from npl import models
 from npl.transactions.catalog import (
+    ASSET_CAP,
+    ASSET_CARRIED_SALARY,
     ASSET_CASH,
     ASSET_DRAFT_PICK,
     ASSET_FUTURE,
     ASSET_IFA,
+    ASSET_LABELS,
     ASSET_PLAYER,
     ASSET_TYPES,
     FOREIGN_FORM_TO_CODE,
@@ -137,6 +140,44 @@ def _normalize_asset(raw, originating_team, counterparty):
     }
 
 
+def _explicit_clubs(counterparty_team, counterparty_teams):
+    values = []
+    if counterparty_team not in (None, ""):
+        values.append(counterparty_team)
+    extra = counterparty_teams or []
+    if isinstance(extra, (str, int)):
+        extra = [extra]
+    values.extend(extra)
+    clubs = []
+    seen = set()
+    for value in values:
+        club = _resolve_team(value)
+        if club is None or club.pk in seen:
+            continue
+        seen.add(club.pk)
+        clubs.append(club)
+    return clubs
+
+
+def _trade_parties(origin, explicit, assets):
+    """Every club in the deal except the one that filed it."""
+    parties = []
+    seen = {origin.pk}
+
+    def add(club):
+        if club is None or club.pk in seen:
+            return
+        seen.add(club.pk)
+        parties.append(club)
+
+    for club in explicit:
+        add(club)
+    for asset in assets:
+        add(asset.get("from_team"))
+        add(asset.get("to_team"))
+    return parties
+
+
 def create_proposal(
     *,
     user,
@@ -144,6 +185,7 @@ def create_proposal(
     code,
     assets=None,
     counterparty_team=None,
+    counterparty_teams=None,
     notes="",
     source="web",
     effective_date=None,
@@ -156,17 +198,36 @@ def create_proposal(
 ):
     kind = get_kind(code)
     team = _require_team(user, _resolve_team(team))
-    counterparty = _resolve_team(counterparty_team) if counterparty_team else None
-    if kind["requires_agreement"] and counterparty is None:
-        raise TransactionError("A trade needs the other team.")
-    if counterparty and counterparty.pk == team.pk:
-        raise TransactionError("The other team has to be a different club.")
-
+    explicit = _explicit_clubs(counterparty_team, counterparty_teams)
+    if any(club.pk == team.pk for club in explicit):
+        raise TransactionError("The other clubs have to be different from yours.")
+    default_dest = explicit[0] if len(explicit) == 1 else None
     normalized = [
-        _normalize_asset(asset, team, counterparty) for asset in (assets or [])
+        _normalize_asset(asset, team, default_dest) for asset in (assets or [])
     ]
-    if code == "trade" and not normalized:
-        raise TransactionError("A trade needs at least one player, pick, or financial asset.")
+    parties = _trade_parties(team, explicit, normalized) if code == "trade" else []
+    if code == "trade":
+        if not normalized:
+            raise TransactionError(
+                "A trade needs at least one piece: a player, a pick, cash, cap space, IFA pool space, carried salary, or a player to be named later."
+            )
+        if not parties:
+            raise TransactionError("A trade needs another club.")
+        involved = set()
+        for asset in normalized:
+            if asset.get("from_team") is None or asset.get("to_team") is None:
+                raise TransactionError("Say which club sends each piece, and which club receives it.")
+            if asset["from_team"].pk == asset["to_team"].pk:
+                raise TransactionError("A piece cannot be sent to the club that is sending it.")
+            involved.add(asset["from_team"].pk)
+            involved.add(asset["to_team"].pk)
+        if team.pk not in involved:
+            raise TransactionError("Your club has to send or receive something in the trade.")
+        for club in parties:
+            if club.pk not in involved:
+                raise TransactionError(
+                    f"{club.short_name} is named in the trade, but nothing is sent or received."
+                )
     if code in SIGNING_CODES:
         has_player = any(asset["player"] or asset["raw_label"] for asset in normalized)
         has_money = _terms_present(contract_terms) or any(
@@ -213,10 +274,10 @@ def create_proposal(
         agreed_by=user if getattr(user, "is_authenticated", False) else None,
         agreed_at=timezone.now(),
     )
-    if counterparty:
+    for club in parties:
         models.TransactionParty.objects.create(
             proposal=proposal,
-            team=counterparty,
+            team=club,
             role=models.TransactionParty.COUNTERPARTY,
             agreement_status=models.TransactionParty.PENDING,
         )
@@ -368,6 +429,10 @@ def execute_proposal(user, proposal):
             player_label = player_label or "Cash Reserves"
         elif asset.asset_type == ASSET_IFA:
             player_label = player_label or "IFA Cap Space"
+        elif asset.asset_type == ASSET_CAP:
+            player_label = player_label or "Cap space"
+        elif asset.asset_type == ASSET_CARRIED_SALARY:
+            player_label = player_label or "Carried salary"
         elif asset.asset_type == ASSET_DRAFT_PICK:
             player_label = player_label or "Draft Pick"
         elif asset.asset_type == ASSET_FUTURE:
@@ -589,6 +654,28 @@ def visible_proposals(user):
     )
 
 
+def _piece_from_form(cleaned, number):
+    """One explicitly assigned trade piece. Blank rows are skipped."""
+    prefix = f"piece_{number}"
+    kind = (cleaned.get(f"{prefix}_kind") or "").strip()
+    if not kind:
+        return None
+    player = cleaned.get(f"{prefix}_player")
+    label = (cleaned.get(f"{prefix}_label") or "").strip() or ASSET_LABELS.get(kind, kind)
+    asset = {
+        "asset_type": kind,
+        "from_team": cleaned.get(f"{prefix}_from"),
+        "to_team": cleaned.get(f"{prefix}_to"),
+        "raw_label": player.name if isinstance(player, models.Player) and kind == ASSET_PLAYER else label,
+    }
+    amount = cleaned.get(f"{prefix}_amount")
+    if amount not in (None, ""):
+        asset["amount"] = int(amount)
+    if kind == ASSET_PLAYER and isinstance(player, models.Player):
+        asset["player"] = player
+    return asset
+
+
 def submit_from_form(user, form_type, cleaned, source="web"):
     """Turn a web-form payload into a proposal. The form type is the step-1 key."""
     team = _resolve_team(cleaned.get("team"))
@@ -610,50 +697,15 @@ def submit_from_form(user, form_type, cleaned, source="web"):
 
     if form_type == "trade":
         assets = []
-        if isinstance(cleaned.get("player"), models.Player):
-            assets.append(
-                {
-                    "asset_type": ASSET_PLAYER,
-                    "player": cleaned["player"],
-                    "from_team": team,
-                    "to_team": cleaned.get("counterparty"),
-                }
-            )
-        if cleaned.get("pick_label"):
-            assets.append(
-                {
-                    "asset_type": ASSET_DRAFT_PICK,
-                    "raw_label": cleaned["pick_label"],
-                    "from_team": team,
-                    "to_team": cleaned.get("counterparty"),
-                }
-            )
-        if cleaned.get("cash_amount"):
-            assets.append(
-                {
-                    "asset_type": ASSET_CASH,
-                    "amount": int(cleaned["cash_amount"]),
-                    "raw_label": "Cash Reserves",
-                    "from_team": team,
-                    "to_team": cleaned.get("counterparty"),
-                }
-            )
-        if cleaned.get("ifa_amount"):
-            assets.append(
-                {
-                    "asset_type": ASSET_IFA,
-                    "amount": int(cleaned["ifa_amount"]),
-                    "raw_label": "IFA Cap Space",
-                    "from_team": team,
-                    "to_team": cleaned.get("counterparty"),
-                }
-            )
+        for number in range(1, 7):
+            piece = _piece_from_form(cleaned, number)
+            if piece is not None:
+                assets.append(piece)
         return create_proposal(
             user=user,
             team=team,
             code="trade",
             assets=assets,
-            counterparty_team=cleaned.get("counterparty"),
             notes=cleaned.get("notes") or "",
             source=source,
             effective_date=effective,

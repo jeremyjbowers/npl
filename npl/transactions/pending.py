@@ -8,7 +8,13 @@ pool space would move.
 from django.utils import timezone
 
 from npl import models
-from npl.transactions.catalog import ASSET_CASH, ASSET_CARRIED_SALARY, ASSET_IFA, SIGNING_CODES
+from npl.transactions.catalog import (
+    ASSET_CAP,
+    ASSET_CARRIED_SALARY,
+    ASSET_CASH,
+    ASSET_IFA,
+    SIGNING_CODES,
+)
 
 OPEN_STATUSES = (
     models.TransactionProposal.DRAFT,
@@ -92,6 +98,11 @@ def money_moves(code, team, assets, contract_terms=None):
                 moves.append((origin.id, "ifa", -amount))
             if dest is not None:
                 moves.append((dest.id, "ifa", amount))
+        elif kind == ASSET_CAP:
+            if origin is not None:
+                moves.append((origin.id, "cap", -amount))
+            if dest is not None:
+                moves.append((dest.id, "cap", amount))
         elif kind == ASSET_CARRIED_SALARY:
             if origin is not None:
                 moves.append((origin.id, "cap", amount))
