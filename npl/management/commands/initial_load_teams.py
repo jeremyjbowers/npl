@@ -6,6 +6,7 @@ from django.conf import settings
 from npl import models, utils
 from npl.books import apply_key_sheet
 from npl.sheetload import parse_key_sheet
+from npl.transactions.clubs import franchise_number, tab_id_for
 
 
 class Command(BaseCommand):
@@ -89,6 +90,9 @@ class Command(BaseCommand):
             for field in ("cap_space", "cash", "ifa"):
                 if row.get(field) is not None:
                     setattr(team_obj, field, row[field])
+            number = franchise_number(full_name)
+            if number:
+                team_obj.tab_id = tab_id_for(number)
             team_obj.save()
 
             team_season = models.TeamSeason.objects.filter(team=team_obj, season=self.season).first()
