@@ -376,23 +376,26 @@ def _published_rules(team, code, assets, players, on_date):
 
 
 def _calendar_rules(code, players, on_date):
+    """Season phase is set by directors. Dates are not used for these gates."""
+    del on_date
+    phase = models.Season.league_phase()
     problems = []
     il_placement = {"il_7", "il_56", "il_eos", "il_covid", "il_move"}
-    if code in il_placement and on_date.month in {10, 11, 12, 1, 2}:
+    if code in il_placement and phase != models.Season.REGULAR:
         problems.append(
-            "There is no injured list in the offseason. Placement begins in March. NPL Rules 8.2."
+            "There is no injured list outside the regular season. NPL Rules 8.2."
         )
-    if code == "option_minors" and on_date.month in {9, 10, 11, 12, 1, 2}:
+    if code == "option_minors" and phase != models.Season.REGULAR:
         problems.append(
-            "Players may not be optioned in September or the offseason. NPL Rules 8.3.2.1."
+            "Players may not be optioned in the postseason or the offseason. NPL Rules 8.3.2.1."
         )
-    if code == "non_tender" and on_date.month in range(4, 10):
+    if code == "non_tender" and phase != models.Season.OFFSEASON:
         problems.append("Players can be nontendered in the offseason only. NPL Rules 8.4.2.")
-    if code == "trade" and on_date.month in {8, 9}:
+    if code == "trade" and phase == models.Season.POSTSEASON:
         for player in players:
             if _major_league_contract(player):
                 problems.append(
-                    f"{player.name} is on a major-league contract and cannot be traded after the July 31 deadline. NPL Rules 8.7.2."
+                    f"{player.name} is on a major-league contract and cannot be traded in the postseason. NPL Rules 8.7.2."
                 )
     return problems
 

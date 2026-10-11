@@ -14,6 +14,7 @@
         <p>{{ processing_info }}</p>
         <p class="mt-1">Trades wait for the other club to agree. Auctions stay on the <a href="/auctions/">auctions page</a>.</p>
         <p class="mt-1"><strong>Next deadline:</strong> {{ next_deadline|date:"l, F j, Y \a\t g:i A T" }}</p>
+        {% if league_phase_label %}<p class="mt-1">The league is in the <strong>{{ league_phase_label|lower }}</strong>.</p>{% endif %}
     </div>
 
     <form method="post" class="space-y-4">

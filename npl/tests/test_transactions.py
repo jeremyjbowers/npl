@@ -728,9 +728,12 @@ class ProposalRulesAndHintsTests(TestCase):
     def test_published_rules_are_cited(self):
         import datetime
 
+        from npl.models import Season
+
         self.player.roster_40man = True
         self.player.options = 2
         self.player.save(update_fields=["roster_40man", "options"])
+        season = Season.objects.create(year=2026, phase=Season.REGULAR, is_current=True)
 
         def filing(**kwargs):
             payload = {
@@ -742,23 +745,25 @@ class ProposalRulesAndHintsTests(TestCase):
             return create_proposal(**payload)
 
         with self.assertRaises(TransactionError) as nontender:
-            filing(code="non_tender", effective_date=datetime.date(2026, 6, 1))
+            filing(code="non_tender")
         self.assertIn("8.4.2", str(nontender.exception))
 
+        season.phase = Season.OFFSEASON
+        season.save(update_fields=["phase"])
         with self.assertRaises(TransactionError) as option:
-            filing(code="option_minors", effective_date=datetime.date(2026, 9, 15))
+            filing(code="option_minors")
         self.assertIn("8.3.2.1", str(option.exception))
 
+        season.phase = Season.REGULAR
+        season.save(update_fields=["phase"])
         with self.assertRaises(TransactionError) as long_il:
-            filing(code="il_56", effective_date=datetime.date(2026, 6, 1))
+            filing(code="il_56")
         self.assertIn("8.2.1", str(long_il.exception))
 
+        season.phase = Season.POSTSEASON
+        season.save(update_fields=["phase"])
         with self.assertRaises(TransactionError) as closed:
-            filing(
-                code="trade",
-                counterparty_team=self.other_team,
-                effective_date=datetime.date(2026, 8, 15),
-            )
+            filing(code="trade", counterparty_team=self.other_team)
         self.assertIn("8.7.2", str(closed.exception))
 
         with self.assertRaises(TransactionError) as cap:
@@ -804,7 +809,19 @@ class ProposalRulesAndHintsTests(TestCase):
         allowed = filing(
             code="trade",
             counterparty_team=self.other_team,
-            effective_date=datetime.date(2026, 8, 15),
             assets=[{"asset_type": "player", "player": minor, "from_team": self.team, "to_team": self.other_team}],
         )
         self.assertEqual(allowed.kind, "trade")
+
+        season.advance()
+        season.refresh_from_db()
+        self.assertEqual(season.phase, Season.OFFSEASON)
+        season.advance()
+        season.refresh_from_db()
+        self.assertEqual(season.phase, Season.REGULAR)
+        other = Season.objects.create(year=2025, phase=Season.POSTSEASON, is_current=True)
+        season.refresh_from_db()
+        self.assertFalse(season.is_current)
+        self.assertEqual(Season.league_phase(), Season.POSTSEASON)
+        other.advance()
+        self.assertEqual(Season.league_phase(), Season.OFFSEASON)

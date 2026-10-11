@@ -46,6 +46,20 @@ class Division(BaseModel):
 
 
 class Season(BaseModel):
+    OFFSEASON = "offseason"
+    REGULAR = "regular"
+    POSTSEASON = "postseason"
+    PHASE_CHOICES = (
+        (OFFSEASON, "Offseason"),
+        (REGULAR, "Regular season"),
+        (POSTSEASON, "Postseason"),
+    )
+    PHASE_NEXT = {
+        OFFSEASON: REGULAR,
+        REGULAR: POSTSEASON,
+        POSTSEASON: OFFSEASON,
+    }
+
     year = models.IntegerField()
     year_start = models.DateField(null=True, blank=True)
     year_end = models.DateField(null=True, blank=True)
@@ -55,9 +69,44 @@ class Season(BaseModel):
     league_min = models.IntegerField(null=True, blank=True)
     qo_salary = models.IntegerField(null=True, blank=True)
     salary_cap = models.IntegerField(null=True, blank=True)
+    phase = models.CharField(
+        max_length=16,
+        choices=PHASE_CHOICES,
+        default=OFFSEASON,
+        help_text="Offseason, then regular season, then postseason, then offseason again. Transaction rules follow this.",
+    )
+    is_current = models.BooleanField(
+        default=False,
+        help_text="The league is in this season. Only one season should be current.",
+    )
 
     def __unicode__(self):
-        return f"The {self.year} NPL season"
+        current = " (current)" if self.is_current else ""
+        return f"The {self.year} NPL season — {self.get_phase_display()}{current}"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.is_current:
+            Season.objects.filter(is_current=True).exclude(pk=self.pk).update(is_current=False)
+
+    def advance(self):
+        self.phase = self.PHASE_NEXT.get(self.phase, self.REGULAR)
+        self.save(update_fields=["phase", "last_modified"])
+        return self.phase
+
+    @classmethod
+    def current(cls):
+        season = cls.objects.filter(is_current=True).order_by("-year").first()
+        if season is None:
+            season = cls.objects.order_by("-year").first()
+        return season
+
+    @classmethod
+    def league_phase(cls):
+        season = cls.current()
+        if season is None:
+            return cls.OFFSEASON
+        return season.phase
 
 
 class Owner(BaseModel):

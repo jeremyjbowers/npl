@@ -19,6 +19,7 @@ from npl.models import (
     MLBAuctionBid,
     PlayerNomination,
     TeamSeason,
+    Season,
     League,
     Division,
     Wishlist,
@@ -271,6 +272,47 @@ class TeamAdmin(admin.ModelAdmin):
     list_display = ['full_name', 'short_name', 'tab_id', 'abbreviation']
     list_editable = ['tab_id', 'abbreviation']
     search_fields = ['full_name']
+
+@admin.register(Season)
+class SeasonAdmin(admin.ModelAdmin):
+    list_display = ["year", "phase", "is_current", "opening_day", "salary_cap"]
+    list_editable = ["phase", "is_current"]
+    list_filter = ["phase", "is_current"]
+    ordering = ["-year"]
+    actions = ["advance_phase"]
+    fieldsets = (
+        (
+            "Where the league is",
+            {
+                "description": "The rules use three phases: offseason, regular season, and postseason. Check Current on the season directors are running, then advance in that order and back to the offseason. Spring training, roster freezes, Winter Meetings, and the October quiet period are dates inside those phases, not separate settings. Set postseason when the July 31 trade deadline passes; major-league contracts cannot be traded until you move back to the offseason.",
+                "fields": ("year", "phase", "is_current"),
+            },
+        ),
+        (
+            "Dates and money",
+            {
+                "fields": (
+                    "year_start",
+                    "year_end",
+                    "opening_day",
+                    "term_pay_1",
+                    "term_pay_2",
+                    "league_min",
+                    "qo_salary",
+                    "salary_cap",
+                ),
+            },
+        ),
+    )
+
+    @admin.action(description="Advance to the next phase")
+    def advance_phase(self, request, queryset):
+        advanced = 0
+        for season in queryset:
+            season.advance()
+            advanced += 1
+        self.message_user(request, f"Advanced {advanced} season{'s' if advanced != 1 else ''}.")
+
 
 @admin.register(TeamSeason)
 class TeamSeasonAdmin(admin.ModelAdmin):
