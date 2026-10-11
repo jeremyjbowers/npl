@@ -6,7 +6,13 @@ same player, a 40-man that would not fit, or cash and pool space the club
 does not have.
 """
 
+import datetime
+
+from django.conf import settings
+from django.utils import timezone
+
 from npl import models
+from npl.sheetload import OPTION_CLASSES, cash_is_overdrawn, settle_books
 from npl.transactions.pending import (
     FORTY_MAN_ADDS,
     FORTY_MAN_DROPS,
@@ -55,6 +61,7 @@ def evaluate(team, code, assets, contract_terms=None, proposal_id=None):
     problems = []
     players = [asset.get("player") for asset in assets if asset.get("player") is not None]
     problems.extend(_players_on_club(team, code, assets, players))
+    problems.extend(_contract_locks(code, players))
     problems.extend(_roster_state(team, code, players))
     problems.extend(_already_pending(team, code, players, proposal_id))
     problems.extend(_money(team, code, assets, contract_terms, proposal_id))
@@ -190,15 +197,54 @@ def _money(team, code, assets, contract_terms, proposal_id):
         if team_id == team.id:
             incoming[field] += delta
     problems = []
-    balances = {"cash": team.cash, "cap": team.cap_space, "ifa": team.ifa}
-    names = {"cash": "cash", "cap": "cap space", "ifa": "IFA pool space"}
-    for field, balance in balances.items():
-        if balance is None:
-            continue
-        spend = pending[field] + incoming[field]
-        if balance + spend < 0:
+    if team.ifa is not None and team.ifa + pending["ifa"] + incoming["ifa"] < 0:
+        short = abs(team.ifa + pending["ifa"] + incoming["ifa"])
+        problems.append(
+            f"This would leave {team.short_name} ${short:,} short of IFA pool space after other pending proposals."
+        )
+    cap_delta = pending["cap"] + incoming["cap"]
+    cash_delta = pending["cash"] + incoming["cash"]
+    if team.cap_space is not None and team.cash is not None:
+        settled = settle_books(team.cap_space, team.cash, cap_delta, cash_delta)
+        if cash_is_overdrawn(team.cash, settled["cash_after"]):
+            if settled["luxury_tax"]:
+                problems.append(
+                    f"This would put {team.short_name} ${abs(settled['cap_after']):,} over the cap. "
+                    f"The luxury tax is paid 1:1 from cash reserves and would overdraw cash by ${abs(settled['cash_after']):,}."
+                )
+            else:
+                problems.append(
+                    f"This would leave {team.short_name} ${abs(settled['cash_after']):,} short of cash after other pending proposals."
+                )
+    elif team.cash is not None and cash_is_overdrawn(team.cash, team.cash + cash_delta):
+        problems.append(
+            f"This would leave {team.short_name} ${abs(team.cash + cash_delta):,} short of cash after other pending proposals."
+        )
+    return problems
+
+
+def _contract_locks(code, players):
+    """Offseason signings and unresolved options cannot be traded yet."""
+    if code != "trade":
+        return []
+    problems = []
+    season_year = settings.LEAGUE_YEAR
+    locked_until = datetime.date(season_year, 6, 1)
+    today = timezone.localdate()
+    for player in players:
+        if player.offseason_fa and today < locked_until:
             problems.append(
-                f"This would leave {team.short_name} ${abs(balance + spend):,} short of {names[field]} after other pending proposals."
+                f"{player.name} signed as an offseason free agent and cannot be traded until June 1."
+            )
+        current = models.ContractYear.objects.filter(
+            contract__player=player,
+            contract__team_id=player.team_id,
+            year=season_year,
+            salary_class__in=OPTION_CLASSES,
+        ).first()
+        if current is not None:
+            problems.append(
+                f"{player.name} has an unresolved {current.salary_label.lower()} for {season_year} and cannot be traded until it is exercised or declined."
             )
     return problems
 

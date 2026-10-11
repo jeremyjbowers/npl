@@ -52,6 +52,8 @@ class Season(BaseModel):
     term_pay_1 = models.DateField(null=True, blank=True)
     term_pay_2 = models.DateField(null=True, blank=True)
     opening_day	= models.DateField(null=True, blank=True)
+    end_of_season = models.DateField(null=True, blank=True)
+    ifa_deadline = models.DateField(null=True, blank=True)
     league_min = models.IntegerField(null=True, blank=True)
     qo_salary = models.IntegerField(null=True, blank=True)
     salary_cap = models.IntegerField(null=True, blank=True)
@@ -96,7 +98,8 @@ class Team(BaseModel):
     double_a_name = models.CharField(max_length=255, null=True, blank=True)
     single_a_name = models.CharField(max_length=255, null=True, blank=True)
 
-    # Financials / denormalized
+    # Financials / denormalized from the current team tab
+    mlb_payroll = models.IntegerField(blank=True, null=True)
     contract_salary = models.IntegerField(blank=True, null=True)
     carried_salary = models.IntegerField(blank=True, null=True)
     cash_borrowing = models.IntegerField(blank=True, null=True)
@@ -150,6 +153,7 @@ class TeamSeason(BaseModel):
     roster_30_man = models.IntegerField(blank=True, null=True)
 
     # Financials
+    mlb_payroll = models.IntegerField(blank=True, null=True)
     contract_salary = models.IntegerField(blank=True, null=True)
     carried_salary = models.IntegerField(blank=True, null=True)
     cash_borrowing = models.IntegerField(blank=True, null=True)
@@ -160,6 +164,37 @@ class TeamSeason(BaseModel):
 
     def __unicode__(self):
         return f"{self.season} Season: {self.team}"
+
+
+class ClubLedgerEntry(BaseModel):
+    """One line from a team tab's FINANCIALS block.
+
+    Payroll lines are termination pay, carried salary, and cap-overage cover.
+    Cash lines are the annual IFA infusion, draft-bonus overages, penalties,
+    and cash included in trades. IFA lines are pool space sent or received.
+    """
+
+    PAYROLL = "payroll"
+    CASH = "cash"
+    IFA = "ifa"
+    BOOK_CHOICES = (
+        (PAYROLL, "Payroll"),
+        (CASH, "Cash reserves"),
+        (IFA, "IFA pool"),
+    )
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="ledger_entries")
+    year = models.IntegerField()
+    book = models.CharField(max_length=16, choices=BOOK_CHOICES)
+    label = models.CharField(max_length=255, blank=True, default="")
+    detail = models.CharField(max_length=255, blank=True, default="")
+    amount = models.IntegerField()
+    row_order = models.IntegerField(default=0)
+
+    class Meta:
+        ordering = ["team", "year", "row_order"]
+
+    def __unicode__(self):
+        return f"{self.year} {self.team.short_name} {self.label}: {self.amount}"
 
 class Player(BaseModel):
     team = models.ForeignKey(Team, on_delete=models.SET_NULL, blank=True, null=True)
@@ -229,6 +264,16 @@ class Player(BaseModel):
 
     grad_year = models.IntegerField(default=None, blank=True, null=True)
     service_time = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
+    mlb_days = models.IntegerField(blank=True, null=True)
+    option_days = models.IntegerField(blank=True, null=True)
+    nonroster_days = models.IntegerField(blank=True, null=True)
+    sos_service_years = models.IntegerField(blank=True, null=True)
+    sos_service_days = models.IntegerField(blank=True, null=True)
+    option_used = models.BooleanField(default=False)
+    offseason_fa = models.BooleanField(
+        default=False,
+        help_text="Italic name on the roster sheet: offseason free-agent signing, cannot be traded until June 1.",
+    )
     options = models.IntegerField(default=3, blank=True, null=True)
     has_been_rostered = models.BooleanField(default=False)
     has_been_npl40 = models.BooleanField(default=False)
@@ -768,6 +813,11 @@ class Contract(BaseModel):
     can_buyout = models.BooleanField(default=False)
     buyout = models.TextField(blank=True, null=True)
     total_years = models.IntegerField(blank=True, null=True)
+    buyout_amount = models.IntegerField(blank=True, null=True)
+    terms_pending = models.BooleanField(
+        default=False,
+        help_text="Italic salary or terms on the sheet: the contract is signed, but the terms are not final.",
+    )
 
     class Meta:
         ordering = ['-total_years', '-total_amount']
@@ -781,19 +831,44 @@ class Contract(BaseModel):
             contract_years = list(self.contractyear_set.all())
         else:
             contract_years = list(ContractYear.objects.filter(contract=self))
-        extra_years = 8 - len(contract_years)
-        if extra_years > 0:
-            contract_years.extend({"amount": "-"} for _ in range(extra_years))
-        return contract_years
+        by_year = {item.year: item for item in contract_years}
+        start = getattr(settings, "LEAGUE_YEAR", None)
+        if not start:
+            start = min(by_year) if by_year else None
+        blank = {"amount": "-", "salary_class": "", "salary_label": ""}
+        if not start:
+            return [blank for _ in range(8)]
+        return [by_year.get(year) or blank for year in range(int(start), int(start) + 8)]
 
 
 class ContractYear(BaseModel):
+    SALARY_CLASSES = (
+        ("guaranteed", "Guaranteed"),
+        ("club_option", "Club option"),
+        ("vesting_option", "Vesting option"),
+        ("player_option", "Player option or opt-out"),
+        ("pre_arb_0", "Pre-arbitration, 0.000–0.171"),
+        ("pre_arb_1", "Pre-arbitration, 1.000–1.171"),
+        ("pre_arb_2", "Pre-arbitration, 2.000+"),
+        ("arbitration", "Arbitration"),
+        ("recall_hold", "Recall hold"),
+        ("pending_fa", "Pending free agent"),
+        ("pending_terms", "Terms pending"),
+    )
     year = models.IntegerField()
     contract = models.ForeignKey(Contract, null=True, blank=True, on_delete=models.SET_NULL)
     amount = models.IntegerField()
+    salary_class = models.CharField(max_length=32, choices=SALARY_CLASSES, default="guaranteed")
+
+    class Meta:
+        ordering = ["year"]
 
     def __unicode__(self):
         return f"{self.year}: {self.contract.player.name}"
+
+    @property
+    def salary_label(self):
+        return dict(self.SALARY_CLASSES).get(self.salary_class, "")
 
 class Collection(BaseModel):
     name = models.CharField(max_length=255)

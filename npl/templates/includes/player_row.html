@@ -24,7 +24,7 @@
     {% if team %}
         {% if p.contract %}
             {% for year in p.contract.years %}
-            <td>{% if year.amount != "-" %}${% endif %}{{ year.amount|intcomma }}</td>
+            <td{% if year.salary_label %} title="{{ year.salary_label }}"{% endif %}>{% if year.amount != "-" %}${% endif %}{{ year.amount|intcomma }}</td>
             {% endfor %}
         {% else %}
             <td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>

@@ -185,28 +185,32 @@ def format_player_row(row, team, player_dict):
     player_dict['position'] = row[4].strip()
     player_dict['mlb_org'] = row[5].strip()
     
-    player_dict['mls_time'] = 0.0
+    player_dict['mls_time'] = None
     player_dict['mls_year'] = None
     player_dict['options'] = 0
     player_dict['status'] = None
+    player_dict['sta'] = ""
 
-    if "." in row[6]:
-        player_dict['mls_time'] = float(row[6])
+    mls = row[6].strip() if len(row) > 6 and row[6] else ""
+    if "." in mls:
+        # Service is years.days (3.085 is 3 years and 85 days), not a float.
+        player_dict['mls_time'] = mls
+        player_dict['service_time'] = mls
         try:
             options_str = row[7].replace('$', '').strip()
             if options_str:
                 player_dict['options'] = int(options_str)
         except (ValueError, IndexError, AttributeError):
-            pass  # Keep default value of 0
+            pass
 
-        if len(row) > 8:
-            player_dict['status'] = row[8].lower()
+        if len(row) > 8 and row[8].strip():
+            player_dict['sta'] = row[8].strip()
+            player_dict['status'] = row[8].strip().lower()
+            if "QO" in [part.strip() for part in row[8].split(",")]:
+                player_dict['has_been_qo'] = True
 
-    else:
-        if row[6].strip() == "":
-            row[6] = None
-        else:
-            player_dict['mls_year'] = int(row[6])
+    elif mls.isdigit():
+        player_dict['mls_year'] = int(mls)
 
     return player_dict
 
@@ -255,6 +259,58 @@ def get_sheet(sheet_id, sheet_range, value_cutoff=None):
 
     if values:
         return values
+
+
+def _rgb(color):
+    if not color:
+        return None
+
+    def channel(name):
+        return int(round(float(color.get(name, 0)) * 255))
+
+    return (channel("red"), channel("green"), channel("blue"))
+
+
+def get_sheet_grid(sheet_id, sheet_range):
+    """Cell text plus the fill and italics the Key legend uses for contracts."""
+    from npl.sheetload import Cell
+
+    SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
+    creds = get_google_creds(SCOPES)
+    service = build("sheets", "v4", credentials=creds)
+    result = (
+        service.spreadsheets()
+        .get(
+            spreadsheetId=sheet_id,
+            ranges=[sheet_range],
+            includeGridData=True,
+            fields=(
+                "sheets(data(rowData(values("
+                "formattedValue,effectiveFormat(backgroundColor,textFormat(italic))"
+                "))))"
+            ),
+        )
+        .execute()
+    )
+    sheets = result.get("sheets") or []
+    if not sheets:
+        return []
+    data = (sheets[0].get("data") or [{}])[0]
+    grid = []
+    for row in data.get("rowData") or []:
+        cells = []
+        for value in row.get("values") or []:
+            style = value.get("effectiveFormat") or {}
+            text_format = style.get("textFormat") or {}
+            cells.append(
+                Cell(
+                    value.get("formattedValue") or "",
+                    bg=_rgb(style.get("backgroundColor")),
+                    italic=bool(text_format.get("italic")),
+                )
+            )
+        grid.append(cells)
+    return grid
 
 def kill_curly(s):
     if isinstance(s, str):
