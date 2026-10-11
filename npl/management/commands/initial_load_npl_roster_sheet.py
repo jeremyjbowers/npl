@@ -132,16 +132,20 @@ class Command(BaseCommand):
                     if row[0] == "1":
                         player_dict['roster_40man'] = True
                         
+                    mlb_id = row[3].strip() if len(row) > 3 else ""
+                    if len(row) < 7 or not mlb_id.isdigit():
+                        continue
                     for header, key in ROSTER_HEADERS:
                         if current_header == header:
                             player_dict[key] = True
                             if "aaa" in key:
                                 player_dict['roster_tripleA'] = True
-
-                        if "," in row[1]:
-                            players.append(utils.format_player_row(row, t, player_dict))
+                    if "," in row[1]:
+                        players.append(utils.format_player_row(row, t, player_dict))
 
                 
+            self.stdout.write(f"  {len(players)} players")
+            self.stdout.flush()
             for idx, p in enumerate(players):
                 """
                 debug
@@ -170,16 +174,22 @@ class Command(BaseCommand):
 
                 except models.Player.DoesNotExist:
                     pass
+                except Exception as exc:
+                    self.stdout.write(f"  could not update {p.get('raw_name')}: {exc}")
+                    player_obj = None
 
                 if not player_obj:
-                    if p.get("mlb_id"):
-                        p["mlb_id"] = str(p["mlb_id"])
+                    if not p.get("mlb_id"):
+                        continue
+                    p["mlb_id"] = str(p["mlb_id"])
+                    try:
                         player_obj = models.Player(**p)
                         player_obj.save()
-                        touched.append(player_obj.pk)
-                        self.stdout.write(f"+ {player_obj}")
-                    else:
-                        self.stdout.write(f'\tno mlb id: "{p.get("raw_name", "")}"')
+                    except Exception as exc:
+                        self.stdout.write(f"  could not save {p.get('raw_name')}: {exc}")
+                        continue
+                    touched.append(player_obj.pk)
+                    self.stdout.write(f"+ {player_obj}")
 
         for player in models.Player.objects.filter(pk__in=touched, last_name=""):
             if not player.raw_name or ", " not in player.raw_name:
