@@ -6,6 +6,7 @@ from django.conf import settings
 import requests
 
 from npl import models, utils
+from npl.sheetload import current_summary, founded_year, parse_team_sheet
 
 
 class Command(BaseCommand):
@@ -60,18 +61,30 @@ class Command(BaseCommand):
         # }
 
         for t in models.Team.objects.all():
+            if not t.tab_id:
+                continue
             sheet = utils.get_sheet(settings.ROSTER_SHEET_ID, f"{t.tab_id}!A:V", value_cutoff=None)
+            if not sheet:
+                continue
             current_header = None
             players = []
             print(t)
 
-            # Luxury cap only on team detail pages
-            lux_cap_space = int(sheet[3][11].split('$')[1].strip().replace(',', ''))
-            t.luxury_cap_space = lux_cap_space
-
-            # Team founded only on team detail pages
-            founded = int(sheet[0][10].split('f. ')[1].strip())
-            t.initial_season = founded
+            parsed = parse_team_sheet(sheet)
+            books = current_summary(parsed, settings.LEAGUE_YEAR)
+            if books:
+                if books.get("payroll") is not None:
+                    t.mlb_payroll = books["payroll"]
+                if books.get("cap_space") is not None:
+                    t.cap_space = books["cap_space"]
+                if books.get("cash") is not None:
+                    t.cash = books["cash"]
+                    t.cash_borrowing = max(0, -books["cash"])
+                if books.get("luxury") is not None:
+                    t.luxury_cap_space = books["luxury"]
+            founded = founded_year(sheet)
+            if founded:
+                t.initial_season = founded
 
             t.save()
 
@@ -79,11 +92,11 @@ class Command(BaseCommand):
                 if row == []:
                     continue
 
-                if row == ['', 'FINANCIALS']:
+                if any(str(cell).strip().upper() == "FINANCIALS" for cell in row):
                     current_header = None
                     break
                 for header,x in ROSTER_HEADERS:
-                    if header in row[1]:
+                    if len(row) > 1 and header in row[1]:
                         current_header = header
 
                 if row[0].strip() in ["-", "1", ""]:
@@ -120,8 +133,8 @@ class Command(BaseCommand):
                             if "aaa" in key:
                                 player_dict['roster_tripleA'] = True
 
-                        if "," in row[1]:
-                            players.append(utils.format_player_row(row, t, player_dict))
+                    if len(row) > 1 and "," in row[1]:
+                        players.append(utils.format_player_row(row, t, player_dict))
 
                 
             for idx, p in enumerate(players):

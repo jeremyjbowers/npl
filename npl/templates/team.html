@@ -30,10 +30,13 @@
             {% if pos_counts.UT %}· UT {{ pos_counts.UT }}{% endif %}
         </p>
         <p class="mt-2 text-xs">
-            Cap ${{ team.cap_space|default:0|intcomma }}
+            Payroll ${{ team.mlb_payroll|default:0|intcomma }}
+            · Cap ${{ team.cap_space|default:0|intcomma }}
             {% if team.pending_cap_after != None %}(if pending clear ${{ team.pending_cap_after|intcomma }}){% endif %}
+            · Carried ${{ team.carried_salary|default:0|intcomma }}
             · Cash ${{ team.cash|default:0|intcomma }}
             {% if team.pending_cash_after != None %}(if pending clear ${{ team.pending_cash_after|intcomma }}){% endif %}
+            · Borrowed ${{ team.cash_borrowing|default:0|intcomma }}
             · IFA ${{ team.ifa|default:0|intcomma }}
             {% if team.pending_ifa_after != None %}(if pending clear ${{ team.pending_ifa_after|intcomma }}){% endif %}
             · Luxury ${{ team.luxury_cap_space|default:0|intcomma }}

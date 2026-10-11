@@ -4,6 +4,8 @@ from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 
 from npl import models, utils
+from npl.books import apply_key_sheet
+from npl.sheetload import parse_key_sheet
 
 
 class Command(BaseCommand):
@@ -69,63 +71,43 @@ class Command(BaseCommand):
 
     def create_season(self, *args, **options):
         season, created = models.Season.objects.get_or_create(year=settings.LEAGUE_YEAR)
+        return season
 
 
     def create_teams(self, *args, **options):
-        teams = []
-
-        teams = utils.get_sheet(settings.ROSTER_SHEET_ID, f"Key!A:H", value_cutoff=None)
-        teams = [t for t in teams[38:] if self.is_team(t)]
-
-        for t in teams:
-            """
-            ['Absolute Sickos', '', '69', '32', '32', '$41,901,354', '$11,455,475', '$6,600,000']
-            """
-            team_dict = {}
-            team_dict['short_name'] = t[0].split()[-1].strip()
-            team_dict['full_name'] = t[0].strip()
-            team_dict['roster_85_man'] = int(t[2])
-            team_dict['roster_40_man'] = int(t[3])
-            team_dict['roster_30_man'] = int(t[4])
-            team_dict['cap_space'] = int(t[5].replace(',', '').replace('$', ''))
-            team_dict['cash'] = int(t[6].replace(',', '').replace('$', ''))
-            team_dict['ifa'] = int(t[7].replace(',', '').replace('$', ''))
-
-            ts_dict = {}
-            ts_dict['roster_85_man'] = int(t[2])
-            ts_dict['roster_40_man'] = int(t[3])
-            ts_dict['roster_30_man'] = int(t[4])
-            ts_dict['cap_space'] = int(t[5].replace(',', '').replace('$', ''))
-            ts_dict['cash'] = int(t[6].replace(',', '').replace('$', ''))
-            ts_dict['ifa'] = int(t[7].replace(',', '').replace('$', ''))
-
-
-            print(team_dict)
-            print(ts_dict)
-
-            try:
-                team_obj = models.Team.objects.get(short_name=team_dict['short_name'])
-                for k,v in team_dict.items():
-                    setattr(team_obj, k, v)
-
-            except:
-                team_obj = models.Team(**team_dict)
-
-            try:
-                ts_obj = models.TeamSeason.objects.get(team=team_obj, season=self.season)
-                for k,v in ts_dict.items():
-                    setattr(ts_obj, k, v)
-
-            except:
-                ts_obj = models.TeamSeason(**ts_dict)
-                ts_obj.team = team_obj
-                ts_obj.season = self.season
-
+        for row in self.key.get("teams") or []:
+            full_name = row["full_name"]
+            short_name = full_name.split()[-1].strip()
+            team_obj = models.Team.objects.filter(full_name=full_name).first()
+            if team_obj is None:
+                team_obj = models.Team.objects.filter(short_name=short_name).first()
+            if team_obj is None:
+                team_obj = models.Team(full_name=full_name, short_name=short_name)
+            else:
+                team_obj.full_name = full_name
+                team_obj.short_name = short_name
+            for field in ("cap_space", "cash", "ifa"):
+                if row.get(field) is not None:
+                    setattr(team_obj, field, row[field])
             team_obj.save()
-            ts_obj.save()
+
+            team_season = models.TeamSeason.objects.filter(team=team_obj, season=self.season).first()
+            if team_season is None:
+                team_season = models.TeamSeason(team=team_obj, season=self.season)
+            for field, source in (
+                ("cap_space", "cap_space"),
+                ("cash", "cash"),
+                ("ifa", "ifa"),
+                ("roster_85_man", "roster_85"),
+                ("roster_40_man", "roster_40"),
+                ("roster_30_man", "roster_30"),
+            ):
+                if row.get(source) is not None:
+                    setattr(team_season, field, row[source])
+            team_season.save()
 
     def assign_teams(self, *args, **options):
-        all_rows = utils.get_sheet(settings.ROSTER_SHEET_ID, f'Key!A:H', value_cutoff=None)
+        all_rows = utils.get_sheet(settings.ROSTER_SHEET_ID, f'Key!A:H', value_cutoff=None) or []
         rows = [r for r in all_rows[38:] if self.is_important(r)]
 
         division = None
@@ -151,8 +133,11 @@ class Command(BaseCommand):
                 division_obj.save()
 
     def handle(self, *args, **options):
+        key = utils.get_sheet(settings.ROSTER_SHEET_ID, "Key!A:H", value_cutoff=None) or []
+        self.key = parse_key_sheet(key)
         self.season = self.create_season()
         self.create_leagues()
         self.create_divisions()
         self.create_teams()
         self.assign_teams()
+        apply_key_sheet(self.key)
