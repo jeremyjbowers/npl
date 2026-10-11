@@ -30,7 +30,11 @@ DEVELOPMENT_MODE = False
 
 DATABASE_URL = os.environ.get("DATABASE_URL", None)
 
-if DATABASE_URL:
+# App Platform's ${db.DATABASE_URL} binding is only a real postgres URL at
+# runtime. During the image build it can be unset or an empty placeholder,
+# and parsing that crashes the buildpack's collectstatic step.
+_db_scheme = (DATABASE_URL or "").split("://", 1)[0]
+if _db_scheme in {"postgres", "postgresql", "pgsql"}:
     DATABASES = {
         "default": dj_database_url.parse(DATABASE_URL, conn_max_age=60),
     }
