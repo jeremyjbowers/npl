@@ -57,7 +57,9 @@ class Command(BaseCommand):
         rookie_teams = [self.parse_players(t) for t in team_list if t['sport']['id'] == 16]            
 
     def parse_players(self, t):
-        roster_link = f"https://statsapi.mlb.com/api/v1/teams/{t['id']}/roster/40Man"
+        # 40-man is the MLB roster. Affiliate pages are the full-season roster.
+        roster_type = "40Man" if t["sport"]["id"] == 1 else "fullSeason"
+        roster_link = f"https://statsapi.mlb.com/api/v1/teams/{t['id']}/roster/{roster_type}"
         tr = requests.get(roster_link).json()
 
         if tr.get('roster', None):
