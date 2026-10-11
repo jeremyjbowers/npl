@@ -1,3 +1,6 @@
+import json
+import shutil
+import subprocess
 import time
 
 from django.core.management.base import BaseCommand, CommandError
@@ -7,10 +10,104 @@ import requests
 
 from npl import models
 
+# MLB's edge returns 406 to the default requests fingerprint from App Platform.
+# A browser Accept header, then curl, is what gets a JSON body back.
 MLB_HEADERS = {
-    "User-Agent": "Mozilla/5.0 (compatible; NPL/1.0; +https://nationalpastime.org)",
-    "Accept": "application/json",
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+    ),
+    "Accept": "*/*",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Referer": "https://www.mlb.com/",
+    "Accept-Encoding": "gzip, deflate",
 }
+
+
+class _CurlResponse:
+    def __init__(self, status_code, content, url):
+        self.status_code = status_code
+        self.content = content
+        self.url = url
+        self.text = content.decode("utf-8", errors="replace")
+
+    def json(self):
+        return json.loads(self.content)
+
+    def raise_for_status(self):
+        if self.status_code >= 400:
+            raise requests.HTTPError(f"{self.status_code} for {self.url}", response=self)
+
+
+def _curl_get(url):
+    if shutil.which("curl") is None:
+        return None
+    completed = subprocess.run(
+        [
+            "curl", "-sS", "-L", "--http1.1", "--noproxy", "*",
+            "-A", MLB_HEADERS["User-Agent"],
+            "-H", "Accept: */*",
+            "-H", "Referer: https://www.mlb.com/",
+            "-w", "\n%{http_code}",
+            url,
+        ],
+        capture_output=True,
+        timeout=40,
+    )
+    raw = completed.stdout
+    if not raw:
+        return None
+    body, _, status = raw.rpartition(b"\n")
+    try:
+        code = int(status.strip() or b"0")
+    except ValueError:
+        return None
+    return _CurlResponse(code, body, url)
+
+
+def mlb_get(url, params=None):
+    prepared = requests.Request("GET", url, params=params).prepare()
+    session = requests.Session()
+    session.trust_env = False
+    response = None
+    try:
+        response = session.get(url, params=params, headers=MLB_HEADERS, timeout=30)
+    except requests.RequestException:
+        response = None
+    if response is not None and response.status_code == 200:
+        return response
+    curled = _curl_get(prepared.url)
+    if curled is not None and (response is None or curled.status_code == 200 or response.status_code != 200):
+        if curled.status_code == 200 or response is None:
+            return curled
+    return response if response is not None else curled
+
+
+def fetch_teams(season):
+    sports = (1, 11, 12, 13, 14, 15, 16)
+    combined = mlb_get(
+        "https://statsapi.mlb.com/api/v1/teams",
+        params={"season": season, "sportId": ",".join(str(sport) for sport in sports)},
+    )
+    if combined is not None and combined.status_code == 200:
+        return combined.json().get("teams") or []
+
+    teams = []
+    errors = []
+    for sport in sports:
+        response = mlb_get(
+            "https://statsapi.mlb.com/api/v1/teams",
+            params={"season": season, "sportId": sport},
+        )
+        if response is None or response.status_code != 200:
+            status = getattr(response, "status_code", "no response")
+            errors.append(f"sport {sport}: {status}")
+            continue
+        teams.extend(response.json().get("teams") or [])
+    if not teams:
+        detail = "; ".join(errors) or "no response"
+        raise CommandError(f"MLB rejected the team list ({detail}).")
+    return teams
 
 
 def fetch_roster(team_id, roster_types):
@@ -22,11 +119,10 @@ def fetch_roster(team_id, roster_types):
     last_status = None
     for roster_type in roster_types:
         url = f"https://statsapi.mlb.com/api/v1/teams/{team_id}/roster/{roster_type}"
-        for attempt in range(4):
-            try:
-                response = requests.get(url, headers=MLB_HEADERS, timeout=30)
-            except requests.RequestException as exc:
-                last_status = str(exc)
+        for attempt in range(3):
+            response = mlb_get(url)
+            if response is None:
+                last_status = "no response"
                 time.sleep(1 + attempt)
                 continue
             last_status = response.status_code
@@ -39,7 +135,7 @@ def fetch_roster(team_id, roster_types):
                     payload["_roster_type"] = roster_type
                     return payload
             if response.status_code in (406, 429, 500, 502, 503):
-                time.sleep(1.5 * (attempt + 1))
+                time.sleep(0.4 * (attempt + 1))
                 continue
             break
     return {"_error": last_status}
@@ -82,14 +178,7 @@ class Command(BaseCommand):
     def get_rosters(self):
         models.Player.objects.all().update(roster_status="MINORS")
         season = getattr(settings, "LEAGUE_YEAR", 2026)
-        response = requests.get(
-            "https://statsapi.mlb.com/api/v1/teams",
-            params={"season": season, "sportIds": "1,11,12,13,14,15,16"},
-            headers=MLB_HEADERS,
-            timeout=30,
-        )
-        response.raise_for_status()
-        team_list = response.json()["teams"]
+        team_list = fetch_teams(season)
         self.saved = 0
         self.skipped = []
 
