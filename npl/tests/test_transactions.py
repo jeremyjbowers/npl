@@ -155,6 +155,8 @@ class ProposalServiceTests(TestCase):
         self.assertEqual(asset.raw_label, "Turner, Trea")
 
     def test_waiver_claim_records_priority_by_creation(self):
+        self.player.roster_40man = True
+        self.player.save(update_fields=["roster_40man"])
         proposal = create_proposal(
             user=self.user,
             team=self.team,
@@ -293,7 +295,7 @@ class ProposalServiceTests(TestCase):
             full_name="Delta Club",
             short_name="Delta",
             abbreviation="DEL",
-            cap_space=2_000_000,
+            cash=2_000_000,
         )
         fourth.owners.add(fourth_owner)
         other_player = Player.objects.create(
@@ -349,7 +351,7 @@ class ProposalServiceTests(TestCase):
                 "piece_3_from": str(third.id),
                 "piece_3_to": str(fourth.id),
                 "piece_3_player": third_player.pk,
-                "piece_4_kind": "cap_space",
+                "piece_4_kind": "cash",
                 "piece_4_from": str(fourth.id),
                 "piece_4_to": str(self.team.id),
                 "piece_4_amount": "500000",
@@ -363,7 +365,7 @@ class ProposalServiceTests(TestCase):
         self.assertTrue(form.is_valid(), form.errors)
         proposal = submit_from_form(self.user, "trade", form.cleaned_data)
         kinds = set(proposal.assets.values_list("asset_type", flat=True))
-        self.assertEqual(kinds, {"player", "cap_space", "future_considerations"})
+        self.assertEqual(kinds, {"player", "cash", "future_considerations"})
         self.assertEqual(proposal.status, TransactionProposal.AWAITING)
         self.assertEqual(proposal.parties.filter(role="counterparty").count(), 3)
 
@@ -722,3 +724,87 @@ class ProposalRulesAndHintsTests(TestCase):
 
         home = self.client.get("/")
         self.assertContains(home, "Cash if pending proposals clear: $750,000")
+
+    def test_published_rules_are_cited(self):
+        import datetime
+
+        self.player.roster_40man = True
+        self.player.options = 2
+        self.player.save(update_fields=["roster_40man", "options"])
+
+        def filing(**kwargs):
+            payload = {
+                "user": self.user,
+                "team": self.team,
+                "assets": [{"asset_type": "player", "player": self.player}],
+            }
+            payload.update(kwargs)
+            return create_proposal(**payload)
+
+        with self.assertRaises(TransactionError) as nontender:
+            filing(code="non_tender", effective_date=datetime.date(2026, 6, 1))
+        self.assertIn("8.4.2", str(nontender.exception))
+
+        with self.assertRaises(TransactionError) as option:
+            filing(code="option_minors", effective_date=datetime.date(2026, 9, 15))
+        self.assertIn("8.3.2.1", str(option.exception))
+
+        with self.assertRaises(TransactionError) as long_il:
+            filing(code="il_56", effective_date=datetime.date(2026, 6, 1))
+        self.assertIn("8.2.1", str(long_il.exception))
+
+        with self.assertRaises(TransactionError) as closed:
+            filing(
+                code="trade",
+                counterparty_team=self.other_team,
+                effective_date=datetime.date(2026, 8, 15),
+            )
+        self.assertIn("8.7.2", str(closed.exception))
+
+        with self.assertRaises(TransactionError) as cap:
+            filing(
+                code="trade",
+                counterparty_team=self.other_team,
+                effective_date=datetime.date(2026, 6, 1),
+                assets=[
+                    {
+                        "asset_type": "cap_space",
+                        "amount": 1_000_000,
+                        "from_team": self.team,
+                        "to_team": self.other_team,
+                    }
+                ],
+            )
+        self.assertIn("8.7.1", str(cap.exception))
+
+        with self.assertRaises(TransactionError) as future_pick:
+            filing(
+                code="trade",
+                counterparty_team=self.other_team,
+                effective_date=datetime.date(2026, 6, 1),
+                assets=[
+                    {
+                        "asset_type": "draft_pick",
+                        "raw_label": "2029 Rule 4, round 1",
+                        "from_team": self.team,
+                        "to_team": self.other_team,
+                    }
+                ],
+            )
+        self.assertIn("8.7.1", str(future_pick.exception))
+
+        minor = Player.objects.create(
+            mlb_id="200099",
+            name="Minor Player",
+            first_name="Minor",
+            last_name="Player",
+            team=self.team,
+            roster_doubleA=True,
+        )
+        allowed = filing(
+            code="trade",
+            counterparty_team=self.other_team,
+            effective_date=datetime.date(2026, 8, 15),
+            assets=[{"asset_type": "player", "player": minor, "from_team": self.team, "to_team": self.other_team}],
+        )
+        self.assertEqual(allowed.kind, "trade")

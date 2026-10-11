@@ -1,10 +1,13 @@
-"""Reject filings that the roster and the books cannot support.
+"""Reject filings that the roster, the books, or the published rules cannot support.
 
-Directors still judge close calls. These checks stop the filings that are
-already false: a player who is not on the club, a second open deal for the
-same player, a 40-man that would not fit, or cash and pool space the club
-does not have.
+Directors still judge close calls. These checks stop filings that are already
+false, and filings that miss a rule in section 8 of the NPL Rules. Each of
+those messages names the section.
 """
+
+import re
+
+from django.utils import timezone
 
 from npl import models
 from npl.transactions.pending import (
@@ -50,12 +53,14 @@ IL_ALREADY = {
 DISPOSING_KINDS = MUST_BE_ON_CLUB | {"trade"}
 
 
-def evaluate(team, code, assets, contract_terms=None, proposal_id=None):
+def evaluate(team, code, assets, contract_terms=None, proposal_id=None, effective_date=None):
     """Return human-readable problems. An empty list means the filing can be stored."""
     problems = []
     players = [asset.get("player") for asset in assets if asset.get("player") is not None]
+    on_date = effective_date or timezone.localdate()
     problems.extend(_players_on_club(team, code, assets, players))
     problems.extend(_roster_state(team, code, players))
+    problems.extend(_published_rules(team, code, assets, players, on_date))
     problems.extend(_already_pending(team, code, players, proposal_id))
     problems.extend(_money(team, code, assets, contract_terms, proposal_id))
     problems.extend(_forty_man(team, code, assets, proposal_id))
@@ -86,10 +91,17 @@ def _trade_clubs(team, assets):
     return list(clubs.values())
 
 
-def assert_legal(team, code, assets, contract_terms=None, proposal_id=None):
+def assert_legal(team, code, assets, contract_terms=None, proposal_id=None, effective_date=None):
     from npl.transactions.service import TransactionError
 
-    problems = evaluate(team, code, assets, contract_terms=contract_terms, proposal_id=proposal_id)
+    problems = evaluate(
+        team,
+        code,
+        assets,
+        contract_terms=contract_terms,
+        proposal_id=proposal_id,
+        effective_date=effective_date,
+    )
     if problems:
         raise TransactionError(" ".join(problems))
 
@@ -133,11 +145,19 @@ def _roster_state(team, code, players):
             continue
         if code == "option_minors":
             if not player.roster_40man:
-                problems.append(f"{player.name} is not on the 40-man, so he cannot be optioned.")
-            elif _options_left(player) <= 0:
-                problems.append(f"{player.name} has no options left.")
+                problems.append(
+                    f"{player.name} is not on the 40-man, so he cannot be optioned. NPL Rules 8.3.1."
+                )
+            elif player.options is not None and player.options >= 99:
+                problems.append(
+                    f"{player.name} is a veteran and cannot be optioned. The only assignment to the minors is outright waivers. NPL Rules 8.3.3."
+                )
+            elif _options_left(player) <= 0 and _on_active_roster(player):
+                problems.append(
+                    f"{player.name} has no options left and is on the active roster. The only assignment to the minors is outright waivers. NPL Rules 8.3.3."
+                )
             elif player.roster_tripleA_option:
-                problems.append(f"{player.name} is already on option.")
+                problems.append(f"{player.name} is already on option. NPL Rules 8.3.1.")
         elif code == "recall_option":
             if not player.roster_tripleA_option:
                 problems.append(f"{player.name} is not on optional assignment.")
@@ -221,9 +241,10 @@ def _money(team, code, assets, contract_terms, proposal_id):
             continue
         spend = pending[field] + incoming[field]
         if balance + spend < 0:
-            problems.append(
-                f"This would leave {team.short_name} ${abs(balance + spend):,} short of {names[field]} after other pending proposals."
-            )
+                cite = {"cash": " NPL Rules 8.7.5.1.", "ifa": " NPL Rules 8.7.4.", "cap": ""}.get(field, "")
+                problems.append(
+                    f"This would leave {team.short_name} ${abs(balance + spend):,} short of {names[field]} after other pending proposals.{cite}"
+                )
     return problems
 
 
@@ -264,3 +285,136 @@ def _options_left(player):
 
 def _on_il(player):
     return bool(player.roster_7dayIL or player.roster_56dayIL or player.roster_eosIL)
+
+
+def _on_active_roster(player):
+    """On the active major-league roster, rather than already in the minors."""
+    if not player.roster_40man:
+        return False
+    return not (
+        player.roster_tripleA
+        or player.roster_tripleA_option
+        or player.roster_doubleA
+        or player.roster_singleA
+        or player.roster_nonroster
+    )
+
+
+def _major_league_contract(player):
+    """A player who cannot be dealt after the July 31 deadline. NPL Rules 8.7.2."""
+    if player.roster_foreign or player.roster_retired:
+        return False
+    if player.roster_doubleA or player.roster_singleA or player.roster_nonroster:
+        return False
+    if player.roster_tripleA and not player.roster_40man and not player.roster_tripleA_option:
+        return False
+    return bool(
+        player.roster_40man
+        or player.roster_tripleA_option
+        or player.roster_outrighted
+        or _on_il(player)
+    )
+
+
+def _published_rules(team, code, assets, players, on_date):
+    """Section 8 checks that do not depend on a director's judgment."""
+    problems = []
+    problems.extend(_calendar_rules(code, players, on_date))
+    problems.extend(_trade_asset_rules(assets, on_date))
+    if code == "il_56":
+        count = models.Player.objects.filter(team=team, roster_40man=True).count()
+        if count != 40:
+            problems.append(
+                f"A player may not be placed on the 56-day IL unless the 40-man contains 40 players. {team.short_name} has {count}. NPL Rules 8.2.1."
+            )
+    if code == "il_activate":
+        for player in players:
+            if player.roster_eosIL and on_date.month in range(3, 10):
+                problems.append(
+                    f"{player.name} is on the end-of-season IL and cannot be activated for the rest of the season. NPL Rules 8.2.1."
+                )
+    if code == "waiver_request_outright":
+        for player in players:
+            if not player.roster_40man:
+                problems.append(
+                    f"{player.name} is not on the 40-man. Outright waivers remove a player from the 40-man. NPL Rules 8.8.2.1."
+                )
+    if code == "foreign_place":
+        for player in players:
+            if not _major_league_contract(player):
+                problems.append(
+                    f"{player.name} is on a minor-league contract. He stays on the 85-man unless he is released. NPL Rules 8.1.2."
+                )
+    if code == "option_minors":
+        for player in players:
+            if _on_il(player):
+                problems.append(
+                    f"{player.name} is on the injured list and cannot be sent to the minors. NPL Rules 8.2."
+                )
+    if code == "rule5_draft":
+        forty = models.Player.objects.filter(team=team, roster_40man=True).count()
+        if forty >= 40:
+            problems.append(
+                f"{team.short_name} has a full 40-man and cannot make a Rule 5 selection. NPL Rules 8.6.4."
+            )
+        rostered = models.Player.objects.filter(team=team).count()
+        if rostered >= 85:
+            problems.append(
+                f"{team.short_name} has a full 85-man and cannot make a Rule 5 selection. NPL Rules 8.6.4."
+            )
+    if code == "trade":
+        for asset in assets:
+            if asset.get("asset_type") != "carried_salary":
+                continue
+            giver = asset.get("from_team") or team
+            amount = asset.get("amount") or 0
+            if giver.carried_salary is not None and amount > giver.carried_salary:
+                problems.append(
+                    f"{giver.short_name} does not have ${amount:,} of carried salary on the books. NPL Rules 8.7.5.2.4."
+                )
+    return problems
+
+
+def _calendar_rules(code, players, on_date):
+    problems = []
+    il_placement = {"il_7", "il_56", "il_eos", "il_covid", "il_move"}
+    if code in il_placement and on_date.month in {10, 11, 12, 1, 2}:
+        problems.append(
+            "There is no injured list in the offseason. Placement begins in March. NPL Rules 8.2."
+        )
+    if code == "option_minors" and on_date.month in {9, 10, 11, 12, 1, 2}:
+        problems.append(
+            "Players may not be optioned in September or the offseason. NPL Rules 8.3.2.1."
+        )
+    if code == "non_tender" and on_date.month in range(4, 10):
+        problems.append("Players can be nontendered in the offseason only. NPL Rules 8.4.2.")
+    if code == "trade" and on_date.month in {8, 9}:
+        for player in players:
+            if _major_league_contract(player):
+                problems.append(
+                    f"{player.name} is on a major-league contract and cannot be traded after the July 31 deadline. NPL Rules 8.7.2."
+                )
+    return problems
+
+
+def _trade_asset_rules(assets, on_date):
+    problems = []
+    for asset in assets:
+        kind = asset.get("asset_type")
+        if kind == "cap_space":
+            problems.append(
+                "Cap space itself cannot be traded. A trade may include cash, carried salary, or IFA cap space. NPL Rules 8.7.1."
+            )
+        label = asset.get("raw_label") or ""
+        if kind == "draft_pick":
+            years = [int(year) for year in re.findall(r"20\d{2}", label)]
+            if any(year >= on_date.year + 2 for year in years):
+                problems.append(
+                    f"Only picks for the next upcoming draft may be dealt. NPL Rules 8.7.1. ({label})"
+                )
+        player = asset.get("player")
+        if kind == "future_considerations" and player is not None and player.roster_40man:
+            problems.append(
+                f"{player.name} is on the 40-man. A player to be named later cannot be on the 40-man. NPL Rules 8.7.1."
+            )
+    return problems

@@ -247,7 +247,7 @@ def create_proposal(
 
     from npl.transactions.rules import assert_legal
 
-    assert_legal(team, code, normalized, contract_terms=contract_terms)
+    assert_legal(team, code, normalized, contract_terms=contract_terms, effective_date=effective_date)
 
     if kind["requires_agreement"]:
         status = models.TransactionProposal.AWAITING
