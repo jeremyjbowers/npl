@@ -40,6 +40,16 @@ if _db_scheme in {"postgres", "postgresql", "pgsql"}:
     }
 
 STATIC_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_LOCATION}/"
-STATICFILES_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+AWS_QUERYSTRING_AUTH = False
+# Django 5 removed STATICFILES_STORAGE. Without STORAGES, collectstatic
+# writes to local STATIC_ROOT and the CDN URL 404s.
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+    },
+}
 
 INSTALLED_APPS = INSTALLED_APPS + ["storages"]
