@@ -10,17 +10,30 @@ WSGI_APPLICATION = "config.do_app_platform.app.application"
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", get_random_secret_key())
 
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ["*"]
 
-DEVELOPMENT_MODE = True
+# App Platform terminates TLS and forwards the original scheme.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+CSRF_TRUSTED_ORIGINS = CSRF_TRUSTED_ORIGINS + [
+    "https://*.ondigitalocean.app",
+    "https://nationalpastime.org",
+    "https://www.nationalpastime.org",
+    "https://npldev.org",
+    "https://www.npldev.org",
+]
+
+DEVELOPMENT_MODE = False
 
 DATABASE_URL = os.environ.get("DATABASE_URL", None)
 
-DATABASES = {
-    "default": dj_database_url.parse(DATABASE_URL),
-}
+if DATABASE_URL:
+    DATABASES = {
+        "default": dj_database_url.parse(DATABASE_URL, conn_max_age=60),
+    }
 
 STATIC_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_LOCATION}/"
 STATICFILES_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
