@@ -7,6 +7,16 @@ from npl import models, utils
 from npl.transactions.clubs import franchise_number, tab_id_for
 
 
+def _number(value):
+    text = str(value or "").strip().replace(",", "").replace("$", "").replace(" ", "")
+    if text in {"", "-"}:
+        return None
+    try:
+        return int(text)
+    except ValueError:
+        return None
+
+
 class Command(BaseCommand):
     season = None
 
@@ -20,13 +30,13 @@ class Command(BaseCommand):
         return False
 
     def is_team(self, *args, **options):
-        if len(args) > 0:
-            row = args[0]
-            if len(row) > 0:
-                if "AL: " not in row[0]:
-                    if "NL: " not in row[0]:
-                        return True
-        return False
+        if not args or not args[0] or not args[0][0].strip():
+            return False
+        row = args[0]
+        if "AL:" in row[0] or "NL:" in row[0]:
+            return False
+        # Division headers and notes share this block. A club row has a roster count.
+        return _number(row[2] if len(row) > 2 else "") is not None
 
     def is_division(self, *args, **options):
         if len(args) > 0:
@@ -70,6 +80,7 @@ class Command(BaseCommand):
 
     def create_season(self, *args, **options):
         season, created = models.Season.objects.get_or_create(year=settings.LEAGUE_YEAR)
+        return season
 
 
     def create_teams(self, *args, **options):
@@ -88,20 +99,27 @@ class Command(BaseCommand):
             number = franchise_number(team_dict['full_name'])
             if number:
                 team_dict['tab_id'] = tab_id_for(number)
-            team_dict['roster_85_man'] = int(t[2])
-            team_dict['roster_40_man'] = int(t[3])
-            team_dict['roster_30_man'] = int(t[4])
-            team_dict['cap_space'] = int(t[5].replace(',', '').replace('$', ''))
-            team_dict['cash'] = int(t[6].replace(',', '').replace('$', ''))
-            team_dict['ifa'] = int(t[7].replace(',', '').replace('$', ''))
+            counts = [_number(t[i] if len(t) > i else "") for i in range(2, 8)]
+            if any(count is None for count in counts):
+                continue
+            (
+                team_dict['roster_85_man'],
+                team_dict['roster_40_man'],
+                team_dict['roster_30_man'],
+                team_dict['cap_space'],
+                team_dict['cash'],
+                team_dict['ifa'],
+            ) = counts
 
             ts_dict = {}
-            ts_dict['roster_85_man'] = int(t[2])
-            ts_dict['roster_40_man'] = int(t[3])
-            ts_dict['roster_30_man'] = int(t[4])
-            ts_dict['cap_space'] = int(t[5].replace(',', '').replace('$', ''))
-            ts_dict['cash'] = int(t[6].replace(',', '').replace('$', ''))
-            ts_dict['ifa'] = int(t[7].replace(',', '').replace('$', ''))
+            (
+                ts_dict['roster_85_man'],
+                ts_dict['roster_40_man'],
+                ts_dict['roster_30_man'],
+                ts_dict['cap_space'],
+                ts_dict['cash'],
+                ts_dict['ifa'],
+            ) = counts
 
 
             print(team_dict)
