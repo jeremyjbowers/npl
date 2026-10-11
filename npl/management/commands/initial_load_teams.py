@@ -93,58 +93,44 @@ class Command(BaseCommand):
             """
             ['Absolute Sickos', '', '69', '32', '32', '$41,901,354', '$11,455,475', '$6,600,000']
             """
-            team_dict = {}
-            team_dict['short_name'] = t[0].split()[-1].strip()
-            team_dict['full_name'] = t[0].strip()
-            number = franchise_number(team_dict['full_name'])
-            if number:
-                team_dict['tab_id'] = tab_id_for(number)
+            full_name = t[0].strip()
+            short_name = full_name.split()[-1].strip()
             counts = [_number(t[i] if len(t) > i else "") for i in range(2, 8)]
             if any(count is None for count in counts):
                 continue
-            (
-                team_dict['roster_85_man'],
-                team_dict['roster_40_man'],
-                team_dict['roster_30_man'],
-                team_dict['cap_space'],
-                team_dict['cash'],
-                team_dict['ifa'],
-            ) = counts
+            roster_85, roster_40, roster_30, cap_space, cash, ifa = counts
+            number = franchise_number(full_name)
+            team_dict = {
+                "short_name": short_name,
+                "full_name": full_name,
+                "cap_space": cap_space,
+                "cash": cash,
+                "ifa": ifa,
+            }
+            if number:
+                team_dict["tab_id"] = tab_id_for(number)
 
-            ts_dict = {}
-            (
-                ts_dict['roster_85_man'],
-                ts_dict['roster_40_man'],
-                ts_dict['roster_30_man'],
-                ts_dict['cap_space'],
-                ts_dict['cash'],
-                ts_dict['ifa'],
-            ) = counts
-
-
-            print(team_dict)
-            print(ts_dict)
-
-            try:
-                team_obj = models.Team.objects.get(short_name=team_dict['short_name'])
-                for k,v in team_dict.items():
-                    setattr(team_obj, k, v)
-
-            except:
+            team_obj = models.Team.objects.filter(short_name=short_name).first()
+            if team_obj is None and team_dict.get("tab_id"):
+                team_obj = models.Team.objects.filter(tab_id=team_dict["tab_id"]).first()
+            if team_obj is None:
                 team_obj = models.Team(**team_dict)
-
-            try:
-                ts_obj = models.TeamSeason.objects.get(team=team_obj, season=self.season)
-                for k,v in ts_dict.items():
-                    setattr(ts_obj, k, v)
-
-            except:
-                ts_obj = models.TeamSeason(**ts_dict)
-                ts_obj.team = team_obj
-                ts_obj.season = self.season
-
+            else:
+                for key, value in team_dict.items():
+                    setattr(team_obj, key, value)
             team_obj.save()
+
+            ts_obj = models.TeamSeason.objects.filter(team=team_obj, season=self.season).first()
+            if ts_obj is None:
+                ts_obj = models.TeamSeason(team=team_obj, season=self.season)
+            ts_obj.roster_85_man = roster_85
+            ts_obj.roster_40_man = roster_40
+            ts_obj.roster_30_man = roster_30
+            ts_obj.cap_space = cap_space
+            ts_obj.cash = cash
+            ts_obj.ifa = ifa
             ts_obj.save()
+            self.stdout.write(f"{team_obj.tab_id or short_name}: 40-man {roster_40}, cap {cap_space}")
 
     def assign_teams(self, *args, **options):
         all_rows = utils.get_sheet(settings.ROSTER_SHEET_ID, f'Key!A:H', value_cutoff=None)
