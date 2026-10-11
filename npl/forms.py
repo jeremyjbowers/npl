@@ -9,23 +9,108 @@ from django.db import models
 from django.db.models import Q
 
 
+# What a manager can file from the site. The form page lists these with the
+# hint, so the choices are visible without opening a dropdown.
+TRANSACTION_MENU = (
+    {
+        "label": "Deals",
+        "options": (
+            {
+                "code": "trade",
+                "label": "Trade Proposal",
+                "hint": "Any number of clubs. Each piece names who gives it and who gets it. Every other club has to agree.",
+            },
+        ),
+    },
+    {
+        "label": "Contracts",
+        "options": (
+            {
+                "code": "signing",
+                "label": "Free Agent or Contract Signing",
+                "hint": "Offseason major-league deal in points, in-season free agent, minor-league contract, or extension.",
+            },
+            {
+                "code": "ifa_signing",
+                "label": "IFA Signing",
+                "hint": "An international signing, paid from the club's bonus pool.",
+            },
+            {
+                "code": "offseason",
+                "label": "Offseason Transactions",
+                "hint": "A spring invitation, or a signing, trade, or extension written out as one note.",
+            },
+        ),
+    },
+    {
+        "label": "Roster",
+        "options": (
+            {
+                "code": "injured_list",
+                "label": "Injured List",
+                "hint": "7-day, 56-day, end of season, COVID, or a move between those lists.",
+            },
+            {
+                "code": "option_minors",
+                "label": "Option to Minor Leagues",
+                "hint": "Send a player to the minors. He needs an option year left.",
+            },
+            {
+                "code": "purchase_contract",
+                "label": "Purchase a Contract",
+                "hint": "Move one of your own minor leaguers onto the 40-man.",
+            },
+            {
+                "code": "recall_option",
+                "label": "Recall an Option",
+                "hint": "Bring an optioned player back.",
+            },
+            {
+                "code": "release_player",
+                "label": "Release Player",
+                "hint": "Unconditional release, outright release, or a release that goes through waivers.",
+            },
+            {
+                "code": "limbo_assignment",
+                "label": "In Limbo Assignment",
+                "hint": "Hold a player for a pending trade, an investigation, or a contract dispute.",
+            },
+            {
+                "code": "restricted_list",
+                "label": "Restricted List",
+                "hint": "Restricted list, a suspension, paternity, family medical, or bereavement.",
+            },
+            {
+                "code": "foreign_retirement",
+                "label": "Foreign/Retirement/Death",
+                "hint": "Foreign list, retirement, or death.",
+            },
+        ),
+    },
+    {
+        "label": "Waivers",
+        "options": (
+            {
+                "code": "waiver_request",
+                "label": "Waiver Request",
+                "hint": "Ask for outright, trade, or Rule 5 waivers on a player you have.",
+            },
+            {
+                "code": "waiver_claim",
+                "label": "Waiver Claim",
+                "hint": "Claim a player another club has placed on waivers.",
+            },
+        ),
+    },
+)
+
+
 class TransactionTypeForm(forms.Form):
     """Step 1: Choose transaction type"""
     TRANSACTION_CHOICES = [
-        ('trade', 'Trade Proposal'),
-        ('signing', 'Free Agent or Contract Signing'),
-        ('ifa_signing', 'IFA Signing'),
-        ('offseason', 'Offseason Transactions'),
-        ('injured_list', 'Injured List'),
-        ('option_minors', 'Option to Minor Leagues'),
-        ('purchase_contract', 'Purchase a Contract'),
-        ('recall_option', 'Recall an Option'),
-        ('release_player', 'Release Player'),
-        ('waiver_request', 'Waiver Request'),
-        ('waiver_claim', 'Waiver Claim'),
-        ('limbo_assignment', 'In Limbo Assignment'),
-        ('restricted_list', 'Restricted List'),
-        ('foreign_retirement', 'Foreign/Retirement/Death'),
+        (option["code"], option["label"])
+        for group in TRANSACTION_MENU
+        for option in group["options"]
     ]
     
     transaction_type = forms.ChoiceField(

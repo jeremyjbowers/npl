@@ -721,9 +721,39 @@ class ProposalRulesAndHintsTests(TestCase):
         self.assertContains(page, "Pending trade")
         self.assertContains(page, "(if pending clear $750,000)")
         self.assertContains(page, "They stay on the club until Monday.")
+        self.assertNotContains(page, "File a transaction")
 
         home = self.client.get("/")
-        self.assertContains(home, "Cash if pending proposals clear: $750,000")
+        self.assertContains(home, "pending $750,000")
+        self.assertNotContains(home, "Cash if pending proposals clear")
+        self.assertContains(home, "85-man")
+        self.assertContains(home, "40-man")
+        self.assertNotContains(home, "· IF")
+
+    def test_manager_can_see_the_moves_a_club_can_file(self):
+        self.owner.email = "rules-owner@example.com"
+        self.owner.save(update_fields=["email"])
+        self.client.force_login(self.user)
+
+        home = self.client.get("/")
+        self.assertContains(home, "Rules")
+        self.assertNotContains(home, "rules-owner@example.com")
+        self.assertContains(home, "File a transaction", count=1)
+
+        club = self.client.get("/teams/rules/")
+        self.assertContains(club, "rules-owner@example.com")
+        self.assertContains(club, "File a transaction")
+        other = self.client.get("/teams/other/")
+        self.assertNotContains(other, "File a transaction")
+
+        form = self.client.get("/transactions/form/")
+        self.assertContains(form, "Trade Proposal")
+        self.assertContains(form, "Every other club has to agree.")
+        self.assertContains(form, "Waiver Claim")
+        self.assertContains(form, "Claim a player another club has placed on waivers.")
+
+        log = self.client.get("/transactions/")
+        self.assertContains(log, "lists every move a club can file")
 
     def test_published_rules_are_cited(self):
         import datetime

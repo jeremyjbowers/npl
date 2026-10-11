@@ -3,8 +3,14 @@
 {% block title %}Transactions — The NPL{% endblock %}
 
 {% block content %}
-<header class="mb-2">
+<header class="mb-4">
     <h1 class="text-2xl font-bold">Transactions</h1>
+    <p class="mt-1 max-w-xl text-sm">This is the processed log. A filing shows up here after directors record it.</p>
+    {% if user.is_authenticated %}
+    <p class="mt-2 text-sm"><a class="underline" href="/transactions/form/">Submit a transaction</a> lists every move a club can file.</p>
+    {% else %}
+    <p class="mt-2 text-sm"><a class="underline" href="/accounts/login/">Log in</a> to file a transaction. The form lists every move a club can send.</p>
+    {% endif %}
 </header>
 
 {% include "includes/pagination.html" %}

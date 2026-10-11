@@ -34,7 +34,7 @@
                 <button type="button" class="underline" aria-haspopup="true">Transactions ▼</button>
                 <div class="nav-dropdown-panel">
                     {% if user.is_authenticated %}
-                    <a href="/transactions/form/" class="block py-0.5 text-sm underline">Submit</a>
+                    <a href="/transactions/form/" class="block py-0.5 text-sm underline">Submit a transaction</a>
                     <a href="/transactions/list/" class="block py-0.5 text-sm underline">My submissions</a>
                     <a href="/account/tokens/" class="block py-0.5 text-sm underline">API tokens</a>
                     {% endif %}
@@ -84,9 +84,10 @@
         <a href="https://tbb.quarto.pub/npl-rules/" class="block underline">Rules</a>
         <a href="/auctions/" class="block underline">Auctions</a>
         <a href="/nominations/" class="block underline">Nominations</a>
-        <a href="/transactions/" class="block underline">Transactions</a>
+        <a href="/transactions/" class="block underline">All transactions</a>
         {% if user.is_authenticated %}
         <a href="/transactions/form/" class="block underline">Submit a transaction</a>
+        <a href="/transactions/list/" class="block underline">My submissions</a>
         <a href="/account/tokens/" class="block underline">API tokens</a>
         {% endif %}
         {% if user.is_staff %}

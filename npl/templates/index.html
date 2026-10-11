@@ -12,27 +12,46 @@
     <h2 class="mb-3 border-b border-gray-300 pb-1 text-lg font-bold">{{ division.grouper }}</h2>
     <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {% for team in division.list %}
-        <article class="border border-gray-300 p-3">
-            <h3 class="font-bold"><a href="/teams/{{ team.short_name|lower }}/">{{ team.full_name }}</a></h3>
-            {% for owner in team.owners.all %}
-            <p>{{ owner.name }}</p>
-            {% if owner.email %}<p><a href="mailto:{{ owner.email }}">{{ owner.email }}</a></p>{% endif %}
-            {% endfor %}
-            <dl class="mt-2 grid grid-cols-2 gap-x-4 text-xs">
-                <div><dt class="inline">C</dt> <dd class="inline">{{ team.pos_counts.C }}</dd></div>
-                <div><dt class="inline">Cap</dt> <dd class="inline">${{ team.cap_space|default:0|intcomma }}</dd></div>
-                <div><dt class="inline">IF</dt> <dd class="inline">{{ team.pos_counts.IF }}</dd></div>
-                <div><dt class="inline">Cash</dt> <dd class="inline">${{ team.cash|default:0|intcomma }}</dd></div>
-                <div><dt class="inline">OF</dt> <dd class="inline">{{ team.pos_counts.OF }}</dd></div>
-                <div><dt class="inline">UT</dt> <dd class="inline">{{ team.pos_counts.UT }}</dd></div>
-                <div><dt class="inline">P</dt> <dd class="inline">{{ team.pos_counts.P }}</dd></div>
-                <div><dt class="inline">Roster</dt> <dd class="inline">{{ team.pos_counts.total }}</dd></div>
+        <article class="flex h-full flex-col border border-gray-300">
+            <header class="px-3 py-2">
+                <h3 class="text-sm font-bold leading-snug">
+                    <a class="underline" href="/teams/{{ team.short_name|lower }}/">{{ team.full_name }}</a>
+                </h3>
+                {% if team.abbreviation or team.owners.all %}
+                <p class="mt-1 text-xs text-gray-600">
+                    {% if team.abbreviation %}<span class="font-bold text-black">{{ team.abbreviation }}</span>{% endif %}
+                    {% for owner in team.owners.all %}{% if owner.name %}{% if team.abbreviation or not forloop.first %} · {% endif %}{{ owner.name }}{% endif %}{% endfor %}
+                </p>
+                {% endif %}
+            </header>
+            <dl class="grid flex-1 grid-cols-[4.25rem_1fr] content-start gap-x-2 gap-y-1 border-t border-gray-200 px-3 py-2 text-xs">
+                <dt class="text-gray-600">85-man</dt>
+                <dd class="text-right">{{ team.roster_85 }}</dd>
+                <dt class="text-gray-600">40-man</dt>
+                <dd class="text-right">{{ team.roster_40 }}</dd>
+                <dt class="text-gray-600">Cap</dt>
+                <dd class="text-right">
+                    {% if team.cap_space != None and team.cap_space < 0 %}-{% endif %}${{ team.cap_space|default:0|cut:"-"|intcomma }}
+                    {% if team.pending_cap_after != None %}
+                    <span class="block text-gray-600">pending {% if team.pending_cap_after < 0 %}-{% endif %}${{ team.pending_cap_after|floatformat:0|cut:"-"|intcomma }}</span>
+                    {% endif %}
+                </dd>
+                <dt class="text-gray-600">Cash</dt>
+                <dd class="text-right">
+                    {% if team.cash != None and team.cash < 0 %}-{% endif %}${{ team.cash|default:0|cut:"-"|intcomma }}
+                    {% if team.pending_cash_after != None %}
+                    <span class="block text-gray-600">pending {% if team.pending_cash_after < 0 %}-{% endif %}${{ team.pending_cash_after|floatformat:0|cut:"-"|intcomma }}</span>
+                    {% endif %}
+                </dd>
             </dl>
-            {% if team.pending_cap_after != None %}
-            <p class="mt-2 text-xs text-gray-600">Cap if pending proposals clear: ${{ team.pending_cap_after|floatformat:0|intcomma }}</p>
+            {% if user.is_authenticated %}
+            {% for owner in team.owners.all %}
+            {% if owner.user_id == user.id %}
+            <p class="border-t border-gray-200 px-3 py-1.5 text-xs">
+                <a class="underline" href="/transactions/form/">File a transaction</a>
+            </p>
             {% endif %}
-            {% if team.pending_cash_after != None %}
-            <p class="text-xs text-gray-600">Cash if pending proposals clear: ${{ team.pending_cash_after|floatformat:0|intcomma }}</p>
+            {% endfor %}
             {% endif %}
         </article>
         {% endfor %}

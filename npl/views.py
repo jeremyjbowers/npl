@@ -20,7 +20,7 @@ from datetime import datetime, timedelta
 import pytz
 
 from npl import models, rosters, utils
-from .forms import TransactionTypeForm, TRANSACTION_FORM_MAP
+from .forms import TRANSACTION_FORM_MAP, TRANSACTION_MENU, TransactionTypeForm
 from npl.transactions.service import (
     TransactionError,
     agree,
@@ -169,7 +169,7 @@ def npl_page_detail(request, slug):
 
 def index(request):
     context = utils.build_context(request, with_owners=True)
-    utils.attach_position_counts(context["all_teams"])
+    utils.attach_roster_counts(context["all_teams"])
     return render(request, "index.html", context)
 
 def player_detail(request, playerid):
@@ -188,6 +188,9 @@ def team_detail(request, short_name):
     )
     team = context["team"]
     context["owners"] = list(team.owners.all())
+    context["viewer_owns"] = request.user.is_authenticated and any(
+        owner.user_id == request.user.id for owner in context["owners"]
+    )
 
     from npl.transactions.pending import (
         annotate_players,
@@ -256,6 +259,7 @@ def transaction_form_step1(request):
     context = utils.build_context(request)
     context.update({
         'form': form,
+        'transaction_menu': TRANSACTION_MENU,
         'step': 1,
         'total_steps': 2,
         'processing_info': 'Transactions are processed Mondays at 1 PM EST.',

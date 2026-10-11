@@ -99,32 +99,32 @@ def build_context(request, *, with_teams=True, with_owners=False):
     return context
 
 
-def attach_position_counts(teams):
-    """One grouped query for the homepage roster tallies."""
-    from django.db.models import Count
-
-    from npl.rosters import position_bucket
+def attach_roster_counts(teams):
+    """One grouped query for the homepage 85-man and 40-man totals."""
+    from django.db.models import Count, Q
 
     team_ids = [team.id for team in teams]
-    tallies = {team.id: {"C": 0, "IF": 0, "OF": 0, "P": 0, "UT": 0, "total": 0} for team in teams}
-    if not team_ids:
-        return teams
-
-    rows = (
-        models.Player.objects.filter(team_id__in=team_ids)
-        .values("team_id", "simple_position")
-        .annotate(n=Count("pk"))
-    )
-    for row in rows:
-        bucket = tallies.get(row["team_id"])
-        if bucket is None:
-            continue
-        key = position_bucket(row["simple_position"])
-        bucket[key] += row["n"]
-        bucket["total"] += row["n"]
+    tallies = {team.id: {"roster_85": 0, "roster_40": 0} for team in teams}
+    if team_ids:
+        rows = (
+            models.Player.objects.filter(team_id__in=team_ids)
+            .values("team_id")
+            .annotate(
+                roster_85=Count("pk"),
+                roster_40=Count("pk", filter=Q(roster_40man=True)),
+            )
+        )
+        for row in rows:
+            bucket = tallies.get(row["team_id"])
+            if bucket is None:
+                continue
+            bucket["roster_85"] = row["roster_85"]
+            bucket["roster_40"] = row["roster_40"]
 
     for team in teams:
-        team.pos_counts = tallies.get(team.id, {"C": 0, "IF": 0, "OF": 0, "P": 0, "UT": 0, "total": 0})
+        counts = tallies.get(team.id, {"roster_85": 0, "roster_40": 0})
+        team.roster_85 = counts["roster_85"]
+        team.roster_40 = counts["roster_40"]
     return teams
 
 def to_bool(bool_string):
