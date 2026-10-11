@@ -32,6 +32,7 @@ MUST_BE_ON_CLUB = {
     "recall_option",
     "purchase_contract",
     "release",
+    "contract_amnesty",
     "non_tender",
     "restricted_place",
     "restricted_activate",
@@ -130,7 +131,7 @@ def _players_on_club(team, code, assets, players):
             if player.team_id and player.team_id != origin.id:
                 problems.append(f"{player.name} is not on {origin.short_name}.")
     if code in MUST_BE_ON_CLUB and code != "extension":
-        if code in {"release", "non_tender", "retirement", "death", "option_minors", "recall_option", "purchase_contract"} and not players:
+        if code in {"release", "contract_amnesty", "non_tender", "retirement", "death", "option_minors", "recall_option", "purchase_contract"} and not players:
             problems.append("Name the player.")
         for player in players:
             if player.team_id != team.id:

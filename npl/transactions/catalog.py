@@ -87,6 +87,7 @@ _KIND_ROWS = (
     ("exercise_vesting_option", "Exercise Vesting Option", "contract", False, True, True),
     ("decline_option", "Decline Option", "contract", False, True, True),
     ("qualifying_offer", "Qualifying Offer", "contract", False, True, True),
+    # Dropped with no penalty. The contract is voided, not bought out.
     ("contract_amnesty", "Contract Amnesty", "contract", False, False, True),
     ("waiver_request_outright", "Waiver Request: Outright", "waiver", False, False, True),
     ("waiver_request_trade", "Waiver Request: Trade", "waiver", False, False, True),
@@ -108,9 +109,12 @@ KINDS = {
         "requires_agreement": agreement,
         "requires_contract": contract,
         "manager_can_initiate": initiate,
+        "effect": "",
     }
     for code, label, category, agreement, contract, initiate in _KIND_ROWS
 }
+
+KINDS["contract_amnesty"]["effect"] = "Dropped without penalty. The contract is voided."
 
 # Lowercased labels from the 2025 and 2026 transaction tabs.
 SHEET_ALIASES = {
