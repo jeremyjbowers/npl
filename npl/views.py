@@ -22,6 +22,7 @@ from datetime import datetime, timedelta
 import pytz
 
 from npl import models, rosters, utils
+from npl.homepage import board_context
 from .forms import TRANSACTION_FORM_MAP, TRANSACTION_MENU, TransactionTypeForm
 from npl.transactions.service import (
     TransactionError,
@@ -170,8 +171,8 @@ def npl_page_detail(request, slug):
     return render(request, "page_detail.html", context)
 
 def index(request):
-    context = utils.build_context(request, with_owners=True)
-    utils.attach_roster_counts(context["all_teams"])
+    context = utils.build_context(request)
+    context.update(board_context())
     return render(request, "index.html", context)
 
 def player_detail(request, playerid):

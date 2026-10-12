@@ -714,10 +714,11 @@ class ProposalRulesAndHintsTests(TestCase):
         self.assertNotContains(page, "File a transaction")
 
         home = self.client.get("/")
-        self.assertContains(home, "pending $750,000")
-        self.assertNotContains(home, "Cash if pending proposals clear")
-        self.assertContains(home, "85-man")
-        self.assertContains(home, "40-man")
+        self.assertEqual(home.status_code, 200)
+        self.assertContains(home, "Full transaction log")
+        self.assertNotContains(home, "pending $750,000")
+        self.assertNotContains(home, "85-man")
+        self.assertNotContains(home, "40-man")
         self.assertNotContains(home, "· IF")
 
     def test_manager_can_see_the_moves_a_club_can_file(self):
@@ -728,7 +729,8 @@ class ProposalRulesAndHintsTests(TestCase):
         home = self.client.get("/")
         self.assertContains(home, "Rules")
         self.assertNotContains(home, "rules-owner@example.com")
-        self.assertContains(home, "File a transaction", count=1)
+        self.assertNotContains(home, "File a transaction")
+        self.assertContains(home, "Submit a transaction")
 
         club = self.client.get("/teams/rules/")
         self.assertContains(club, "rules-owner@example.com")

@@ -4,60 +4,142 @@
 {% block title %}The NPL{% endblock %}
 
 {% block content %}
-<h1 class="mb-4 text-2xl font-bold">League Overview</h1>
+<h1 class="mb-4 text-2xl font-bold">The NPL</h1>
 
-{% regroup all_teams by division_label as division_groups %}
-{% for division in division_groups %}
 <section class="mb-8">
-    <h2 class="mb-3 border-b border-gray-300 pb-1 text-lg font-bold">{{ division.grouper }}</h2>
-    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {% for team in division.list %}
-        <article class="flex h-full flex-col border border-gray-300">
-            <header class="px-3 py-2">
-                <h3 class="text-sm font-bold leading-snug">
-                    <a class="underline" href="/teams/{{ team.short_name|lower }}/">{{ team.full_name }}</a>
-                </h3>
-                {% if team.abbreviation or team.owners.all %}
-                <p class="mt-1 text-xs text-gray-600">
-                    {% if team.abbreviation %}<span class="font-bold text-black">{{ team.abbreviation }}</span>{% endif %}
-                    {% for owner in team.owners.all %}{% if owner.name %}{% if team.abbreviation or not forloop.first %} · {% endif %}{{ owner.name }}{% endif %}{% endfor %}
-                </p>
-                {% endif %}
-            </header>
-            <dl class="grid flex-1 grid-cols-[4.25rem_1fr] content-start gap-x-2 gap-y-1 border-t border-gray-200 px-3 py-2 text-xs">
-                <dt class="text-gray-600">85-man</dt>
-                <dd class="text-right">{{ team.roster_85 }}</dd>
-                <dt class="text-gray-600">40-man</dt>
-                <dd class="text-right">{{ team.roster_40 }}</dd>
-                <dt class="text-gray-600">Cap</dt>
-                <dd class="text-right">
-                    {% if team.cap_space != None and team.cap_space < 0 %}-{% endif %}${{ team.cap_space|default:0|cut:"-"|intcomma }}
-                    {% if team.pending_cap_after != None %}
-                    <span class="block text-gray-600">pending {% if team.pending_cap_after < 0 %}-{% endif %}${{ team.pending_cap_after|floatformat:0|cut:"-"|intcomma }}</span>
-                    {% endif %}
-                </dd>
-                <dt class="text-gray-600">Cash</dt>
-                <dd class="text-right">
-                    {% if team.cash != None and team.cash < 0 %}-{% endif %}${{ team.cash|default:0|cut:"-"|intcomma }}
-                    {% if team.pending_cash_after != None %}
-                    <span class="block text-gray-600">pending {% if team.pending_cash_after < 0 %}-{% endif %}${{ team.pending_cash_after|floatformat:0|cut:"-"|intcomma }}</span>
-                    {% endif %}
-                </dd>
-            </dl>
-            {% if user.is_authenticated %}
-            {% for owner in team.owners.all %}
-            {% if owner.user_id == user.id %}
-            <p class="border-t border-gray-200 px-3 py-1.5 text-xs">
-                <a class="underline" href="/transactions/form/">File a transaction</a>
-            </p>
-            {% endif %}
-            {% endfor %}
-            {% endif %}
-        </article>
-        {% endfor %}
+    <header class="mb-3">
+        <h2 class="text-lg font-bold">Transactions</h2>
+        <p class="mt-1"><a class="underline" href="/transactions/">Full transaction log</a></p>
+    </header>
+    {% for week in transaction_weeks %}
+    <h3 class="mb-2 mt-4 font-bold">{{ week.monday }}</h3>
+    <div class="mb-4 overflow-x-auto">
+        <table class="sheet">
+            <thead>
+                <tr>
+                    <th scope="col">Date</th>
+                    <th scope="col">Team</th>
+                    <th scope="col">Player</th>
+                    <th scope="col">Transaction</th>
+                    <th scope="col">Acquiring team</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in week.transactions %}
+                <tr>
+                    <td>{{ t.date|default:"" }}</td>
+                    <td>{{ t.calculated_team|default:"" }}</td>
+                    <td>{{ t.calculated_player|default:"" }}</td>
+                    <td>{{ t.transaction_type|default:"" }}</td>
+                    <td>{{ t.calculated_acquiring_team|default:"" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
+    {% empty %}
+    <p>No transactions have been recorded.</p>
+    {% endfor %}
 </section>
-{% empty %}
-<p>No clubs are loaded yet.</p>
-{% endfor %}
+
+<section class="mb-8">
+    <h2 class="mb-3 text-lg font-bold">Deadlines</h2>
+    {% if deadlines %}
+    <div class="overflow-x-auto">
+        <table class="sheet">
+            <thead>
+                <tr>
+                    <th scope="col">Date</th>
+                    <th scope="col">Deadline</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for deadline in deadlines %}
+                <tr>
+                    <td>{{ deadline.when }}</td>
+                    <td>{{ deadline.label }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p>No deadlines are on the calendar.</p>
+    {% endif %}
+</section>
+
+<section class="mb-8">
+    <header class="mb-3">
+        <h2 class="text-lg font-bold">Auctions</h2>
+        <p class="mt-1"><a class="underline" href="/auctions/">All auctions</a></p>
+    </header>
+    {% if open_auctions %}
+    <div class="overflow-x-auto">
+        <table class="sheet">
+            <thead>
+                <tr>
+                    <th scope="col">Player</th>
+                    <th scope="col">Closes</th>
+                    <th scope="col">Minimum bid</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for auction in open_auctions %}
+                <tr>
+                    <td>
+                        {% if auction.player and auction.player.mlb_id %}
+                        <a class="underline" href="/players/{{ auction.player.mlb_id }}/">{{ auction.player.name }}</a>
+                        {% else %}
+                        {{ auction.player.name|default:"" }}
+                        {% endif %}
+                    </td>
+                    <td>{{ auction.closes }}</td>
+                    <td>${{ auction.min_bid|intcomma }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p>There is no open auction.</p>
+    {% endif %}
+</section>
+
+<section class="mb-8">
+    <header class="mb-3">
+        <h2 class="text-lg font-bold">Unowned players</h2>
+        <p class="mt-1">For research before stats are wired. The <a class="underline" href="/players/search/?owned=no">Players page</a> has the full list.</p>
+    </header>
+    {% if unowned_players %}
+    <div class="overflow-x-auto">
+        <table class="sheet">
+            <thead>
+                <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">Position</th>
+                    <th scope="col">Age</th>
+                    <th scope="col">MLB org</th>
+                    <th scope="col">Roster status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for player in unowned_players %}
+                <tr>
+                    <td><a class="underline" href="/players/{{ player.mlb_id }}/">{{ player.name }}</a></td>
+                    <td>{{ player.position|default:"" }}</td>
+                    <td>{{ player.age|default:"" }}</td>
+                    <td>{{ player.mlb_org|default:"" }}</td>
+                    <td>{{ player.get_roster_status|default:"" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if unowned_players_capped %}
+    <p class="mt-2">Showing 40. The <a class="underline" href="/players/search/?owned=no">Players page</a> has the full list.</p>
+    {% endif %}
+    {% else %}
+    <p>No unowned players are loaded.</p>
+    {% endif %}
+</section>
 {% endblock %}
