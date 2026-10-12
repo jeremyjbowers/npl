@@ -45,6 +45,7 @@
 
             <a href="https://docs.google.com/spreadsheets/d/1On6uRXLRQ3pzl2FHYRgWKCedsCdl6UNbNaSF6pwlGiw/" class="underline">Rosters</a>
             <a href="https://npldash.onrender.com/" class="underline">Season Stats</a>
+            <a href="/players/search/" class="underline">Players</a>
 
             <form action="/players/search/" method="get">
                 <label class="sr-only" for="nav-search">Find a player</label>
@@ -85,6 +86,7 @@
         <a href="/auctions/" class="block underline">Auctions</a>
         <a href="/nominations/" class="block underline">Nominations</a>
         <a href="/transactions/" class="block underline">All transactions</a>
+        <a href="/players/search/" class="block underline">Players</a>
         {% if user.is_authenticated %}
         <a href="/transactions/form/" class="block underline">Submit a transaction</a>
         <a href="/transactions/list/" class="block underline">My submissions</a>
