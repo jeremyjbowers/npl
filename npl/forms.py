@@ -57,17 +57,17 @@ TRANSACTION_MENU = (
             {
                 "code": "option_minors",
                 "label": "Option to Minor Leagues",
-                "hint": "Send a player to the minors. He needs an option year left.",
+                "hint": "The player is sent to Triple-A and needs an option year left.",
             },
             {
                 "code": "purchase_contract",
                 "label": "Purchase a Contract",
-                "hint": "Move one of your own minor leaguers onto the 40-man.",
+                "hint": "A player at Double-A or Single-A is brought onto the 40-man by purchasing his contract, not by recalling an option.",
             },
             {
                 "code": "recall_option",
                 "label": "Recall an Option",
-                "hint": "Bring an optioned player back.",
+                "hint": "Bring an optioned player back from Triple-A.",
             },
             {
                 "code": "release_player",
@@ -298,16 +298,6 @@ class InjuredListForm(BaseTransactionForm):
         label="Injury Description",
         help_text="Provide details about the injury"
     )
-    
-    retroactive_date = forms.DateField(
-        required=False,
-        widget=forms.DateInput(attrs={
-            'class': 'input',
-            'type': 'date'
-        }),
-        label="Retroactive Date (Optional)",
-        help_text="If this should be retroactive to a specific date"
-    )
 
 
 class OptionToMinorsForm(BaseTransactionForm):
@@ -325,17 +315,7 @@ class OptionToMinorsForm(BaseTransactionForm):
         if self.user_team:
             return Player.objects.filter(team=self.user_team, active=True)
         return Player.objects.none()
-    
-    destination_level = forms.ChoiceField(
-        choices=[
-            ('AAA', 'Triple-A'),
-            ('AA', 'Double-A'),
-            ('A', 'Single-A'),
-        ],
-        widget=forms.Select(attrs={'class': 'select'}),
-        label="Destination Level"
-    )
-    
+
     notes = forms.CharField(
         max_length=500,
         required=False,
@@ -346,6 +326,11 @@ class OptionToMinorsForm(BaseTransactionForm):
         }),
         label="Notes (Optional)"
     )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        cleaned_data["destination_level"] = "AAA"
+        return cleaned_data
 
 
 class PurchaseContractForm(BaseTransactionForm):
@@ -421,28 +406,18 @@ class RecallOptionForm(BaseTransactionForm):
         super().__init__(*args, **kwargs)
         self.setup_player_field(
             label="Player Name",
-            help_text="Select a player from your minor league system to recall"
+            help_text="Bring back a player on optional assignment at Triple-A."
         )
     
     def get_player_queryset(self):
-        """Only players in the user's minor league system"""
+        """A recall is only a player already optioned at Triple-A."""
         if self.user_team:
             return Player.objects.filter(
-                team=self.user_team, 
-                roster_40man=False,  # Minor leaguers
-                active=True
+                team=self.user_team,
+                active=True,
+                roster_tripleA_option=True,
             )
         return Player.objects.none()
-    
-    from_level = forms.ChoiceField(
-        choices=[
-            ('AAA', 'Triple-A'),
-            ('AA', 'Double-A'),
-            ('A', 'Single-A'),
-        ],
-        widget=forms.Select(attrs={'class': 'select'}),
-        label="Recalling From"
-    )
 
 
 class ReleasePlayerForm(BaseTransactionForm):

@@ -700,6 +700,8 @@ def submit_from_form(user, form_type, cleaned, source="web"):
         "contract_details",
     )
     effective = cleaned.get("effective_date") or cleaned.get("retroactive_date")
+    if form_type == "injured_list":
+        effective = next_processing_week()
     player = cleaned.get("player")
     if isinstance(player, str):
         player = None

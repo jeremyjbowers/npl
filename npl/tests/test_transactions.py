@@ -1001,3 +1001,161 @@ class TradeCoverageTests(TestCase):
             },
         )
         self.assertEqual(posted.status_code, 302, posted.content[:500] if posted.status_code != 302 else "")
+
+
+class FilingIlAndOptionsTests(TestCase):
+    def setUp(self):
+        from npl.models import Season
+
+        self.user = User.objects.create_user(email="filing@example.com", password="secret")
+        self.owner = Owner.objects.create(name="Filing", user=self.user)
+        self.team = Team.objects.create(full_name="Filing Club", short_name="Filing", abbreviation="FIL")
+        self.team.owners.add(self.owner)
+        self.player = Player.objects.create(
+            mlb_id="400001",
+            name="Hurt Player",
+            first_name="Hurt",
+            last_name="Player",
+            team=self.team,
+            roster_40man=True,
+            options=2,
+        )
+        Season.objects.create(year=2026, phase=Season.REGULAR, is_current=True)
+        self.client.force_login(self.user)
+
+    def test_injured_list_web_submission_is_effective_on_processing_monday(self):
+        import datetime
+
+        from npl.forms import InjuredListForm
+        from npl.models import TransactionProposal, TransactionSubmission
+        from npl.transactions.service import next_processing_week, submit_from_form
+
+        self.assertNotIn("retroactive_date", InjuredListForm(user=self.user).fields)
+        page = self.client.get("/transactions/form/step2/?type=injured_list")
+        self.assertContains(page, "The placement is effective the Monday the transaction is processed.")
+        self.assertNotContains(page, "retroactive")
+        self.assertNotContains(page, "Retroactive")
+
+        retro = datetime.date(2020, 1, 6)
+        posted = self.client.post(
+            "/transactions/form/step2/?type=injured_list",
+            {
+                "team": str(self.team.id),
+                "player": self.player.mlb_id,
+                "il_type": "7-day",
+                "injury_description": "Hamstring",
+                "retroactive_date": retro.isoformat(),
+                "effective_date": retro.isoformat(),
+            },
+        )
+        self.assertEqual(posted.status_code, 302, posted.content[:800])
+        proposal = TransactionProposal.objects.get()
+        monday = next_processing_week()
+        self.assertEqual(proposal.effective_date, monday)
+        self.assertEqual(proposal.processing_week, monday)
+        self.assertNotEqual(proposal.effective_date, retro)
+        stored = TransactionSubmission.objects.get().form_data
+        self.assertNotIn("retroactive_date", stored)
+
+        other = Player.objects.create(
+            mlb_id="400002",
+            name="Other Hurt Player",
+            first_name="Other",
+            last_name="Hurt",
+            team=self.team,
+            roster_40man=True,
+        )
+        direct = submit_from_form(
+            self.user,
+            "injured_list",
+            {
+                "team": self.team,
+                "player": other,
+                "il_type": "7-day",
+                "injury_description": "Oblique",
+                "retroactive_date": retro,
+                "effective_date": retro,
+            },
+            source="web",
+        )
+        self.assertEqual(direct.effective_date, next_processing_week())
+        self.assertEqual(direct.processing_week, direct.effective_date)
+        self.assertNotEqual(direct.effective_date, retro)
+
+    def test_option_form_data_is_triple_a_without_a_destination_field(self):
+        from npl.forms import OptionToMinorsForm
+        from npl.models import TransactionSubmission
+
+        form = OptionToMinorsForm(
+            user=self.user,
+            data={"team": str(self.team.id), "player": self.player.mlb_id, "notes": ""},
+        )
+        self.assertNotIn("destination_level", form.fields)
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.cleaned_data["destination_level"], "AAA")
+
+        posted = self.client.post(
+            "/transactions/form/step2/?type=option_minors",
+            {"team": str(self.team.id), "player": self.player.mlb_id, "notes": ""},
+        )
+        self.assertEqual(posted.status_code, 302, posted.content[:800])
+        submission = TransactionSubmission.objects.get()
+        self.assertEqual(submission.form_data["destination_level"], "AAA")
+        listing = self.client.get("/transactions/list/")
+        self.assertContains(listing, "to AAA")
+        step = self.client.get("/transactions/form/step2/?type=option_minors")
+        self.assertContains(step, "Every option goes to Triple-A.")
+        self.assertNotContains(step, "Destination Level")
+        self.assertNotContains(step, 'name="destination_level"')
+
+    def test_recall_queryset_is_only_optioned_triple_a_players(self):
+        from npl.forms import RecallOptionForm
+
+        optioned = Player.objects.create(
+            mlb_id="400010",
+            name="Optioned Player",
+            first_name="Optioned",
+            last_name="Player",
+            team=self.team,
+            roster_tripleA_option=True,
+        )
+        aa = Player.objects.create(
+            mlb_id="400011",
+            name="Double A Player",
+            first_name="Double",
+            last_name="Player",
+            team=self.team,
+            roster_doubleA=True,
+        )
+        inactive = Player.objects.create(
+            mlb_id="400012",
+            name="Inactive Option",
+            first_name="Inactive",
+            last_name="Option",
+            team=self.team,
+            roster_tripleA_option=True,
+            active=False,
+        )
+        form = RecallOptionForm(user=self.user)
+        self.assertNotIn("from_level", form.fields)
+        self.assertEqual(
+            form.fields["player"].help_text,
+            "Bring back a player on optional assignment at Triple-A.",
+        )
+        ids = set(form.fields["player"].queryset.values_list("mlb_id", flat=True))
+        self.assertIn(optioned.mlb_id, ids)
+        self.assertNotIn(aa.mlb_id, ids)
+        self.assertNotIn(inactive.mlb_id, ids)
+        self.assertNotIn(self.player.mlb_id, ids)
+
+    def test_menu_sends_aa_and_a_callups_through_a_purchase(self):
+        menu = self.client.get("/transactions/form/")
+        self.assertContains(menu, "The player is sent to Triple-A and needs an option year left.")
+        self.assertContains(menu, "Bring an optioned player back from Triple-A.")
+        purchase_hint = (
+            "A player at Double-A or Single-A is brought onto the 40-man by purchasing his contract, "
+            "not by recalling an option."
+        )
+        self.assertContains(menu, purchase_hint)
+        purchase = self.client.get("/transactions/form/step2/?type=purchase_contract")
+        self.assertContains(purchase, purchase_hint)
