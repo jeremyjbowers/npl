@@ -56,11 +56,12 @@
         <h2 class="font-bold">Injured list</h2>
         <ul class="mt-1 list-disc pl-5">
             <li>7-day, 15-day, 60-day, or end-of-season.</li>
-            <li>Placements can be retroactive up to 10 days.</li>
+            <li>The placement is effective the Monday the transaction is processed.</li>
         </ul>
         {% elif transaction_type == 'option_minors' %}
         <h2 class="font-bold">Options</h2>
         <ul class="mt-1 list-disc pl-5">
+            <li>Every option goes to Triple-A.</li>
             <li>The player needs an option year remaining.</li>
             <li>Five-plus years of service requires consent.</li>
             <li>An optioned player stays down 10 days unless injured.</li>
@@ -80,6 +81,7 @@
         {% elif transaction_type == 'purchase_contract' %}
         <h2 class="font-bold">Purchase contract</h2>
         <ul class="mt-1 list-disc pl-5">
+            <li>A player at Double-A or Single-A is brought onto the 40-man by purchasing his contract, not by recalling an option.</li>
             <li>Only your own minor leaguers who are not already on the 40-man.</li>
             <li>The purchase moves the player onto the 40-man.</li>
         </ul>
