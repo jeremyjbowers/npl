@@ -175,7 +175,15 @@ def _trade_parties(origin, explicit, assets):
     for asset in assets:
         add(asset.get("from_team"))
         add(asset.get("to_team"))
+        for team_id in _payer_team_ids(asset):
+            add(_resolve_team(team_id))
     return parties
+
+
+def _payer_team_ids(asset):
+    from npl.transactions.coverage import iter_payer_ids
+
+    return list(iter_payer_ids(asset))
 
 
 def create_proposal(
@@ -221,6 +229,7 @@ def create_proposal(
                 raise TransactionError("A piece cannot be sent to the club that is sending it.")
             involved.add(asset["from_team"].pk)
             involved.add(asset["to_team"].pk)
+            involved.update(_payer_team_ids(asset))
         if team.pk not in involved:
             raise TransactionError("Your club has to send or receive something in the trade.")
         for club in parties:
@@ -696,16 +705,12 @@ def submit_from_form(user, form_type, cleaned, source="web"):
         player = None
 
     if form_type == "trade":
-        assets = []
-        for number in range(1, 7):
-            piece = _piece_from_form(cleaned, number)
-            if piece is not None:
-                assets.append(piece)
         return create_proposal(
             user=user,
             team=team,
             code="trade",
-            assets=assets,
+            assets=cleaned.get("pieces") or [],
+            counterparty_teams=cleaned.get("counterparty_teams") or [],
             notes=cleaned.get("notes") or "",
             source=source,
             effective_date=effective,

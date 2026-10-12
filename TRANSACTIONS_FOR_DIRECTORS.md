@@ -77,11 +77,11 @@ Section 8 of the rules also blocks a filing before it is stored, and the message
 - An option in September or the offseason, or of a player who is on the injured list (8.3.2.1, 8.2).
 - A nontender during the season (8.4.2).
 - A major-league contract traded in the postseason (8.7.2). Directors set that phase when the July 31 deadline passes, and move back to the offseason after the World Series.
-- Cap space itself, a draft pick more than one draft ahead, or a 40-man player named as the player to be named later (8.7.1).
+- A draft pick more than one draft ahead, or a 40-man player named as the player to be named later (8.7.1). Cap space, cash, IFA dollars, and coverage of a named player's salary can be traded. Coverage of one year cannot go past that year's salary.
 - Outright waivers for a player who is not on the 40-man (8.8.2.1).
 - A minor-league player placed on the foreign list (8.1.2).
 
-A release that frees a known salary adds that salary back to cap space in the preview. A signing subtracts its total. Cash, IFA pool space, and carried salary move with those assets. Directors still decide the close calls the roster data cannot see, including whether an injury is real, whether a contract is guaranteed, and whether the World Series is over.
+A release that frees a known salary adds that salary back to cap space in the preview. A signing subtracts its total. Cash, cap space, IFA pool space, and salary coverage move with those assets. On a traded player, the sending club covers the current year during the season and the receiving club covers the later years. In the offseason the receiving club covers every year, unless the clubs split a year. Directors still decide the close calls the roster data cannot see, including whether an injury is real, whether a contract is guaranteed, and whether the World Series is over.
 
 Directors set the phase on the current season in the admin. The rules name three phases: offseason, regular season, and postseason. Spring training, roster freezes, Winter Meetings, and the October quiet period sit inside those phases. They are not separate settings.
 

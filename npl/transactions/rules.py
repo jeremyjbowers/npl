@@ -13,6 +13,7 @@ from django.utils import timezone
 
 from npl import models
 from npl.sheetload import OPTION_CLASSES, cash_is_overdrawn, settle_books
+from npl.transactions.coverage import iter_payer_ids, problems_for_trade
 from npl.transactions.pending import (
     FORTY_MAN_ADDS,
     FORTY_MAN_DROPS,
@@ -60,7 +61,18 @@ DISPOSING_KINDS = MUST_BE_ON_CLUB | {"trade"}
 def evaluate(team, code, assets, contract_terms=None, proposal_id=None, effective_date=None):
     """Return human-readable problems. An empty list means the filing can be stored."""
     problems = []
-    players = [asset.get("player") for asset in assets if asset.get("player") is not None]
+    if code == "trade":
+        players = [
+            asset.get("player")
+            for asset in assets
+            if asset.get("asset_type") == "player" and asset.get("player") is not None
+        ]
+        club_ids = {club.pk for club in _trade_clubs(team, assets)}
+        for asset in assets:
+            club_ids.update(iter_payer_ids(asset))
+        problems.extend(problems_for_trade(assets, club_ids))
+    else:
+        players = [asset.get("player") for asset in assets if asset.get("player") is not None]
     on_date = effective_date or timezone.localdate()
     problems.extend(_players_on_club(team, code, assets, players))
     problems.extend(_contract_locks(code, players))
@@ -76,7 +88,8 @@ def evaluate(team, code, assets, contract_terms=None, proposal_id=None, effectiv
             leaving = [
                 asset.get("player")
                 for asset in assets
-                if asset.get("player") is not None
+                if asset.get("asset_type") == "player"
+                and asset.get("player") is not None
                 and asset.get("from_team") is not None
                 and asset["from_team"].pk == club.pk
             ]
@@ -124,6 +137,8 @@ def _players_on_club(team, code, assets, players):
                 problems.append(f"{player.name} is not under contract to {team.short_name}.")
     if code == "trade":
         for asset in assets:
+            if asset.get("asset_type") != "player":
+                continue
             player = asset.get("player")
             if player is None:
                 continue
@@ -199,7 +214,7 @@ def _already_pending(team, code, players, proposal_id):
         if proposal.kind not in DISPOSING_KINDS and proposal.kind != "trade":
             continue
         for asset in proposal.assets.all():
-            if asset.player_id not in wanted:
+            if asset.asset_type != "player" or asset.player_id not in wanted:
                 continue
             if proposal.kind == "trade" and asset.from_team_id not in {None, team.id}:
                 continue
@@ -447,10 +462,6 @@ def _trade_asset_rules(assets, on_date):
     problems = []
     for asset in assets:
         kind = asset.get("asset_type")
-        if kind == "cap_space":
-            problems.append(
-                "Cap space itself cannot be traded. A trade may include cash, carried salary, or IFA cap space. NPL Rules 8.7.1."
-            )
         label = asset.get("raw_label") or ""
         if kind == "draft_pick":
             years = [int(year) for year in re.findall(r"20\d{2}", label)]
