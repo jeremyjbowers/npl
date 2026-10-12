@@ -2,7 +2,7 @@ from django.test import TestCase
 
 from npl.models import Team, Transaction
 from npl.transactions.catalog import KINDS
-from npl.transactions.clubs import franchise_number, tab_id_for
+from npl.transactions.clubs import deal_label, franchise_number, tab_id_for
 from npl.transactions.pending import DEPARTURE_KINDS, FORTY_MAN_DROPS
 from npl.management.commands.initial_load_transactions import parse_transaction_row
 
@@ -31,6 +31,12 @@ class FranchiseNumberTests(TestCase):
     def test_tab_id_uses_the_current_nickname(self):
         self.assertEqual(tab_id_for(13), "GmbH #13")
         self.assertEqual(tab_id_for(8), "Rats #8")
+
+    def test_deal_label_is_the_nickname_and_number(self):
+        stored = Team(short_name="Tobacconists", full_name="Durham Tobacconists", tab_id="Tobacconists #15")
+        self.assertEqual(deal_label(stored), "Tobacconists #15")
+        bare = Team(short_name="Tobacconists", full_name="Durham Tobacconists", tab_id="")
+        self.assertEqual(deal_label(bare), "Tobacconists #15")
 
 
 class TransactionSheetRowTests(TestCase):

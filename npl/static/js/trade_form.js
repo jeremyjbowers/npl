@@ -30,11 +30,16 @@
         return teamField ? String(teamField.value || "") : "";
     }
 
+    function clubSelect() {
+        return document.getElementById("trade-clubs");
+    }
+
     function selectedClubs() {
-        return Array.prototype.map.call(
-            document.querySelectorAll(".trade-club:checked"),
-            function (box) { return { id: String(box.value), name: box.parentNode.textContent.trim() }; }
-        );
+        var select = clubSelect();
+        if (!select) return [];
+        return Array.prototype.map.call(select.selectedOptions, function (option) {
+            return { id: String(option.value), name: option.textContent.trim() };
+        });
     }
 
     function clubName(id) {
@@ -100,13 +105,15 @@
 
     function lockFilingClub() {
         var filing = filingId();
-        document.querySelectorAll(".trade-club").forEach(function (box) {
-            var isFiling = box.value === filing;
+        var select = clubSelect();
+        if (!select) return;
+        Array.prototype.forEach.call(select.options, function (option) {
+            var isFiling = option.value === filing;
             if (isFiling) {
-                box.checked = true;
-                box.setAttribute("data-filing", "1");
+                option.selected = true;
+                option.setAttribute("data-filing", "1");
             } else {
-                box.removeAttribute("data-filing");
+                option.removeAttribute("data-filing");
             }
         });
     }
@@ -555,9 +562,12 @@
     function restore(payload) {
         if (!payload || !payload.clubs) return Promise.resolve();
         var wanted = payload.clubs.map(String);
-        document.querySelectorAll(".trade-club").forEach(function (box) {
-            if (wanted.indexOf(box.value) !== -1) box.checked = true;
-        });
+        var select = clubSelect();
+        if (select) {
+            Array.prototype.forEach.call(select.options, function (option) {
+                option.selected = wanted.indexOf(option.value) !== -1;
+            });
+        }
         lockFilingClub();
         return loadRosters().then(function () {
             pieces = (payload.pieces || []).map(function (piece) {
@@ -611,16 +621,16 @@
         renderPool();
     });
 
-    document.querySelectorAll(".trade-club").forEach(function (box) {
-        box.addEventListener("change", function () {
-            if (box.getAttribute("data-filing") === "1") box.checked = true;
+    if (clubSelect()) {
+        clubSelect().addEventListener("change", function () {
+            lockFilingClub();
             var keep = {};
             selectedClubs().forEach(function (club) { keep[club.id] = true; });
             pieces = pieces.filter(function (piece) { return keep[String(piece.from)]; });
             showError("");
             loadRosters().then(renderPool);
         });
-    });
+    }
 
     if (teamField) {
         teamField.addEventListener("change", function () {
