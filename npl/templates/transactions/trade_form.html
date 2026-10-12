@@ -40,17 +40,15 @@
         {{ form.team }}
         {% endif %}
 
-        <fieldset>
-            <legend class="mb-2 text-xs font-bold">Clubs in the deal</legend>
-            <div class="flex flex-wrap gap-x-4 gap-y-1">
-                {% for club in all_teams %}
-                <label class="inline-flex items-center gap-1 text-sm">
-                    <input type="checkbox" class="trade-club" value="{{ club.id }}" {% if form.team.value|stringformat:"s" == club.id|stringformat:"s" %}checked data-filing="1"{% endif %}>
-                    {{ club.short_name }}
-                </label>
+        <div class="max-w-md">
+            <label class="mb-1 block text-xs font-bold" for="trade-clubs">Clubs in the deal</label>
+            <select id="trade-clubs" class="trade-clubs" multiple size="8">
+                {% for club in deal_clubs %}
+                <option value="{{ club.id }}" {% if form.team.value|stringformat:"s" == club.id|stringformat:"s" %}selected data-filing="1"{% endif %}>{{ club.deal_label }}</option>
                 {% endfor %}
-            </div>
-        </fieldset>
+            </select>
+            <p class="mt-1 text-xs text-gray-600">Your club stays selected.</p>
+        </div>
 
         <div id="trade-columns" class="trade-columns" hidden></div>
 

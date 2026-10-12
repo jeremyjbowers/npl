@@ -9,6 +9,7 @@ from django.db.models import Count, Avg, Sum, Max, Min, Prefetch, Q
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.http import JsonResponse
 from django.conf import settings
+from npl.transactions.clubs import deal_label, franchise_sort_key
 from npl.transactions.coverage import league_year, years_by_player
 from django.contrib.auth.decorators import login_required
 from decimal import *
@@ -282,10 +283,15 @@ def _step2_context(request, form, transaction_type):
         'next_deadline': get_next_processing_deadline(),
     })
     if transaction_type == "trade":
+        clubs = list(context["all_teams"])
+        for club in clubs:
+            club.deal_label = deal_label(club)
+        clubs.sort(key=franchise_sort_key)
         context.update({
             "league_phase": models.Season.league_phase(),
             "league_year": league_year(),
             "deal_json": request.POST.get("deal", ""),
+            "deal_clubs": clubs,
         })
     return context
 

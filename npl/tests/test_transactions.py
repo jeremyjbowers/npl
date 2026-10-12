@@ -967,6 +967,8 @@ class TradeCoverageTests(TestCase):
     def test_trade_form_lists_the_clubs_and_their_contracts(self):
         page = self.client.get("/transactions/form/step2/?type=trade")
         self.assertContains(page, "Clubs in the deal")
+        self.assertContains(page, 'id="trade-clubs"')
+        self.assertContains(page, "multiple")
         self.assertContains(page, "Cap, cash, and IFA")
         roster = self.client.get(f"/transactions/form/trade-roster/?teams={self.team.id}")
         self.assertEqual(roster.status_code, 200)
