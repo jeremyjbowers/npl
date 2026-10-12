@@ -25,6 +25,37 @@ PENDING_TERMS = "pending_terms"
 
 OPTION_CLASSES = (CLUB_OPTION, VESTING_OPTION, PLAYER_OPTION)
 
+# Team-roster markers. The workbook key is yellow, red, and purple for the
+# three option kinds. Guaranteed, pre-arbitration, and arbitration stay plain.
+OPTION_CELL_CLASS = {
+    CLUB_OPTION: "salary-club_option",
+    VESTING_OPTION: "salary-vesting_option",
+    PLAYER_OPTION: "salary-player_option",
+}
+BUYOUT_CELL_CLASS = "salary-buyout"
+
+
+def salary_cell_class(name):
+    """CSS class for a contract year. Only option years are marked."""
+    return OPTION_CELL_CLASS.get(name or "", "")
+
+
+def contract_has_buyout(contract):
+    """A buyout is the contract's buyout amount, not a year cell."""
+    if not contract:
+        return False
+    if isinstance(contract, dict):
+        amount = contract.get("buyout_amount")
+    else:
+        amount = getattr(contract, "buyout_amount", None)
+    return bool(amount)
+
+
+def buyout_cell_class(contract):
+    if contract_has_buyout(contract):
+        return BUYOUT_CELL_CLASS
+    return ""
+
 # Key tab swatches, sampled from the live roster workbook.
 SALARY_COLORS = (
     ((255, 255, 0), CLUB_OPTION),

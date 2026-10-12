@@ -1,7 +1,20 @@
 from django import template
 from decimal import Decimal
 
+from npl.sheetload import buyout_cell_class as buyout_marker
+from npl.sheetload import salary_cell_class as salary_marker
+
 register = template.Library()
+
+
+@register.filter(name="salary_cell_class")
+def salary_cell_class(value):
+    return salary_marker(value)
+
+
+@register.filter(name="buyout_cell_class")
+def buyout_cell_class(contract):
+    return buyout_marker(contract)
 
 
 @register.filter(name="kill_leading_zero")

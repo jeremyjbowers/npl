@@ -47,6 +47,12 @@
         {% if viewer_owns %}
         <p class="mt-2 text-xs"><a class="underline" href="/transactions/form/">File a transaction</a></p>
         {% endif %}
+        <p class="salary-key mt-3 text-xs">
+            <span class="salary-club_option">Club option</span>
+            · <span class="salary-vesting_option">Vesting option</span>
+            · <span class="salary-player_option">Player option</span>
+            · <span class="salary-buyout">Buyout</span>
+        </p>
     </header>
 
     {% for section in roster_sections %}
@@ -64,7 +70,7 @@
                     {% regroup section.players by simple_position as position_groups %}
                     {% for group in position_groups %}
                     <tr class="band">
-                        <th scope="colgroup" colspan="16">{{ group.grouper|default:"—" }} ({{ group.list|length }})</th>
+                        <th scope="colgroup" colspan="17">{{ group.grouper|default:"—" }} ({{ group.list|length }})</th>
                     </tr>
                     {% for p in group.list %}
                     {% include "includes/player_row.html" %}
