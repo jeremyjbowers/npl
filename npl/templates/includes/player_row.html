@@ -1,4 +1,4 @@
-{% load humanize %}
+{% load humanize npl_tags %}
 <tr class="{% if p.player_level == 'MLB' %}majors{% endif %}{% if p.pending_hint %} pending{% endif %}">
     <td>
         {% if not team and p.is_owned %}<span title="Owned">✓</span> {% endif %}
@@ -24,10 +24,15 @@
     {% if team %}
         {% if p.contract %}
             {% for year in p.contract.years %}
-            <td{% if year.salary_label %} title="{{ year.salary_label }}"{% endif %}>{% if year.amount != "-" %}${% endif %}{{ year.amount|intcomma }}</td>
+            {% with cell_class=year.salary_class|salary_cell_class %}
+            <td{% if cell_class %} class="{{ cell_class }}"{% endif %}{% if year.salary_label %} title="{{ year.salary_label }}"{% endif %}>{% if year.amount != "-" %}${% endif %}{{ year.amount|intcomma }}</td>
+            {% endwith %}
             {% endfor %}
+            {% with cell_class=p.contract|buyout_cell_class %}
+            <td{% if cell_class %} class="{{ cell_class }}"{% endif %}>{% if p.contract.buyout_amount %}${{ p.contract.buyout_amount|intcomma }}{% else %}—{% endif %}</td>
+            {% endwith %}
         {% else %}
-            <td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>
+            <td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>—</td>
         {% endif %}
     {% elif user.is_authenticated %}
     <td>
