@@ -12,6 +12,7 @@ ASSET_CASH = "cash"
 ASSET_CAP = "cap_space"
 ASSET_IFA = "ifa_pool"
 ASSET_CARRIED_SALARY = "carried_salary"
+ASSET_COVERAGE = "coverage"
 ASSET_FUTURE = "future_considerations"
 
 ASSET_TYPES = (
@@ -21,6 +22,7 @@ ASSET_TYPES = (
     ASSET_CAP,
     ASSET_IFA,
     ASSET_CARRIED_SALARY,
+    ASSET_COVERAGE,
     ASSET_FUTURE,
 )
 
@@ -31,6 +33,7 @@ ASSET_LABELS = {
     ASSET_CAP: "Cap space",
     ASSET_IFA: "IFA pool space",
     ASSET_CARRIED_SALARY: "Carried salary",
+    ASSET_COVERAGE: "Salary coverage",
     ASSET_FUTURE: "PTBNL",
 }
 

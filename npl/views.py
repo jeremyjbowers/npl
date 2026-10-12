@@ -9,6 +9,8 @@ from django.db.models import Count, Avg, Sum, Max, Min, Prefetch, Q
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.http import JsonResponse
 from django.conf import settings
+from npl.transactions.clubs import deal_label, franchise_sort_key
+from npl.transactions.coverage import league_year, years_by_player
 from django.contrib.auth.decorators import login_required
 from decimal import *
 from django.contrib import messages
@@ -270,6 +272,70 @@ def transaction_form_step1(request):
     
     return render(request, 'transactions/form_step1.html', context)
 
+def _step2_context(request, form, transaction_type):
+    context = utils.build_context(request)
+    context.update({
+        'form': form,
+        'transaction_type': transaction_type,
+        'transaction_display': dict(TransactionTypeForm.TRANSACTION_CHOICES)[transaction_type],
+        'step': 2,
+        'total_steps': 2,
+        'next_deadline': get_next_processing_deadline(),
+    })
+    if transaction_type == "trade":
+        clubs = list(context["all_teams"])
+        for club in clubs:
+            club.deal_label = deal_label(club)
+        clubs.sort(key=franchise_sort_key)
+        context.update({
+            "league_phase": models.Season.league_phase(),
+            "league_year": league_year(),
+            "deal_json": request.POST.get("deal", ""),
+            "deal_clubs": clubs,
+        })
+    return context
+
+
+def _step2_template(transaction_type):
+    if transaction_type == "trade":
+        return "transactions/trade_form.html"
+    return "transactions/form_step2.html"
+
+
+@login_required
+def trade_roster(request):
+    """Players and contract years for the clubs selected on the trade form."""
+    raw_ids = []
+    for part in (request.GET.get("teams") or "").split(","):
+        part = part.strip()
+        if part.isdigit():
+            raw_ids.append(int(part))
+    teams = list(models.Team.objects.filter(pk__in=raw_ids).order_by("short_name"))
+    players = list(
+        models.Player.objects.filter(team__in=teams).select_related("team").order_by("name")
+    )
+    years = years_by_player(players)
+    by_team = {team.pk: [] for team in teams}
+    for player in players:
+        by_team.setdefault(player.team_id, []).append(
+            {
+                "id": player.pk,
+                "name": player.name,
+                "years": years.get(player.pk, []),
+            }
+        )
+    return JsonResponse(
+        {
+            "phase": models.Season.league_phase(),
+            "league_year": league_year(),
+            "teams": [
+                {"id": team.pk, "name": team.short_name, "players": by_team.get(team.pk, [])}
+                for team in teams
+            ],
+        }
+    )
+
+
 @login_required
 def transaction_form_step2(request):
     """Step 2: Transaction-specific form"""
@@ -288,16 +354,11 @@ def transaction_form_step2(request):
                 proposal = submit_from_form(request.user, transaction_type, form.cleaned_data, source='web')
             except TransactionError as exc:
                 form.add_error(None, str(exc))
-                context = utils.build_context(request)
-                context.update({
-                    'form': form,
-                    'transaction_type': transaction_type,
-                    'transaction_display': dict(TransactionTypeForm.TRANSACTION_CHOICES)[transaction_type],
-                    'step': 2,
-                    'total_steps': 2,
-                    'next_deadline': get_next_processing_deadline()
-                })
-                return render(request, 'transactions/form_step2.html', context)
+                return render(
+                    request,
+                    _step2_template(transaction_type),
+                    _step2_context(request, form, transaction_type),
+                )
 
             # Create transaction submission
             team_id = form.cleaned_data.get('team')
@@ -354,17 +415,11 @@ def transaction_form_step2(request):
     else:
         form = FormClass(user=request.user)
     
-    context = utils.build_context(request)
-    context.update({
-        'form': form,
-        'transaction_type': transaction_type,
-        'transaction_display': dict(TransactionTypeForm.TRANSACTION_CHOICES)[transaction_type],
-        'step': 2,
-        'total_steps': 2,
-        'next_deadline': get_next_processing_deadline()
-    })
-    
-    return render(request, 'transactions/form_step2.html', context)
+    return render(
+        request,
+        _step2_template(transaction_type),
+        _step2_context(request, form, transaction_type),
+    )
 
 @login_required
 def transaction_success(request):

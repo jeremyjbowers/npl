@@ -106,6 +106,30 @@ def tab_id_for(number):
     return f"{FRANCHISES[number][0]} #{number}"
 
 
+def deal_label(team):
+    """How a club is named in the trade picker, e.g. 'Tobacconists #15'."""
+    tab = (getattr(team, "tab_id", None) or "").strip()
+    if tab and re.search(r"#\s*\d+\s*$", tab) and franchise_number(tab):
+        return tab
+    number = (
+        franchise_number(getattr(team, "short_name", None))
+        or franchise_number(getattr(team, "full_name", None))
+        or franchise_number(tab)
+    )
+    if number:
+        return tab_id_for(number)
+    return getattr(team, "short_name", None) or getattr(team, "full_name", None) or "Club"
+
+
+def franchise_sort_key(team):
+    number = (
+        franchise_number(getattr(team, "tab_id", None))
+        or franchise_number(getattr(team, "short_name", None))
+        or franchise_number(getattr(team, "full_name", None))
+    )
+    return (number is None, number or 0, deal_label(team))
+
+
 def team_for_label(label):
     """Match a historical or current name to the Team row for that franchise."""
     from npl.models import Team

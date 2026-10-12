@@ -46,6 +46,7 @@ urlpatterns = [
     
     # Transaction form system
     path("transactions/form/", views.transaction_form_step1, name='transaction_form'),
+    path("transactions/form/trade-roster/", views.trade_roster, name='trade_roster'),
     path("transactions/form/step2/", views.transaction_form_step2, name='transaction_form_step2'),
     path("transactions/success/", views.transaction_success, name='transaction_success'),
     path("transactions/list/", views.transaction_list, name='transaction_list'),

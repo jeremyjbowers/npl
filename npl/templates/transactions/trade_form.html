@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ transaction_display }} — The NPL{% endblock %}
+
+{% block content %}
+<section>
+    <header class="mb-4">
+        <h1 class="text-2xl font-bold">{{ transaction_display }}</h1>
+        <p class="text-sm">Step {{ step }} of {{ total_steps }}. Pick the clubs, then what each one sends, then who receives it.</p>
+        <progress class="mt-2 w-full" value="{{ step }}" max="{{ total_steps }}">{{ step }}/{{ total_steps }}</progress>
+    </header>
+
+    <div class="note mb-4 max-w-3xl">
+        <p><strong>Next deadline:</strong> {{ next_deadline|date:"l, F j, Y \a\t g:i A T" }}</p>
+        {% if league_phase == "offseason" %}
+        <p class="mt-1">This is the offseason. The club that receives a player covers every year of his contract.</p>
+        {% else %}
+        <p class="mt-1">This is the {{ league_phase }}. The club that sends a player covers {{ league_year }}. The club that receives him covers the later years.</p>
+        {% endif %}
+        <p class="mt-1">A year can be split between clubs. The dollars cannot go past that year's salary. Cap, cash, and IFA dollars go in the same pool.</p>
+    </div>
+
+    {{ deal_json|json_script:"trade-initial-deal" }}
+
+    <form method="post" id="trade-form" class="space-y-4" data-roster-url="{% url 'trade_roster' %}" data-phase="{{ league_phase }}" data-year="{{ league_year }}">
+        {% csrf_token %}
+        {{ form.deal }}
+        {% if form.non_field_errors %}
+        <div class="note max-w-3xl">{{ form.non_field_errors }}</div>
+        {% endif %}
+        <p id="trade-client-error" class="note hidden max-w-3xl"></p>
+
+        {% if form.team.field.widget.input_type != "hidden" %}
+        <div class="max-w-md">
+            <label class="mb-1 block text-xs font-bold" for="{{ form.team.id_for_label }}">{{ form.team.label }}</label>
+            {{ form.team }}
+        </div>
+        {% else %}
+        {{ form.team }}
+        {% endif %}
+
+        <div class="max-w-md">
+            <label class="mb-1 block text-xs font-bold" for="trade-clubs">Clubs in the deal</label>
+            <select id="trade-clubs" class="trade-clubs" multiple size="8">
+                {% for club in deal_clubs %}
+                <option value="{{ club.id }}" {% if form.team.value|stringformat:"s" == club.id|stringformat:"s" %}selected data-filing="1"{% endif %}>{{ club.deal_label }}</option>
+                {% endfor %}
+            </select>
+            <p class="mt-1 text-xs text-gray-600">Your club stays selected.</p>
+        </div>
+
+        <div id="trade-columns" class="trade-columns" hidden></div>
+
+        <section id="trade-pool-section" hidden>
+            <h2 class="mb-2 text-lg font-bold">Who receives what</h2>
+            <div id="trade-pool" class="space-y-2"></div>
+        </section>
+
+        <div class="max-w-xl">
+            <label class="mb-1 block text-xs font-bold" for="{{ form.notes.id_for_label }}">{{ form.notes.label }}</label>
+            {{ form.notes }}
+        </div>
+
+        <div class="flex flex-wrap gap-2">
+            <button type="submit" class="btn">Submit transaction</button>
+            <a href="/transactions/form/" class="btn-line">Back</a>
+            <a href="/transactions/" class="btn-line">Cancel</a>
+        </div>
+    </form>
+    <noscript><p class="note mt-4">Choosing the clubs and the pieces needs JavaScript.</p></noscript>
+</section>
+{% endblock %}
+
+{% block extrascript %}
+<script src="{% static 'js/trade_form.js' %}"></script>
+{% endblock %}
