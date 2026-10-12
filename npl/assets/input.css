@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 @source "../templates";
+@source "../static/js";
 
 /*
  * The NPL sheet. Same idea as ULMG: white page, black type, one green
@@ -77,9 +78,23 @@
     max-width: 36rem;
   }
 
-  main form.space-y-4 input[type="radio"] {
+  main form.space-y-4 input[type="radio"],
+  main form.space-y-4 input[type="checkbox"] {
     width: auto;
     max-width: none;
+  }
+
+  .trade-columns {
+    display: flex;
+    gap: 0.75rem;
+    overflow-x: auto;
+    padding-bottom: 0.35rem;
+  }
+
+  .trade-column {
+    flex: 0 0 18rem;
+    border: 1px solid #d1d5db;
+    padding: 0.5rem 0.65rem;
   }
 
   .choice-list {

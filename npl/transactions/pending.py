@@ -5,6 +5,7 @@ describe the overlay: who would leave, and how cash, cap space, and IFA
 pool space would move.
 """
 
+from django.conf import settings
 from django.utils import timezone
 
 from npl import models
@@ -12,7 +13,9 @@ from npl.transactions.catalog import (
     ASSET_CAP,
     ASSET_CARRIED_SALARY,
     ASSET_CASH,
+    ASSET_COVERAGE,
     ASSET_IFA,
+    ASSET_PLAYER,
     SIGNING_CODES,
 )
 
@@ -110,6 +113,17 @@ def money_moves(code, team, assets, contract_terms=None):
                 moves.append((origin.id, "cap", amount))
             if dest is not None:
                 moves.append((dest.id, "cap", -amount))
+        elif kind == ASSET_COVERAGE:
+            # The sending club pays the salary. The receiving club is relieved.
+            if origin is not None:
+                moves.append((origin.id, "cap", -amount))
+            if dest is not None:
+                moves.append((dest.id, "cap", amount))
+    if code == "trade":
+        for asset in assets:
+            if asset.get("asset_type") != ASSET_PLAYER:
+                continue
+            moves.extend(_player_coverage_moves(asset))
     if code in SIGNING_CODES and code != "ifa_signing":
         hit = _signing_cap_hit(assets, contract_terms)
         if hit and team is not None:
@@ -128,6 +142,50 @@ def money_moves(code, team, assets, contract_terms=None):
             salary = _current_salary(player, team)
             if salary:
                 moves.append((team.id, "cap", salary))
+    return moves
+
+
+def _payer_id(value):
+    if hasattr(value, "pk"):
+        return value.pk
+    return int(value)
+
+
+def _player_coverage_moves(asset):
+    """Move this year's salary off the sender's cap and onto whoever covers it.
+
+    The salary is on the sender's books today. What he keeps paying stays there.
+    The rest leaves his cap and hits the club that covers it.
+    """
+    origin = asset.get("from_team")
+    terms = asset.get("contract_terms") or {}
+    if origin is None or not isinstance(terms, dict):
+        return []
+    moves = []
+    for row in terms.get("coverage") or []:
+        try:
+            year = int(row.get("year"))
+        except (TypeError, ValueError):
+            continue
+        if year != int(settings.LEAGUE_YEAR):
+            continue
+        salary = int(row.get("salary") or 0)
+        if not salary:
+            continue
+        paid_by_sender = 0
+        for payer in row.get("payers") or []:
+            try:
+                team_id = _payer_id(payer.get("team"))
+                dollars = int(payer.get("amount") or 0)
+            except (TypeError, ValueError):
+                continue
+            if team_id == origin.id:
+                paid_by_sender += dollars
+            elif dollars:
+                moves.append((team_id, "cap", -dollars))
+        relief = salary - paid_by_sender
+        if relief:
+            moves.append((origin.id, "cap", relief))
     return moves
 
 
@@ -152,6 +210,8 @@ def forty_man_delta(code, team, assets):
                 delta -= 1
     if code == "trade":
         for asset in assets:
+            if asset.get("asset_type") != ASSET_PLAYER:
+                continue
             player = asset.get("player")
             if player is None or not player.roster_40man:
                 continue
@@ -190,6 +250,8 @@ def hints_for_team(team, proposals):
         if proposal.kind not in DEPARTURE_KINDS:
             continue
         for asset in proposal.assets.all():
+            if asset.asset_type != ASSET_PLAYER:
+                continue
             player = asset.player
             if player is None or player.team_id != team.id:
                 continue

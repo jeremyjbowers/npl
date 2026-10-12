@@ -339,27 +339,17 @@ class ProposalServiceTests(TestCase):
             user=self.user,
             data={
                 "team": str(self.team.id),
-                "piece_1_kind": "player",
-                "piece_1_from": str(self.team.id),
-                "piece_1_to": str(self.other_team.id),
-                "piece_1_player": self.player.pk,
-                "piece_2_kind": "player",
-                "piece_2_from": str(self.other_team.id),
-                "piece_2_to": str(third.id),
-                "piece_2_player": other_player.pk,
-                "piece_3_kind": "player",
-                "piece_3_from": str(third.id),
-                "piece_3_to": str(fourth.id),
-                "piece_3_player": third_player.pk,
-                "piece_4_kind": "cash",
-                "piece_4_from": str(fourth.id),
-                "piece_4_to": str(self.team.id),
-                "piece_4_amount": "500000",
-                "piece_5_kind": "future_considerations",
-                "piece_5_from": str(self.other_team.id),
-                "piece_5_to": str(self.team.id),
-                "piece_5_label": "PTBNL",
                 "notes": "Four clubs, mixed pieces",
+                "deal": json.dumps({
+                    "clubs": [self.team.id, self.other_team.id, third.id, fourth.id],
+                    "pieces": [
+                        {"kind": "player", "from": self.team.id, "to": self.other_team.id, "player": self.player.pk, "coverage": []},
+                        {"kind": "player", "from": self.other_team.id, "to": third.id, "player": other_player.pk, "coverage": []},
+                        {"kind": "player", "from": third.id, "to": fourth.id, "player": third_player.pk, "coverage": []},
+                        {"kind": "cash", "from": fourth.id, "to": self.team.id, "amount": 500000},
+                        {"kind": "future_considerations", "from": self.other_team.id, "to": self.team.id, "label": "PTBNL"},
+                    ],
+                }),
             },
         )
         self.assertTrue(form.is_valid(), form.errors)
@@ -748,7 +738,7 @@ class ProposalRulesAndHintsTests(TestCase):
 
         form = self.client.get("/transactions/form/")
         self.assertContains(form, "Trade Proposal")
-        self.assertContains(form, "Every other club has to agree.")
+        self.assertContains(form, "salary coverage can be included.")
         self.assertContains(form, "Waiver Claim")
         self.assertContains(form, "Claim a player another club has placed on waivers.")
 
@@ -796,21 +786,20 @@ class ProposalRulesAndHintsTests(TestCase):
             filing(code="trade", counterparty_team=self.other_team)
         self.assertIn("8.7.2", str(closed.exception))
 
-        with self.assertRaises(TransactionError) as cap:
-            filing(
-                code="trade",
-                counterparty_team=self.other_team,
-                effective_date=datetime.date(2026, 6, 1),
-                assets=[
-                    {
-                        "asset_type": "cap_space",
-                        "amount": 1_000_000,
-                        "from_team": self.team,
-                        "to_team": self.other_team,
-                    }
-                ],
-            )
-        self.assertIn("8.7.1", str(cap.exception))
+        cap_trade = filing(
+            code="trade",
+            counterparty_team=self.other_team,
+            effective_date=datetime.date(2026, 6, 1),
+            assets=[
+                {
+                    "asset_type": "cap_space",
+                    "amount": 1_000_000,
+                    "from_team": self.team,
+                    "to_team": self.other_team,
+                }
+            ],
+        )
+        self.assertEqual(cap_trade.assets.get().asset_type, "cap_space")
 
         with self.assertRaises(TransactionError) as future_pick:
             filing(
@@ -855,3 +844,158 @@ class ProposalRulesAndHintsTests(TestCase):
         self.assertEqual(Season.league_phase(), Season.POSTSEASON)
         other.advance()
         self.assertEqual(Season.league_phase(), Season.OFFSEASON)
+
+
+class TradeCoverageTests(TestCase):
+    def setUp(self):
+        from npl.models import Contract, ContractYear
+
+        self.user = User.objects.create_user(email="cover@example.com", password="secret")
+        self.owner = Owner.objects.create(name="Cover", user=self.user)
+        self.team = Team.objects.create(
+            full_name="Cover Club", short_name="Cover", abbreviation="COV", cap_space=20_000_000, cash=5_000_000
+        )
+        self.other_team = Team.objects.create(
+            full_name="Other Cover", short_name="Other", abbreviation="OTH", cap_space=20_000_000, cash=5_000_000
+        )
+        self.team.owners.add(self.owner)
+        self.player = Player.objects.create(
+            mlb_id="607400",
+            name="Covered Player",
+            first_name="Covered",
+            last_name="Player",
+            team=self.team,
+        )
+        self.contract = Contract.objects.create(player=self.player, team=self.team, total_years=2, total_amount=3_000_000)
+        ContractYear.objects.create(contract=self.contract, year=2026, amount=1_000_000)
+        ContractYear.objects.create(contract=self.contract, year=2027, amount=2_000_000)
+        self.client = Client()
+        self.client.force_login(self.user)
+
+    def _trade(self, coverage):
+        return create_proposal(
+            user=self.user,
+            team=self.team,
+            code="trade",
+            counterparty_team=self.other_team,
+            assets=[
+                {
+                    "asset_type": "player",
+                    "player": self.player,
+                    "from_team": self.team,
+                    "to_team": self.other_team,
+                    "contract_terms": {"coverage": coverage},
+                }
+            ],
+        )
+
+    def test_defaults_follow_the_phase(self):
+        from npl.transactions.coverage import default_coverage
+
+        years = [{"year": 2026, "amount": 1_000_000}, {"year": 2027, "amount": 2_000_000}]
+        offseason = default_coverage(years, self.team.id, self.other_team.id, "offseason")
+        self.assertEqual(offseason[0]["payers"][0]["team"], self.other_team.id)
+        self.assertEqual(offseason[1]["payers"][0]["team"], self.other_team.id)
+        regular = default_coverage(years, self.team.id, self.other_team.id, "regular")
+        self.assertEqual(regular[0]["payers"][0]["team"], self.team.id)
+        self.assertEqual(regular[0]["payers"][0]["amount"], 1_000_000)
+        self.assertEqual(regular[1]["payers"][0]["team"], self.other_team.id)
+
+    def test_every_contract_year_has_to_be_covered_and_not_past_the_salary(self):
+        with self.assertRaises(TransactionError) as missing:
+            self._trade([])
+        self.assertIn("2026", str(missing.exception))
+        self.assertIn("2027", str(missing.exception))
+
+        with self.assertRaises(TransactionError) as over:
+            self._trade([
+                {"year": 2026, "payers": [{"team": self.team.id, "amount": 1_500_000}]},
+                {"year": 2027, "payers": [{"team": self.other_team.id, "amount": 2_000_000}]},
+            ])
+        self.assertIn("1,000,000", str(over.exception))
+
+        proposal = self._trade([
+            {"year": 2026, "payers": [{"team": self.team.id, "percent": 100, "amount": 1_000_000}]},
+            {"year": 2027, "payers": [{"team": self.other_team.id, "percent": 100, "amount": 2_000_000}]},
+        ])
+        self.assertEqual(proposal.assets.get().player_id, self.player.pk)
+
+    def test_coverage_of_a_player_who_stays_cannot_exceed_his_salary(self):
+        stayer = Player.objects.create(
+            mlb_id="607401", name="Staying Player", first_name="Staying", last_name="Player", team=self.other_team
+        )
+        from npl.models import Contract, ContractYear
+
+        contract = Contract.objects.create(player=stayer, team=self.other_team, total_years=1, total_amount=500_000)
+        ContractYear.objects.create(contract=contract, year=2026, amount=500_000)
+        with self.assertRaises(TransactionError) as over:
+            create_proposal(
+                user=self.user,
+                team=self.team,
+                code="trade",
+                counterparty_team=self.other_team,
+                assets=[
+                    {
+                        "asset_type": "coverage",
+                        "player": stayer,
+                        "from_team": self.team,
+                        "to_team": self.other_team,
+                        "amount": 600_000,
+                        "contract_terms": {"year": 2026, "percent": 100},
+                    }
+                ],
+            )
+        self.assertIn("500,000", str(over.exception))
+        kept = create_proposal(
+            user=self.user,
+            team=self.team,
+            code="trade",
+            counterparty_team=self.other_team,
+            assets=[
+                {
+                    "asset_type": "coverage",
+                    "player": stayer,
+                    "from_team": self.team,
+                    "to_team": self.other_team,
+                    "amount": 200_000,
+                    "contract_terms": {"year": 2026, "percent": 40},
+                }
+            ],
+        )
+        self.assertEqual(kept.assets.get().amount, 200_000)
+
+    def test_trade_form_lists_the_clubs_and_their_contracts(self):
+        page = self.client.get("/transactions/form/step2/?type=trade")
+        self.assertContains(page, "Clubs in the deal")
+        self.assertContains(page, "Cap, cash, and IFA")
+        roster = self.client.get(f"/transactions/form/trade-roster/?teams={self.team.id}")
+        self.assertEqual(roster.status_code, 200)
+        player = roster.json()["teams"][0]["players"][0]
+        self.assertEqual(player["name"], "Covered Player")
+        self.assertEqual([row["year"] for row in player["years"]], [2026, 2027])
+
+        posted = self.client.post(
+            "/transactions/form/step2/?type=trade",
+            {
+                "team": str(self.team.id),
+                "notes": "",
+                "deal": json.dumps({
+                    "clubs": [self.team.id, self.other_team.id],
+                    "pieces": [
+                        {
+                            "kind": "player",
+                            "from": self.team.id,
+                            "to": self.other_team.id,
+                            "player": self.player.pk,
+                            "coverage": [
+                                {"year": 2026, "salary": 1_000_000, "payers": [{"team": self.other_team.id, "percent": 100, "amount": 1_000_000, "name": "Other"}]},
+                                {"year": 2027, "salary": 2_000_000, "payers": [{"team": self.other_team.id, "percent": 100, "amount": 2_000_000, "name": "Other"}]},
+                            ],
+                        },
+                        {"kind": "cap_space", "from": self.team.id, "to": self.other_team.id, "amount": 250000},
+                        {"kind": "ifa_pool", "from": self.other_team.id, "to": self.team.id, "amount": 100000},
+                    ],
+                }),
+            },
+        )
+        self.assertEqual(posted.status_code, 302, posted.content[:500] if posted.status_code != 302 else "")

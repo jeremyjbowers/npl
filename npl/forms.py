@@ -1,3 +1,5 @@
+import json
+
 from django import forms
 from django.forms import widgets
 from django.contrib.auth.decorators import login_required
@@ -7,6 +9,8 @@ from .models import Team, Player, TransactionSubmission, Owner
 from users.models import User
 from django.db import models
 from django.db.models import Q
+from npl.transactions.catalog import ASSET_LABELS
+from npl.transactions.coverage import problems_for_trade
 
 
 # What a manager can file from the site. The form page lists these with the
@@ -18,7 +22,7 @@ TRANSACTION_MENU = (
             {
                 "code": "trade",
                 "label": "Trade Proposal",
-                "hint": "Any number of clubs. Each piece names who gives it and who gets it. Every other club has to agree.",
+                "hint": "Pick the clubs, then what each one sends, then who receives it. Cap, cash, IFA dollars, and salary coverage can be included.",
             },
         ),
     },
@@ -747,156 +751,173 @@ class LimboAssignmentForm(BaseTransactionForm):
     )
 
 
-class ClubPlayerChoice(forms.ModelChoiceField):
-    def label_from_instance(self, obj):
-        club = obj.team.short_name if obj.team_id else "Free agent"
-        return f"{obj.name} ({club})"
-
-
 class TradeProposalForm(BaseTransactionForm):
-    """A trade is a pool of pieces. Each piece names the club that gives it and the club that receives it.
+    """Clubs first, then what each club sends, then who receives each piece.
 
-    There is no limit on how many clubs are in the deal. Every club other than
-    the one filing has to agree. Unused rows are left blank.
+    The browser posts that deal as JSON. Two clubs or twenty use the same shape.
     """
 
-    PIECES = 6
-    PIECE_KINDS = [
-        ("", "—"),
-        ("player", "Player"),
-        ("draft_pick", "Draft pick"),
-        ("cash", "Cash"),
-        ("ifa_pool", "IFA pool space"),
-        ("carried_salary", "Carried salary"),
-        ("future_considerations", "Player to be named later"),
-    ]
-    MONEY_KINDS = {"cash", "ifa_pool", "carried_salary"}
+    PIECE_KINDS = {
+        "player",
+        "draft_pick",
+        "cash",
+        "cap_space",
+        "ifa_pool",
+        "coverage",
+        "future_considerations",
+    }
+    MONEY_KINDS = {"cash", "cap_space", "ifa_pool"}
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        clubs = Team.objects.all()
-        owned = Player.objects.filter(team__isnull=False, active=True).select_related("team")
-        order = ["team"]
-        for number in range(1, self.PIECES + 1):
-            prefix = f"piece_{number}"
-            self.fields[f"{prefix}_kind"] = forms.ChoiceField(
-                choices=self.PIECE_KINDS,
-                required=False,
-                widget=forms.Select(attrs={"class": "w-full"}),
-                label=f"Piece {number}",
-                help_text="Leave the row blank if you do not need it.",
-            )
-            self.fields[f"{prefix}_from"] = forms.ModelChoiceField(
-                queryset=clubs,
-                required=False,
-                widget=forms.Select(attrs={"class": "w-full"}),
-                label="Gives it",
-            )
-            self.fields[f"{prefix}_to"] = forms.ModelChoiceField(
-                queryset=clubs,
-                required=False,
-                widget=forms.Select(attrs={"class": "w-full"}),
-                label="Gets it",
-            )
-            self.fields[f"{prefix}_player"] = ClubPlayerChoice(
-                queryset=owned,
-                required=False,
-                widget=forms.Select(attrs={"class": "w-full"}),
-                label="Player",
-            )
-            self.fields[f"{prefix}_amount"] = forms.IntegerField(
-                required=False,
-                min_value=0,
-                widget=forms.NumberInput(attrs={"class": "w-full"}),
-                label="Dollars",
-            )
-            self.fields[f"{prefix}_label"] = forms.CharField(
-                required=False,
-                max_length=255,
-                widget=forms.TextInput(attrs={"class": "w-full", "placeholder": "2027 Rule 4, round 1, or PTBNL"}),
-                label="Pick or PTBNL",
-            )
-            if number == 1 and self.user_team is not None:
-                self.fields[f"{prefix}_from"].initial = self.user_team
-            order.extend([
-                f"{prefix}_kind",
-                f"{prefix}_from",
-                f"{prefix}_to",
-                f"{prefix}_player",
-                f"{prefix}_amount",
-                f"{prefix}_label",
-            ])
-        order.append("notes")
-        self.order_fields(order)
-
-    def get_player_queryset(self):
-        if self.user_team:
-            return Player.objects.filter(team=self.user_team, active=True)
-        return Player.objects.none()
-
-    def _club_pk(self, value):
-        if value is None or value == "":
-            return None
-        if hasattr(value, "pk"):
-            return value.pk
-        return int(value)
-
+    deal = forms.CharField(required=False, widget=forms.HiddenInput)
     notes = forms.CharField(
         required=False,
         widget=forms.Textarea(attrs={"class": "w-full", "rows": 3}),
-        label="Salary coverage and other terms",
+        label="Notes",
     )
 
     def clean(self):
         cleaned = super().clean()
-        our_pk = self._club_pk(cleaned.get("team"))
-        involved = set()
-        filled = 0
-        for number in range(1, self.PIECES + 1):
-            if self._clean_piece(cleaned, number, involved):
-                filled += 1
-        if not filled:
-            raise forms.ValidationError(
-                "Add at least one piece: a player, a pick, cash, cap space, IFA pool space, carried salary, or a player to be named later."
-            )
-        if our_pk not in involved:
-            raise forms.ValidationError("Your club has to give or receive something in the trade.")
+        filing = self._pk(cleaned.get("team"))
+        if filing is None:
+            raise forms.ValidationError("Choose the club you are filing for.")
+        try:
+            payload = json.loads(cleaned.get("deal") or "")
+        except json.JSONDecodeError:
+            raise forms.ValidationError("Pick the clubs and add what each one sends.")
+        if not isinstance(payload, dict):
+            raise forms.ValidationError("Pick the clubs and add what each one sends.")
+
+        club_ids = []
+        for raw in payload.get("clubs") or []:
+            club_id = self._pk(raw)
+            if club_id is not None and club_id not in club_ids:
+                club_ids.append(club_id)
+        if filing not in club_ids:
+            club_ids.insert(0, filing)
+        clubs = {club.pk: club for club in Team.objects.filter(pk__in=club_ids)}
+        missing = [club_id for club_id in club_ids if club_id not in clubs]
+        if missing:
+            raise forms.ValidationError("One of those clubs is not on the site.")
+        if len(club_ids) < 2:
+            raise forms.ValidationError("A trade needs at least one other club.")
+
+        raw_pieces = payload.get("pieces") or []
+        if not isinstance(raw_pieces, list) or not raw_pieces:
+            raise forms.ValidationError("Add at least one piece to the pool.")
+        if len(raw_pieces) > 40:
+            raise forms.ValidationError("Split a deal this large into more than one trade.")
+
+        player_ids = []
+        for piece in raw_pieces:
+            if isinstance(piece, dict) and piece.get("player"):
+                player_ids.append(str(piece.get("player")))
+        players = {
+            player.pk: player
+            for player in Player.objects.filter(pk__in=player_ids).select_related("team")
+        }
+
+        pieces = []
+        resolved = []
+        problems = []
+        for index, piece in enumerate(raw_pieces, start=1):
+            built, asset, error = self._piece(piece, index, clubs, players)
+            if error:
+                problems.append(error)
+                continue
+            pieces.append(built)
+            resolved.append(asset)
+        if problems:
+            raise forms.ValidationError(problems)
+
+        problems = problems_for_trade(resolved, club_ids)
+        if problems:
+            raise forms.ValidationError(problems)
+        cleaned["pieces"] = pieces
+        cleaned["counterparty_teams"] = [club_id for club_id in club_ids if club_id != filing]
         return cleaned
 
-    def _clean_piece(self, cleaned, number, involved):
-        prefix = f"piece_{number}"
-        kind = (cleaned.get(f"{prefix}_kind") or "").strip()
-        player = cleaned.get(f"{prefix}_player")
-        amount = cleaned.get(f"{prefix}_amount")
-        label = (cleaned.get(f"{prefix}_label") or "").strip()
-        giver = cleaned.get(f"{prefix}_from")
-        getter = cleaned.get(f"{prefix}_to")
-        started = any([kind, player, amount not in (None, ""), label, giver, getter])
-        if not started:
-            return False
-        if not kind:
-            raise forms.ValidationError(f"Piece {number} needs a type.")
+    def _piece(self, piece, index, clubs, players):
+        if not isinstance(piece, dict):
+            return None, None, f"Piece {index} could not be read."
+        kind = (piece.get("kind") or "").strip()
+        if kind not in self.PIECE_KINDS:
+            return None, None, f"Piece {index} needs a type."
+        giver = clubs.get(self._pk(piece.get("from")))
+        getter = clubs.get(self._pk(piece.get("to")))
         if giver is None or getter is None:
-            raise forms.ValidationError(f"Piece {number} needs the club that gives it and the club that gets it.")
+            return None, None, f"Piece {index} needs the club that sends it and the club that receives it."
         if giver.pk == getter.pk:
-            raise forms.ValidationError(f"Piece {number} cannot be given and received by the same club.")
+            return None, None, f"Piece {index} cannot be sent back to the club that sends it."
+        player = players.get(str(piece.get("player"))) if piece.get("player") else None
+        amount = piece.get("amount")
+        if amount in ("", None):
+            amount = None
+        else:
+            try:
+                amount = int(amount)
+            except (TypeError, ValueError):
+                return None, None, f"Piece {index} needs a dollar amount."
+        label = (piece.get("label") or "").strip()
+        terms = piece.get("coverage")
+        contract_terms = None
         if kind == "player":
-            if not isinstance(player, Player):
-                raise forms.ValidationError(f"Piece {number} needs a player.")
+            if player is None:
+                return None, None, f"Piece {index} needs a player."
             if player.team_id != giver.pk:
                 club = player.team.short_name if player.team_id else "no club"
-                raise forms.ValidationError(
-                    f"{player.name} is on {club}, so that club has to be the one giving him."
-                )
-        elif kind in self.MONEY_KINDS and amount in (None, ""):
-            raise forms.ValidationError(f"Piece {number} needs a dollar amount.")
+                return None, None, f"{player.name} is on {club}, so that club has to be the one sending him."
+            contract_terms = {"coverage": terms or []}
+            label = player.name
+        elif kind in self.MONEY_KINDS:
+            if amount in (None, "") or amount <= 0:
+                return None, None, f"Piece {index} needs a dollar amount."
+            label = label or ASSET_LABELS.get(kind, kind)
+        elif kind == "coverage":
+            if player is None:
+                return None, None, f"Piece {index} needs the player whose salary is covered."
+            if amount in (None, "") or amount < 0:
+                return None, None, f"Piece {index} needs the dollars being covered."
+            try:
+                year = int(piece.get("year"))
+            except (TypeError, ValueError):
+                return None, None, f"Piece {index} needs the year being covered."
+            percent = piece.get("percent")
+            contract_terms = {"year": year, "percent": percent, "salary": piece.get("salary")}
+            label = f"Coverage of {player.name}, {year}"
         elif kind == "draft_pick" and not label:
-            raise forms.ValidationError(f"Piece {number} needs a description of the pick.")
+            return None, None, f"Piece {index} needs a description of the pick."
         elif kind == "future_considerations" and not label:
-            cleaned[f"{prefix}_label"] = "PTBNL"
-        involved.add(giver.pk)
-        involved.add(getter.pk)
-        return True
+            label = "PTBNL"
+        built = {
+            "asset_type": kind,
+            "from_team": giver.pk,
+            "to_team": getter.pk,
+            "raw_label": label,
+            "amount": amount,
+            "contract_terms": contract_terms,
+        }
+        if player is not None and kind in {"player", "coverage", "future_considerations"}:
+            built["player"] = player.pk
+        asset = {
+            "asset_type": kind,
+            "from_team": giver,
+            "to_team": getter,
+            "player": player if kind in {"player", "coverage", "future_considerations"} else None,
+            "amount": amount,
+            "contract_terms": contract_terms,
+            "raw_label": label,
+        }
+        return built, asset, None
+
+    def _pk(self, value):
+        if value is None or value == "":
+            return None
+        if hasattr(value, "pk"):
+            return int(value.pk)
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return None
 
 
 class SigningProposalForm(BaseTransactionForm):

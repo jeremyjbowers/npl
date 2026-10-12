@@ -36,6 +36,13 @@
                 {% if asset.from_team %} from {{ asset.from_team.short_name }}{% endif %}
                 {% if asset.to_team %} to {{ asset.to_team.short_name }}{% endif %}
                 {% if asset.amount %} · ${{ asset.amount|intcomma }}{% endif %}
+                {% if asset.contract_terms.coverage %}
+                <ul class="mt-1 text-xs text-gray-600">
+                    {% for row in asset.contract_terms.coverage %}
+                    <li>{{ row.year }}: {% for payer in row.payers %}{% if not forloop.first %}, {% endif %}{{ payer.name|default:payer.team }} ${{ payer.amount|default:0|intcomma }}{% endfor %}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
             </li>
             {% empty %}
             <li>No assets listed.</li>
