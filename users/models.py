@@ -1,7 +1,10 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.base_user import BaseUserManager
+
+from users.names import DOMAIN_IN_NAME_MESSAGE, name_contains_domain
 
 
 class UserManager(BaseUserManager):
@@ -41,3 +44,13 @@ class User(AbstractUser):
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
+
+    def clean(self):
+        super().clean()
+        errors = {}
+        if name_contains_domain(self.first_name):
+            errors["first_name"] = DOMAIN_IN_NAME_MESSAGE
+        if name_contains_domain(self.last_name):
+            errors["last_name"] = DOMAIN_IN_NAME_MESSAGE
+        if errors:
+            raise ValidationError(errors)
