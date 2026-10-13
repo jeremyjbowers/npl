@@ -25,6 +25,7 @@ from npl import auctions, models, rosters, utils
 from npl.auctions import NominationError
 from npl.homepage import board_context
 from npl.transactions.impact import lines_for_proposal, roster_roundup
+from npl.transactions.trades import group_log, join_parties, sends_for_proposal
 from .forms import TRANSACTION_FORM_MAP, TRANSACTION_MENU, TransactionTypeForm
 from npl.transactions.service import (
     TransactionError,
@@ -475,10 +476,22 @@ def proposal_detail_page(request, proposal_id):
         request.user.is_staff or proposal.parties.filter(team__in=involved).exists()
     )
     context = utils.build_context(request)
+    party_names = []
+    if proposal.originating_team_id and proposal.originating_team.short_name:
+        party_names.append(proposal.originating_team.short_name)
+    for party in proposal.parties.all():
+        if party.team_id and party.team.short_name and party.team.short_name not in party_names:
+            party_names.append(party.team.short_name)
+    posted_trade = (
+        models.Trade.objects.filter(receipts__proposal=proposal).distinct().prefetch_related("teams").first()
+    )
     context.update({
         "proposal": proposal,
         "can_see_terms": can_see_terms,
         "impact_lines": lines_for_proposal(proposal),
+        "sends": sends_for_proposal(proposal),
+        "trade_parties": join_parties(party_names),
+        "posted_trade": posted_trade,
     })
     return render(request, "transactions/proposal.html", context)
 
@@ -889,7 +902,7 @@ def transactions(request):
             "player", "team", "acquiring_team", "transaction_type"
         )
         .defer("player__stats", "player__scoresheet_defense", "player__scoresheet_offense")
-        .prefetch_related("edits")
+        .prefetch_related("edits", "trade__teams")
         .order_by("-date", "-id")
     )
     
@@ -908,6 +921,7 @@ def transactions(request):
     
     context['transactions'] = transactions_page
     context['page_obj'] = transactions_page
+    context["blocks"] = group_log(transactions_page.object_list)
     
     return render(request, 'transactions.html', context)
 

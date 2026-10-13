@@ -1,0 +1,40 @@
+<div class="overflow-x-auto">
+    <table class="sheet">
+        <thead>
+            <tr>
+                <th scope="col">Date</th>
+                <th scope="col">Team</th>
+                <th scope="col">Player</th>
+                <th scope="col">Transaction</th>
+                <th scope="col">Acquiring team</th>
+                {% if show_notes %}
+                <th scope="col">Notes</th>
+                <th scope="col">Impact</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for t in rows %}
+            <tr id="transaction-{{ t.id }}">
+                <td>{{ t.date|default:"" }}</td>
+                <td>{{ t.calculated_team|default:"" }}</td>
+                <td>{{ t.calculated_player|default:"" }}</td>
+                <td>{{ t.transaction_type|default:"" }}</td>
+                <td>{{ t.calculated_acquiring_team|default:"" }}</td>
+                {% if show_notes %}
+                <td class="whitespace-normal">
+                    {{ t.notes|default:"" }}
+                    {% for edit in t.edits.all %}
+                    <p class="mt-1 text-xs text-gray-700">Director note{% if edit.created %} · {{ edit.created|date:"M j, Y" }}{% endif %}: {{ edit.note }}</p>
+                    {% endfor %}
+                    {% if user.is_staff %}
+                    <p class="mt-1 text-xs"><a class="underline" href="/admin/npl/transaction/{{ t.id }}/change/">Edit</a></p>
+                    {% endif %}
+                </td>
+                <td class="whitespace-normal">{{ t.impact_summary|default:"" }}</td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

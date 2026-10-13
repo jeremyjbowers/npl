@@ -78,13 +78,14 @@ def select_homepage_weeks(groups, today, limit=HOMEPAGE_WEEK_LIMIT):
 def _transaction_queryset():
     return (
         models.Transaction.objects.select_related(
-            "player", "team", "acquiring_team", "transaction_type"
+            "player", "team", "acquiring_team", "transaction_type", "trade"
         )
         .defer(
             "player__stats",
             "player__scoresheet_defense",
             "player__scoresheet_offense",
         )
+        .prefetch_related("trade__teams")
         .order_by("-date", "-id")
     )
 
@@ -124,7 +125,12 @@ def transaction_weeks(today=None):
             group_transactions_by_week(_latest_dated_transactions(HOMEPAGE_WEEK_LIMIT)),
             today,
         )
-    return [{"monday": monday, "transactions": week_rows} for monday, week_rows in selected]
+    from npl.transactions.trades import group_log
+
+    return [
+        {"monday": monday, "transactions": week_rows, "blocks": group_log(week_rows)}
+        for monday, week_rows in selected
+    ]
 
 
 def _defer_player(queryset):
