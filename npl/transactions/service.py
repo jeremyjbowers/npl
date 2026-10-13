@@ -440,6 +440,7 @@ def execute_proposal(user, proposal):
     from npl.transactions.impact import lines_for_proposal
 
     impact = " ".join(lines_for_proposal(proposal))
+    trade = _open_trade(proposal, when)
     for asset in proposal.assets.all():
         player_label = asset.raw_label
         if asset.player:
@@ -469,6 +470,7 @@ def execute_proposal(user, proposal):
             notes=asset.notes or proposal.notes,
             impact_summary=impact,
             proposal=proposal,
+            trade=trade,
         )
         asset.executed_transaction = ledger
         asset.save(update_fields=["executed_transaction", "last_modified"])
@@ -478,6 +480,21 @@ def execute_proposal(user, proposal):
     proposal.executed_at = timezone.now()
     proposal.save(update_fields=["status", "executed_at", "last_modified"])
     return proposal
+
+
+def _open_trade(proposal, when):
+    """A trade is one record. The ledger lines posted under it are the receipts."""
+    if proposal.kind != "trade":
+        return None
+    trade = models.Trade(date=when)
+    trade.save()
+    clubs = [proposal.originating_team]
+    for party in proposal.parties.select_related("team"):
+        if party.team_id and party.team_id != proposal.originating_team_id:
+            clubs.append(party.team)
+    if clubs:
+        trade.teams.add(*clubs)
+    return trade
 
 
 def _open_stint(proposal, when):

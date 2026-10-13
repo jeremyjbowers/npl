@@ -786,6 +786,14 @@ class Transaction(BaseModel):
         null=True,
         related_name="ledger_rows",
     )
+    trade = models.ForeignKey(
+        "Trade",
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="receipts",
+        help_text="The trade this ledger line belongs to. The trade is the parent; these rows are its receipts.",
+    )
 
     class Meta():
         ordering = ['-date', 'transaction_type__transaction_type']
@@ -1388,10 +1396,21 @@ class Trade(BaseModel):
     teams = models.ManyToManyField(Team, blank=True)
 
     def __unicode__(self):
-        return self.summary()
+        names = [team.short_name for team in self.teams.all() if team.short_name]
+        if len(names) == 2:
+            clubs = f"{names[0]} and {names[1]}"
+        elif len(names) > 2:
+            clubs = ", ".join(names[:-1]) + f", and {names[-1]}"
+        elif names:
+            clubs = names[0]
+        else:
+            clubs = ""
+        when = self.date.isoformat() if self.date else ""
+        return f"Trade #{self.pk} {when} {clubs}".strip()
 
     def set_season(self):
-        self.season = utils.get_ulmg_season(self.date)
+        if self.date:
+            self.season = self.date.year
 
     def set_teams(self):
         if self.reciepts():
