@@ -7,7 +7,7 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import TestCase
 
-from npl.models import Player
+from npl.models import Player, PlayerStatSeason
 from npl.ulmg_import import apply_player, import_rows, stat_lines
 
 
@@ -116,7 +116,7 @@ class ApplyTests(TestCase):
             ),
         ]
         changed = apply_player(self.player, rows, {"15640"})
-        self.assertIn("stats", changed)
+        self.assertNotIn("stats", changed)
         self.assertEqual(self.player.roster_status, "IL-7")
         self.assertEqual(self.player.fg_role, "MLB")
         self.assertEqual(self.player.fg_role_type, "mlb-il")
@@ -125,11 +125,22 @@ class ApplyTests(TestCase):
         self.assertEqual(self.player.fg_injury_description, "oblique")
         self.assertEqual(self.player.mlb_org, "NYY")
         self.assertEqual(self.player.stats["2019_majors_hit"]["plate_appearances"], 1)
-        self.assertEqual(self.player.stats["2023_minors_hit"]["level"], "AA")
-        self.assertEqual(self.player.stats["2025_majors_hit"]["hr"], 2)
+        self.assertNotIn("2025_majors_hit", self.player.stats)
         self.assertTrue(self.player.has_appeared_in_majors)
         self.assertEqual(self.player.fg_id, "15640")
         self.assertEqual(self.player.bats, "R")
+
+        summary = import_rows(rows)
+        self.assertEqual(summary["seasons_created"], 2)
+        self.player.refresh_from_db()
+        seasons = {row.season: row for row in self.player.stat_seasons.all()}
+        self.assertEqual(seasons[2023].level, "AA")
+        self.assertEqual(seasons[2023].hit_stats["hr"], 20)
+        self.assertEqual(seasons[2025].roster_status, "IL-7")
+        shown = {line["year"]: line for line in self.player.hit_stats()}
+        self.assertEqual(shown[2019]["plate_appearances"], 1)
+        self.assertEqual(shown[2023]["level"], "AA")
+        self.assertEqual(shown[2025]["hr"], 2)
 
     def test_level_fills_roster_status_when_ulmg_left_it_blank(self):
         player = Player.objects.create(mlb_id="1", name="Minors Only", first_name="Minors", last_name="Only")
@@ -142,27 +153,41 @@ class ApplyTests(TestCase):
         self.assertEqual(player.fg_role, "AAA")
         self.assertEqual(player.fg_id, "99")
 
-    def test_list_stats_are_replaced_by_ulmg_lines(self):
+    def test_list_stats_stay_put_and_the_season_is_separate(self):
         self.player.stats = [{"season": 2020, "plateAppearances": 10}]
         self.player.save(update_fields=["stats"])
-        apply_player(self.player, [_row(hit_stats={"pa": 10, "hr": 1})], {"15640"})
-        self.assertEqual(self.player.stats["2024_majors_hit"]["hr"], 1)
-        self.assertNotIsInstance(self.player.stats, list)
+        import_rows([_row(hit_stats={"pa": 10, "hr": 1})])
+        self.player.refresh_from_db()
+        self.assertEqual(self.player.stats, [{"season": 2020, "plateAppearances": 10}])
+        season = PlayerStatSeason.objects.get(player=self.player, season=2024)
+        self.assertEqual(season.hit_stats["hr"], 1)
+        self.assertEqual(self.player.hit_stats()[0]["hr"], 1)
 
     def test_import_matches_on_mlb_id_and_can_dry_run(self):
         rows = [_row(hit_stats={"pa": 20, "hr": 3, "k_pct": 0.1})]
         summary = import_rows(rows, dry_run=True)
         self.player.refresh_from_db()
-        self.assertIsNone(self.player.stats and self.player.stats.get("2024_majors_hit"))
+        self.assertFalse(PlayerStatSeason.objects.exists())
         self.assertEqual(summary["matched"], 1)
+        self.assertEqual(summary["seasons_created"], 1)
         self.assertEqual(summary["updated"], 1)
 
-        import_rows(rows, dry_run=False)
+        written = import_rows(rows, dry_run=False)
         self.player.refresh_from_db()
         self.assertEqual(self.player.stats["2019_majors_hit"]["plate_appearances"], 1)
-        self.assertEqual(self.player.stats["2024_majors_hit"]["hr"], 3)
+        season = PlayerStatSeason.objects.get(player=self.player)
+        self.assertEqual(season.hit_stats["hr"], 3)
+        self.assertEqual(season.level, "MLB")
         self.assertEqual(self.player.roster_status, "MLB")
         self.assertEqual(self.player.fg_role, "MLB")
+        self.assertEqual(written["seasons_created"], 1)
+
+        again = import_rows([_row(hit_stats={"pa": 22, "hr": 9})])
+        season.refresh_from_db()
+        self.assertEqual(PlayerStatSeason.objects.count(), 1)
+        self.assertEqual(season.hit_stats["hr"], 9)
+        self.assertEqual(again["seasons_created"], 0)
+        self.assertEqual(again["seasons_refreshed"], 1)
 
     def test_player_page_shows_affiliate_level_beside_roster_status(self):
         self.player.roster_status = "MINORS"
@@ -200,5 +225,7 @@ class CommandTests(TestCase):
             with patch("npl.management.commands.import_ulmg.fetch_rows", return_value=rows):
                 call_command("import_ulmg")
         player = Player.objects.get(mlb_id="592450")
-        self.assertEqual(player.stats["2024_majors_hit"]["hr"], 4)
+        season = PlayerStatSeason.objects.get(player=player, season=2024)
+        self.assertEqual(season.hit_stats["hr"], 4)
         self.assertEqual(player.mlb_org, "NYY")
+        self.assertEqual(player.hit_stats()[0]["plate_appearances"], 12)

@@ -1,10 +1,9 @@
 """Copy roster status, affiliate level, and season stats from ULMG into NPL.
 
-ULMG keeps one PlayerStatSeason row per year and league. NPL keeps the same
-numbers on Player.stats, keyed by ``{year}_{type}_{side}``, and keeps the
-current roster line on the player. This module reads ULMG once and updates
-players NPL already has. It does not create players and it does not query
-ULMG while a page is rendering.
+Each ULMG PlayerStatSeason becomes an NPL PlayerStatSeason. The current roster
+line is also copied onto the player so the roster tables can show it. This
+module reads ULMG once. It does not create players and it does not query ULMG
+while a page is rendering.
 """
 
 import json
@@ -296,27 +295,71 @@ def _role_flags(row):
     }
 
 
-def _stats_dict(value):
-    """NPL's older stats loader stored a list. The player page reads a dict."""
-    if isinstance(value, dict):
-        return dict(value)
-    return {}
+SEASON_UPDATE_FIELDS = (
+    "level",
+    "hit_stats",
+    "pitch_stats",
+    "minors",
+    "is_mlb",
+    "is_starter",
+    "is_bench",
+    "is_injured",
+    "injury_description",
+    "role",
+    "role_type",
+    "roster_status",
+    "mlb_org",
+    "is_mlb40man",
+)
+
+
+def _text(value, limit=255):
+    return str(value or "").strip()[:limit]
+
+
+def json_or_none(value):
+    blob = as_json(value)
+    return blob or None
+
+
+def season_from_row(player, row):
+    """Build an unsaved PlayerStatSeason. Returns None when the year is missing."""
+    if not row.get("season"):
+        return None
+    classification = _text(row.get("classification"))
+    level = _text(row.get("level"))
+    flags = _role_flags(row)
+    roster_status = roster_status_for(row) or ""
+    return models.PlayerStatSeason(
+        player=player,
+        season=int(row["season"]),
+        is_career=False,
+        classification=classification,
+        level=level,
+        hit_stats=json_or_none(row.get("hit_stats")),
+        pitch_stats=json_or_none(row.get("pitch_stats")),
+        minors=classification.startswith("2-") or roster_status == "MINORS",
+        is_mlb=classification.startswith("1-") or level.upper() == "MLB",
+        injury_description=_text(row.get("injury_description")),
+        role=_text(row.get("role")),
+        role_type=_text(row.get("role_type")),
+        roster_status=roster_status,
+        mlb_org=_text(row.get("mlb_org") or row.get("current_mlb_org")),
+        is_starter=flags["fg_is_starter"],
+        is_bench=flags["fg_is_bench"],
+        is_injured=flags["fg_is_injured"],
+        is_mlb40man=flags["fg_is_mlb40man"],
+    )
 
 
 def apply_player(player, rows, fg_ids_in_use):
-    """Mutate ``player`` from ULMG rows. Return the field names that changed."""
+    """Copy the current roster line onto the player. Season stats are stored separately."""
     changed = []
 
     lines = stat_lines(rows)
-    if lines:
-        stats = _stats_dict(player.stats)
-        stats.update(lines)
-        if stats != player.stats:
-            player.stats = stats
-            changed.append("stats")
-        if any(line["type"] == "majors" for line in lines.values()) and player.has_appeared_in_majors is not True:
-            player.has_appeared_in_majors = True
-            changed.append("has_appeared_in_majors")
+    if lines and any(line["type"] == "majors" for line in lines.values()) and player.has_appeared_in_majors is not True:
+        player.has_appeared_in_majors = True
+        changed.append("has_appeared_in_majors")
 
     status = current_status_row(rows)
     if status:
@@ -386,6 +429,8 @@ def import_rows(rows, dry_run=False):
         "stat_lines": 0,
         "status": 0,
         "skipped": 0,
+        "seasons_created": 0,
+        "seasons_refreshed": 0,
     }
     grouped = {}
     for row in rows:
@@ -404,6 +449,7 @@ def import_rows(rows, dry_run=False):
 
     pending = []
     update_fields = set()
+    seasons = {}
     for group in grouped.values():
         player = match_player(group[0], by_mlb, by_fg)
         if player is None:
@@ -413,6 +459,11 @@ def import_rows(rows, dry_run=False):
         summary["stat_lines"] += len(stat_lines(group))
         if current_status_row(group):
             summary["status"] += 1
+        for row in group:
+            season = season_from_row(player, row)
+            if season is None:
+                continue
+            seasons[(season.player_id, season.season, season.classification, season.is_career)] = season
         changed = apply_player(player, group, fg_ids_in_use)
         if not changed:
             continue
@@ -421,8 +472,28 @@ def import_rows(rows, dry_run=False):
         if player not in pending:
             pending.append(player)
 
-    if pending and not dry_run:
-        models.Player.objects.bulk_update(pending, sorted(update_fields), batch_size=200)
+    existing = set()
+    player_ids = {key[0] for key in seasons}
+    if player_ids:
+        existing = set(
+            models.PlayerStatSeason.objects.filter(player_id__in=player_ids).values_list(
+                "player_id", "season", "classification", "is_career"
+            )
+        )
+    summary["seasons_created"] = sum(1 for key in seasons if key not in existing)
+    summary["seasons_refreshed"] = len(seasons) - summary["seasons_created"]
+
+    if not dry_run:
+        if seasons:
+            models.PlayerStatSeason.objects.bulk_create(
+                list(seasons.values()),
+                batch_size=500,
+                update_conflicts=True,
+                unique_fields=["player", "season", "classification", "is_career"],
+                update_fields=list(SEASON_UPDATE_FIELDS),
+            )
+        if pending:
+            models.Player.objects.bulk_update(pending, sorted(update_fields), batch_size=200)
     return summary
 
 

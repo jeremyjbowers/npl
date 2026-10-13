@@ -7,8 +7,8 @@ from npl.ulmg_import import database_url, fetch_rows, import_rows
 
 class Command(BaseCommand):
     help = (
-        "Copy roster status, affiliate level, and season stats from ULMG "
-        "onto NPL players matched by MLB id or FanGraphs id."
+        "Copy ULMG player stat seasons onto matching NPL players. "
+        "Roster status and affiliate level are also written on the player."
     )
 
     def add_arguments(self, parser):
@@ -37,12 +37,16 @@ class Command(BaseCommand):
         rows = fetch_rows(url, years=years)
         summary = import_rows(rows, dry_run=options["dry_run"])
 
-        verb = "Would update" if options["dry_run"] else "Updated"
+        season_verb = "Would create" if options["dry_run"] else "Seasons created"
+        refresh_verb = "Would refresh" if options["dry_run"] else "Seasons refreshed"
+        player_verb = "Would update players" if options["dry_run"] else "Players updated"
         self.stdout.write(
             f"ULMG players read: {summary['ulmg_players']}\n"
             f"Matched to NPL: {summary['matched']}\n"
             f"Unmatched: {summary['skipped']}\n"
             f"Status rows: {summary['status']}\n"
             f"Stat lines: {summary['stat_lines']}\n"
-            f"{verb}: {summary['updated']}"
+            f"{season_verb}: {summary['seasons_created']}\n"
+            f"{refresh_verb}: {summary['seasons_refreshed']}\n"
+            f"{player_verb}: {summary['updated']}"
         )
