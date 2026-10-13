@@ -6,6 +6,7 @@ from reversion.admin import VersionAdmin
 
 from npl.models import (
     Team,
+    Trade,
     Owner,
     Player,
     Contract,
@@ -345,6 +346,28 @@ class TransactionAdmin(VersionAdmin):
         if note:
             message = note
         return super().log_change(request, obj, message)
+
+
+class LedgerReceiptInline(admin.TabularInline):
+    model = Transaction
+    fk_name = "trade"
+    extra = 0
+    can_delete = False
+    fields = ("date", "team", "raw_player", "player", "acquiring_team", "notes")
+    readonly_fields = ("date", "team", "raw_player", "player", "acquiring_team", "notes")
+    show_change_link = True
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(Trade)
+class TradeAdmin(admin.ModelAdmin):
+    list_display = ["id", "date", "season"]
+    list_filter = ["date"]
+    filter_horizontal = ["teams"]
+    inlines = [LedgerReceiptInline]
+    date_hierarchy = "date"
 
 
 class ContractYearInline(admin.TabularInline):

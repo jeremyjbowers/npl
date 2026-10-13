@@ -16,30 +16,13 @@
     </header>
     {% for week in transaction_weeks %}
     <h3 class="mb-2 mt-4 font-bold">{{ week.monday }}</h3>
-    <div class="mb-4 overflow-x-auto">
-        <table class="sheet">
-            <thead>
-                <tr>
-                    <th scope="col">Date</th>
-                    <th scope="col">Team</th>
-                    <th scope="col">Player</th>
-                    <th scope="col">Transaction</th>
-                    <th scope="col">Acquiring team</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for t in week.transactions %}
-                <tr>
-                    <td>{{ t.date|default:"" }}</td>
-                    <td>{{ t.calculated_team|default:"" }}</td>
-                    <td>{{ t.calculated_player|default:"" }}</td>
-                    <td>{{ t.transaction_type|default:"" }}</td>
-                    <td>{{ t.calculated_acquiring_team|default:"" }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+    {% for block in week.blocks %}
+        {% if block.kind == "trade" %}
+            {% include "includes/trade_card.html" %}
+        {% else %}
+            {% include "includes/transaction_rows.html" with rows=block.rows %}
+        {% endif %}
+    {% endfor %}
     {% empty %}
     <p>No transactions have been recorded.</p>
     {% endfor %}
