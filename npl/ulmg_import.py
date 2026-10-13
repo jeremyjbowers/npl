@@ -296,21 +296,27 @@ def _role_flags(row):
     }
 
 
+def _stats_dict(value):
+    """NPL's older stats loader stored a list. The player page reads a dict."""
+    if isinstance(value, dict):
+        return dict(value)
+    return {}
+
+
 def apply_player(player, rows, fg_ids_in_use):
     """Mutate ``player`` from ULMG rows. Return the field names that changed."""
     changed = []
 
-    if isinstance(player.stats, dict) or not player.stats:
-        stats = dict(player.stats or {})
-        lines = stat_lines(rows)
-        if lines:
-            stats.update(lines)
-            if stats != (player.stats or {}):
-                player.stats = stats
-                changed.append("stats")
-            if any(line["type"] == "majors" for line in lines.values()) and player.has_appeared_in_majors is not True:
-                player.has_appeared_in_majors = True
-                changed.append("has_appeared_in_majors")
+    lines = stat_lines(rows)
+    if lines:
+        stats = _stats_dict(player.stats)
+        stats.update(lines)
+        if stats != player.stats:
+            player.stats = stats
+            changed.append("stats")
+        if any(line["type"] == "majors" for line in lines.values()) and player.has_appeared_in_majors is not True:
+            player.has_appeared_in_majors = True
+            changed.append("has_appeared_in_majors")
 
     status = current_status_row(rows)
     if status:
