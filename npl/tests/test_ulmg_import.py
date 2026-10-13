@@ -142,11 +142,12 @@ class ApplyTests(TestCase):
         self.assertEqual(player.fg_role, "AAA")
         self.assertEqual(player.fg_id, "99")
 
-    def test_list_stats_are_left_alone(self):
-        self.player.stats = [{"year": 2020}]
+    def test_list_stats_are_replaced_by_ulmg_lines(self):
+        self.player.stats = [{"season": 2020, "plateAppearances": 10}]
         self.player.save(update_fields=["stats"])
         apply_player(self.player, [_row(hit_stats={"pa": 10, "hr": 1})], {"15640"})
-        self.assertEqual(self.player.stats, [{"year": 2020}])
+        self.assertEqual(self.player.stats["2024_majors_hit"]["hr"], 1)
+        self.assertNotIsInstance(self.player.stats, list)
 
     def test_import_matches_on_mlb_id_and_can_dry_run(self):
         rows = [_row(hit_stats={"pa": 20, "hr": 3, "k_pct": 0.1})]
