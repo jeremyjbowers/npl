@@ -25,7 +25,9 @@
         {% if user.is_authenticated and not p.is_owned %}
         <p class="mt-3">
             <button type="button" class="btn-line" onclick="nominatePlayer('{{ p.mlb_id }}', 'fa', this)" {% if not p.can_nominate_fa %}disabled title="{{ p.fa_nominate_reason }}"{% endif %}>Nominate for FA</button>
+            {% if p.show_ifa %}
             <button type="button" class="btn-line" onclick="nominatePlayer('{{ p.mlb_id }}', 'ifa', this)" {% if not p.can_nominate_ifa %}disabled title="{{ p.ifa_nominate_reason }}"{% endif %}>Nominate for IFA</button>
+            {% endif %}
         </p>
         {% endif %}
     </header>
