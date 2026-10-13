@@ -733,33 +733,98 @@ class Player(BaseModel):
 
         self.stats[stats_dict["slug"]] = stats_dict
 
-    def pit_stats(self):
-        # should return stats dict by level and year
+    def _stat_season_rows(self):
+        cached = getattr(self, "_stat_season_cache", None)
+        if cached is None:
+            cached = list(self.stat_seasons.all())
+            self._stat_season_cache = cached
+        return cached
+
+    def _legacy_lines(self, side, count_key):
+        if not isinstance(self.stats, dict):
+            return []
         payload = []
-
-        if self.stats:
-            for year_side_level, stats in self.stats.items():
-                if stats['side'] == "pitch":
-                    if stats['g'] >= 1:
-                        payload.append(stats)
-
-        payload = sorted(payload, key=lambda x:int(x['year']))
-
+        for stats in self.stats.values():
+            if not isinstance(stats, dict) or stats.get("side") != side:
+                continue
+            if (stats.get(count_key) or 0) >= 1:
+                payload.append(stats)
         return payload
+
+    def _season_lines(self, side):
+        from npl.ulmg_import import hitting_line, pitching_line
+
+        builder = hitting_line if side == "hit" else pitching_line
+        payload = []
+        for season in self._stat_season_rows():
+            if season.is_career:
+                continue
+            line = builder(season.as_import_row())
+            if line:
+                payload.append(line)
+        return payload
+
+    def _lines(self, side, count_key):
+        by_slug = {}
+        for line in self._legacy_lines(side, count_key):
+            by_slug[line.get("slug") or f"legacy-{line.get('year')}-{side}"] = line
+        for line in self._season_lines(side):
+            by_slug[line["slug"]] = line
+        return sorted(by_slug.values(), key=lambda row: int(row["year"]))
+
+    def pit_stats(self):
+        return self._lines("pitch", "g")
 
     def hit_stats(self):
-        # shoudl return stats dict by level and year
-        payload = []
+        return self._lines("hit", "plate_appearances")
 
-        if self.stats:
-            for year_side_level, stats in self.stats.items():
-                if stats['side'] == "hit":
-                    if stats['plate_appearances'] >= 1:
-                        payload.append(stats)
 
-        payload = sorted(payload, key=lambda x:int(x['year']))
+class PlayerStatSeason(BaseModel):
+    """One year of batting, pitching, and roster status for a player."""
 
-        return payload
+    player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="stat_seasons")
+    season = models.IntegerField()
+    is_career = models.BooleanField(default=False)
+    classification = models.CharField(max_length=255, blank=True, default="")
+    level = models.CharField(max_length=255, blank=True, default="")
+    hit_stats = models.JSONField(null=True, blank=True)
+    pitch_stats = models.JSONField(null=True, blank=True)
+    minors = models.BooleanField(default=False)
+    is_mlb = models.BooleanField(default=False)
+    is_starter = models.BooleanField(default=False)
+    is_bench = models.BooleanField(default=False)
+    is_injured = models.BooleanField(default=False)
+    injury_description = models.CharField(max_length=255, blank=True, default="")
+    role = models.CharField(max_length=255, blank=True, default="")
+    role_type = models.CharField(max_length=255, blank=True, default="")
+    roster_status = models.CharField(max_length=255, blank=True, default="")
+    mlb_org = models.CharField(max_length=255, blank=True, default="")
+    is_mlb40man = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ["-season", "classification"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["player", "season", "classification", "is_career"],
+                name="npl_stat_season_player_year_class",
+            )
+        ]
+        indexes = [
+            models.Index(fields=["player", "season"], name="npl_players_player__6a0e1d_idx"),
+        ]
+
+    def __unicode__(self):
+        label = "career" if self.is_career else self.season
+        return f"{self.player} @ {label} @ {self.classification}"
+
+    def as_import_row(self):
+        return {
+            "season": self.season,
+            "classification": self.classification,
+            "level": self.level,
+            "hit_stats": self.hit_stats,
+            "pitch_stats": self.pitch_stats,
+        }
 
 
 class TransactionType(BaseModel):

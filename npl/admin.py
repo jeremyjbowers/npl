@@ -9,6 +9,7 @@ from npl.models import (
     Trade,
     Owner,
     Player,
+    PlayerStatSeason,
     Contract,
     ContractYear,
     Transaction,
@@ -389,6 +390,14 @@ class PlayerAdmin(admin.ModelAdmin):
     list_display = ['last_name', 'first_name', 'position', 'team', 'mlb_org', 'mlb_id', 'scoresheet_id']
     list_filter = ['team', 'mlb_org', 'position']
     search_fields = ['name', 'team__full_name', 'mlb_org', 'scoresheet_id']
+
+
+@admin.register(PlayerStatSeason)
+class PlayerStatSeasonAdmin(admin.ModelAdmin):
+    list_display = ["player", "season", "classification", "level", "roster_status", "mlb_org"]
+    list_filter = ["season", "classification", "level", "roster_status"]
+    search_fields = ["player__name", "player__mlb_id", "mlb_org"]
+    raw_id_fields = ["player"]
 
 @admin.register(Owner)
 class OwnerAdmin(admin.ModelAdmin):
