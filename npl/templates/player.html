@@ -18,6 +18,7 @@
         </p>
         <p class="mt-1 text-xs text-gray-700">
             {{ p.get_roster_status|default:"" }}
+            {% if p.fg_role and p.fg_role|upper != p.roster_status|upper %} · {{ p.fg_role }}{% endif %}
             {% if p.player_level %} · {{ p.player_level }}{% endif %}
             {% if p.is_owned %} · Owned{% else %} · Unowned{% endif %}
             {% if p.has_appeared_in_majors %} · MLB debut {{ p.mlb_debut_date|date:"M j, Y"|default:"on file" }}{% elif p.has_appeared_in_majors is False %} · Has not appeared in the majors{% else %} · Majors debut not checked yet{% endif %}
@@ -49,7 +50,7 @@
         </div>
         <div>
             <dt class="font-bold">Roster</dt>
-            <dd>{{ p.get_roster_status|default:"—" }}</dd>
+            <dd>{{ p.get_roster_status|default:"—" }}{% if p.fg_role and p.fg_role|upper != p.roster_status|upper %} · {{ p.fg_role }}{% endif %}</dd>
         </div>
         <div>
             <dt class="font-bold">MLS</dt>
