@@ -115,7 +115,7 @@
                     <td>{{ player.position|default:"" }}</td>
                     <td>{{ player.age|default:"" }}</td>
                     <td>{{ player.mlb_org|default:"" }}</td>
-                    <td>{{ player.get_roster_status|default:"" }}</td>
+                    <td>{{ player.get_roster_status|default:"" }}{% if player.fg_role and player.fg_role|upper != player.roster_status|upper %} · {{ player.fg_role }}{% endif %}</td>
                 </tr>
                 {% endfor %}
             </tbody>

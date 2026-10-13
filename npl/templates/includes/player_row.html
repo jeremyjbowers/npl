@@ -15,7 +15,7 @@
         {% endif %}
     </td>
     <td>{{ p.position|default:"" }}</td>
-    <td>{{ p.get_roster_status|default:"" }}</td>
+    <td>{{ p.get_roster_status|default:"" }}{% if p.fg_role and p.fg_role|upper != p.roster_status|upper %} · {{ p.fg_role }}{% endif %}</td>
     <td>{{ p.age|default:"" }}</td>
     <td>{{ p.mlb_org|default:"" }}</td>
     <td>{% if p.roster_40man %}{{ p.mls_time|default:"" }}{% else %}{{ p.mls_year|default:"" }}{% endif %}</td>
