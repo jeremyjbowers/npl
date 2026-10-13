@@ -824,7 +824,7 @@ def nominate_player_api(request, playerid):
     Put an eligible unowned player on this Friday's auction.
 
     ``kind=fa`` is the in-season free-agent auction (majors debut required).
-    ``kind=ifa`` is the separate auction for a player who has not debuted.
+    ``kind=ifa`` is only for a player who meets the international free-agent rules.
     """
     context = utils.build_context(request, with_teams=False)
     payload = {

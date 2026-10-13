@@ -287,6 +287,33 @@ class Player(BaseModel):
         help_text="True after an MLB debut. False when the stats API has no debut. Empty until that check has run.",
     )
     mlb_status_checked = models.DateTimeField(blank=True, null=True)
+    birth_country = models.CharField(max_length=80, blank=True, default="")
+    stateside_seasons = models.PositiveSmallIntegerField(
+        blank=True,
+        null=True,
+        help_text="Calendar years with a game in an affiliated U.S. minor league. DSL and VSL do not count. Empty until the IFA check has run.",
+    )
+    npb_kbo_seasons = models.PositiveSmallIntegerField(
+        blank=True,
+        null=True,
+        help_text="Seasons with a game in NPB or KBO. Empty until the IFA check has run.",
+    )
+    international_signee = models.BooleanField(
+        blank=True,
+        null=True,
+        help_text="True when the first MLB signing was an international free-agent contract. Empty until the IFA check has run.",
+    )
+    international_signing_date = models.DateField(blank=True, null=True)
+    international_mlb_contract = models.BooleanField(
+        blank=True,
+        null=True,
+        help_text="True when that international signing was a major-league contract. Those players are offseason free agents, not IFA.",
+    )
+    ifa_checked = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text="When the signing and minor-league seasons used for IFA eligibility were last read.",
+    )
 
     # Contract status
     mls_time = models.CharField(max_length=255, blank=True, null=True)

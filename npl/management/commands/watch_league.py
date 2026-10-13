@@ -28,7 +28,7 @@ EASTERN = pytz.timezone("US/Eastern")
 
 
 class Command(BaseCommand):
-    help = "Check MLB debuts and club status, and load this season's MLB stats by MLBID."
+    help = "Check MLB debuts, club status, and IFA eligibility, and load this season's MLB stats by MLBID."
 
     def add_arguments(self, parser):
         parser.add_argument(

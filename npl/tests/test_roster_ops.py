@@ -146,6 +146,14 @@ class NominationTests(TestCase):
             first_name="Prospect",
             last_name="Arm",
             has_appeared_in_majors=False,
+            birthdate=datetime.date(2005, 4, 2),
+            birth_country="Dominican Republic",
+            stateside_seasons=1,
+            npb_kbo_seasons=0,
+            international_signee=True,
+            international_signing_date=datetime.date(2024, 1, 15),
+            international_mlb_contract=False,
+            ifa_checked=timezone.now(),
         )
         self.season = Season.objects.create(year=2026, phase=Season.REGULAR, is_current=True)
         self.client.force_login(self.user)
@@ -174,12 +182,14 @@ class NominationTests(TestCase):
         auction = Auction.objects.get(player=self.prospect)
         self.assertEqual(auction.auction_kind, Auction.IFA)
 
-    def test_search_grays_out_the_wrong_button(self):
+    def test_search_offers_ifa_only_to_an_eligible_player(self):
         page = self.client.get("/players/search/?name=Prospect")
         self.assertContains(page, "This player has not appeared in the majors. Use the IFA nomination.")
-        self.assertContains(page, ">IFA</button>")
+        self.assertContains(page, 'data-kind="ifa"')
         veteran = self.client.get("/players/search/?name=Veteran")
-        self.assertContains(
+        self.assertNotContains(veteran, 'data-kind="ifa"')
+        self.assertContains(veteran, 'data-kind="fa"')
+        self.assertNotContains(
             veteran,
             "This player has appeared in the majors. Use the free-agent nomination.",
         )

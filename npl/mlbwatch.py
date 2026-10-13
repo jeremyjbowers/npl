@@ -5,6 +5,9 @@ league's players are keyed by ``mlb_id``, and a debut is a field on the
 people endpoint rather than a row in a season stat dump. Season lines still
 land in the same stats dictionary the FanGraphs loader writes
 (``{year}_majors_hit`` and ``{year}_majors_pitch``).
+
+The same pass reads the signing and minor-league seasons used to decide
+whether the IFA button is shown.
 """
 
 import datetime
@@ -14,7 +17,10 @@ from urllib.parse import urlencode
 import requests
 from django.utils import timezone
 
-from npl import models
+from npl import ifa, models
+
+# Year-by-year lines used for the stateside-year and NPB/KBO counts.
+IFA_SPORT_IDS = (11, 12, 13, 14, 15, 16, 31, 32)
 
 PEOPLE_URL = "https://statsapi.mlb.com/api/v1/people"
 STATS_URL = "https://statsapi.mlb.com/api/v1/stats"
@@ -67,24 +73,58 @@ def _chunks(values, size):
         yield values[start : start + size]
 
 
-def people_url(mlb_ids):
+def people_url(mlb_ids, hydrate="currentTeam,transactions"):
     query = urlencode(
         {
             "personIds": ",".join(str(mlb_id) for mlb_id in mlb_ids),
-            "hydrate": "currentTeam",
+            "hydrate": hydrate,
         }
     )
     return f"{PEOPLE_URL}?{query}"
 
 
+def _attach_career_stats(people, mlb_ids, getter):
+    """Merge minor-league, NPB, and KBO year lines onto these people payloads.
+
+    A sport response that omits someone, or any failed request, leaves the
+    chunk unmarked so we do not store a partial season count.
+    """
+    ids = [str(mlb_id) for mlb_id in mlb_ids if mlb_id]
+    if not ids or not people:
+        return
+    for sport_id in IFA_SPORT_IDS:
+        hydrate = f"stats(group=[hitting,pitching],type=[yearByYear],sportId={sport_id})"
+        try:
+            payload = getter(people_url(ids, hydrate=hydrate))
+        except Exception:
+            return
+        seen = set()
+        for person in payload.get("people") or []:
+            pid = str(person.get("id"))
+            seen.add(pid)
+            target = people.get(pid)
+            if target is None:
+                continue
+            target.setdefault("stats", [])
+            target["stats"].extend(person.get("stats") or [])
+        if not set(ids).issubset(seen):
+            return
+    for pid in ids:
+        if pid in people:
+            people[pid]["_ifa_ready"] = True
+
+
 def fetch_people(mlb_ids, getter=None):
-    """Return ``{mlb_id: person}`` from the people endpoint."""
+    """Return ``{mlb_id: person}`` from the people endpoint, with IFA season lines."""
     getter = getter or default_getter
     found = {}
     for chunk in _chunks([mlb_id for mlb_id in mlb_ids if mlb_id], PEOPLE_CHUNK):
         payload = getter(people_url(chunk))
+        chunk_people = {}
         for person in payload.get("people") or []:
-            found[str(person.get("id"))] = person
+            chunk_people[str(person.get("id"))] = person
+        _attach_career_stats(chunk_people, chunk, getter)
+        found.update(chunk_people)
     return found
 
 
@@ -110,7 +150,7 @@ def apply_person(player, person, now=None):
 
 
 def refresh_appearances(players, getter=None, now=None):
-    """Update debut and club for these players. Returns how many were saved."""
+    """Update debut, club, and IFA facts for these players. Returns how many were saved."""
     getter = getter or default_getter
     now = now or timezone.now()
     players = list(players)
@@ -123,15 +163,15 @@ def refresh_appearances(players, getter=None, now=None):
             player.save(update_fields=["mlb_status_checked"])
             continue
         apply_person(player, person, now=now)
-        player.save(
-            update_fields=[
-                "mlb_debut_date",
-                "has_appeared_in_majors",
-                "mlb_org",
-                "roster_status",
-                "mlb_status_checked",
-            ]
-        )
+        fields = [
+            "mlb_debut_date",
+            "has_appeared_in_majors",
+            "mlb_org",
+            "roster_status",
+            "mlb_status_checked",
+        ]
+        fields.extend(ifa.apply_player_facts(player, person, now))
+        player.save(update_fields=fields)
         saved += 1
     return saved
 
