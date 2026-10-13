@@ -55,7 +55,8 @@
         {% elif transaction_type == 'injured_list' %}
         <h2 class="font-bold">Injured list</h2>
         <ul class="mt-1 list-disc pl-5">
-            <li>7-day, 15-day, 60-day, or end-of-season.</li>
+            <li>7-day, 56-day, or end-of-season.</li>
+            <li>End-of-season IL needs a link explaining why he will not return this season.</li>
             <li>The placement is effective the Monday the transaction is processed.</li>
         </ul>
         {% elif transaction_type == 'option_minors' %}
@@ -77,6 +78,11 @@
         <ul class="mt-1 list-disc pl-5">
             <li>Claims process in reverse order of the standings.</li>
             <li>You need roster space. You take the current contract.</li>
+        </ul>
+        {% elif transaction_type == 'foreign_retirement' %}
+        <h2 class="font-bold">Foreign list</h2>
+        <ul class="mt-1 list-disc pl-5">
+            <li>A foreign-list assignment needs a link showing the player is playing in a foreign league.</li>
         </ul>
         {% elif transaction_type == 'purchase_contract' %}
         <h2 class="font-bold">Purchase contract</h2>

@@ -7,7 +7,7 @@ This document describes the implementation of the NPL auction system that follow
 The system implements the following rules:
 
 1. **One Bid Per Team**: You are allowed to make only one bid per auction
-2. **Nominations vs Bids**: Nominations are NON-BINDING; you MUST bid to win an auction
+2. **Nominations vs Bids**: During the regular season, a one-click nomination puts an unowned player who has appeared in the majors on that Friday's auction. A player who has not appeared uses the separate IFA button. The nomination is not a bid. You must bid to win. Offseason point auctions are not this process.
 3. **Blind Auctions**: FA auction time does NOT extend; auctions are blind and expire at 3 PM ET on Friday each week
 4. **Dollar Amounts**: Bids must be in dollars (positive integers)
 5. **Winning Amount**: The winning amount will be $1 greater than the second highest bid

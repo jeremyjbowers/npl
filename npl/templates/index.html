@@ -10,6 +10,9 @@
     <header class="mb-3">
         <h2 class="text-lg font-bold">Transactions</h2>
         <p class="mt-1"><a class="underline" href="/transactions/">Full transaction log</a></p>
+        {% if roster_moves %}
+        <p class="mt-1"><a class="underline" href="/transactions/roundup/">{{ roster_moves|length }} club{{ roster_moves|length|pluralize }} {{ roster_moves|length|pluralize:"has,have" }} a roster move to make.</a></p>
+        {% endif %}
     </header>
     {% for week in transaction_weeks %}
     <h3 class="mb-2 mt-4 font-bold">{{ week.monday }}</h3>

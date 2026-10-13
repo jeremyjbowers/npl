@@ -142,6 +142,28 @@
     background: #f9fafb;
   }
 
+  .sheet.roster {
+    table-layout: fixed;
+    width: 98rem;
+    min-width: 98rem;
+  }
+
+  .sheet.roster .c-player { width: 14rem; }
+  .sheet.roster .c-pos { width: 3.5rem; }
+  .sheet.roster .c-roster { width: 5rem; }
+  .sheet.roster .c-age { width: 3.5rem; }
+  .sheet.roster .c-mlb { width: 4rem; }
+  .sheet.roster .c-mls { width: 5rem; }
+  .sheet.roster .c-opt { width: 3.5rem; }
+  .sheet.roster .c-status { width: 5rem; }
+  .sheet.roster .c-year { width: 7rem; }
+  .sheet.roster .c-buyout { width: 7rem; }
+
+  .sheet.roster td:first-child,
+  .sheet.roster th:first-child {
+    white-space: normal;
+  }
+
   .sheet tr.majors td {
     font-weight: 700;
   }
@@ -181,6 +203,12 @@
 
   .btn-line:hover {
     background: #f3f4f6;
+  }
+
+  .btn-line:disabled {
+    color: #9ca3af;
+    background: #f3f4f6;
+    cursor: not-allowed;
   }
 
   .note {

@@ -85,6 +85,18 @@ A release that frees a known salary adds that salary back to cap space in the pr
 
 Directors set the phase on the current season in the admin. The rules name three phases: offseason, regular season, and postseason. Spring training, roster freezes, Winter Meetings, and the October quiet period sit inside those phases. They are not separate settings.
 
+## Audit, impact, and the weekly roster check
+
+The trade form already lets a club specify what moves: players, cash, cap space, IFA pool space, and how a contract year is covered. That filing is the proposal you flag when something is wrong.
+
+A posted row in **Transactions → All Transactions** can be changed from the admin. A change requires a director note. The note is stored on an edit trail (who, when, which fields, and the note) and shown on the public log under that row. django-reversion also keeps a full copy of the row, linked from the admin history.
+
+Each proposal page, and each posted row, states the cap and roster effect. Examples: a signing removes dollars from cap space and adds a player to the 40-man; an end-of-season IL or a foreign-list move takes a player off the 40-man and the 85-man.
+
+**Transactions → Roster check** lists clubs that are over 40 or over 85, including clubs that would be over once open filings clear. The way off a full 40-man is a waiver, the end-of-season IL, or the foreign list. The way off a full 85-man is a drop or one of those reclassifications.
+
+End-of-season IL and a foreign-list assignment are rejected unless the note includes a URL.
+
 ## What you still do yourselves
 
 The proposal is the filing. It is not the roster move.

@@ -5,7 +5,7 @@
 {% block content %}
 <header class="mb-4">
     <h1 class="text-2xl font-bold">Players</h1>
-    <p class="mt-1 max-w-xl text-sm">The list includes players who are not on a club roster.</p>
+    <p class="mt-1 max-w-xl text-sm">The list includes players who are not on a club roster. During the season, Nominate puts a player who has appeared in the majors on Friday's free-agent auction. IFA is the separate button for a player who has not. A gray button is not eligible.</p>
 </header>
 
 {% include "includes/pagination.html" %}
@@ -28,88 +28,10 @@
 {% endif %}
 
 {% include "includes/pagination.html" %}
-
-{% if user.is_authenticated %}
-<dialog id="nomination-modal" class="w-full max-w-md border border-gray-300 p-4">
-    <form method="dialog">
-        <h2 class="mb-2 text-lg font-bold">Nominate <span id="nominee-name"></span></h2>
-        <p class="mb-3 text-sm">This asks an administrator to review the player for auction.</p>
-        <label class="mb-1 block text-xs font-bold" for="nomination-reason">Reason (optional)</label>
-        <textarea id="nomination-reason" maxlength="500" rows="4" class="mb-3 w-full" placeholder="Why should this player be auctioned?"></textarea>
-        <div class="flex gap-2">
-            <button type="button" id="confirm-nomination" class="btn">Submit nomination</button>
-            <button type="submit" value="cancel" class="btn-line">Cancel</button>
-        </div>
-    </form>
-</dialog>
-{% endif %}
 {% endblock %}
 
 {% block extrascript %}
 {% if user.is_authenticated %}
-<script>
-var currentNominationPlayerId = null;
-
-function openNominationModal(playerId, playerName) {
-    currentNominationPlayerId = playerId;
-    document.getElementById("nominee-name").textContent = playerName;
-    document.getElementById("nomination-reason").value = "";
-    document.getElementById("nomination-modal").showModal();
-}
-
-function closeNominationModal() {
-    var dialog = document.getElementById("nomination-modal");
-    if (dialog.open) dialog.close();
-    currentNominationPlayerId = null;
-}
-
-function getCookie(name) {
-    var cookies = document.cookie ? document.cookie.split(";") : [];
-    for (var i = 0; i < cookies.length; i++) {
-        var cookie = cookies[i].trim();
-        if (cookie.substring(0, name.length + 1) === name + "=") {
-            return decodeURIComponent(cookie.substring(name.length + 1));
-        }
-    }
-    return null;
-}
-
-document.addEventListener("DOMContentLoaded", function () {
-    var confirmButton = document.getElementById("confirm-nomination");
-    if (!confirmButton) return;
-    confirmButton.addEventListener("click", function () {
-        if (!currentNominationPlayerId) return;
-        var reason = document.getElementById("nomination-reason").value.trim();
-        confirmButton.disabled = true;
-        fetch("/api/v1/players/" + currentNominationPlayerId + "/nominate/?reason=" + encodeURIComponent(reason), {
-            method: "POST",
-            headers: { "X-CSRFToken": getCookie("csrftoken") }
-        })
-        .then(function (response) { return response.json(); })
-        .then(function (data) {
-            if (!data.success) {
-                alert(data.message || "Nomination failed.");
-                return;
-            }
-            var note = document.createElement("p");
-            note.className = "note mb-4";
-            note.textContent = data.message;
-            document.getElementById("content").insertBefore(note, document.getElementById("content").firstChild);
-            var button = document.querySelector('[data-player-id="' + currentNominationPlayerId + '"]');
-            if (button) {
-                button.disabled = true;
-                button.textContent = "Nominated";
-            }
-            closeNominationModal();
-        })
-        .catch(function () {
-            alert("Error submitting nomination. Please try again.");
-        })
-        .finally(function () {
-            confirmButton.disabled = false;
-        });
-    });
-});
-</script>
+{% include "includes/nominate.js.html" %}
 {% endif %}
 {% endblock %}

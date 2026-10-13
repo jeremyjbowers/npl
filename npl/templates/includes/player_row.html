@@ -35,9 +35,10 @@
             <td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>—</td>
         {% endif %}
     {% elif user.is_authenticated %}
-    <td>
+    <td class="nominate">
         {% if not p.is_owned %}
-        <button type="button" class="btn-line" data-player-id="{{ p.mlb_id }}" onclick="openNominationModal('{{ p.mlb_id }}', '{{ p.name|escapejs }}')">Nominate</button>
+        <button type="button" class="btn-line" data-player-id="{{ p.mlb_id }}" data-kind="fa" onclick="nominatePlayer('{{ p.mlb_id }}', 'fa', this)" {% if not p.can_nominate_fa %}disabled title="{{ p.fa_nominate_reason }}"{% endif %}>Nominate</button>
+        <button type="button" class="btn-line" data-player-id="{{ p.mlb_id }}" data-kind="ifa" onclick="nominatePlayer('{{ p.mlb_id }}', 'ifa', this)" {% if not p.can_nominate_ifa %}disabled title="{{ p.ifa_nominate_reason }}"{% endif %}>IFA</button>
         {% endif %}
     </td>
     {% endif %}

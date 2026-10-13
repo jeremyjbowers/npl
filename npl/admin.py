@@ -29,6 +29,7 @@ from npl.models import (
     TransactionProposal,
     TransactionParty,
     TransactionAsset,
+    TransactionEdit,
     Waiver,
     WaiverClaim,
     DraftSession,
@@ -216,27 +217,134 @@ class TransactionTypeAdmin(admin.ModelAdmin):
     search_fields = ['transaction_type', 'code']
     list_filter = ['category', 'requires_agreement', 'requires_contract']
 
+AUDIT_FIELDS = (
+    "date",
+    "player_id",
+    "team_id",
+    "acquiring_team_id",
+    "transaction_type_id",
+    "notes",
+    "cash_considerations",
+    "mlb_id",
+    "raw_player",
+    "raw_team",
+    "raw_acquiring_team",
+    "raw_transaction_type",
+    "impact_summary",
+)
+
+
+def _audit_value(value):
+    if hasattr(value, "isoformat"):
+        return value.isoformat()
+    return value
+
+
+class TransactionAdminForm(forms.ModelForm):
+    director_note = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 3}),
+        label="Director note",
+        help_text="Required when you change a posted transaction. The note is kept with the edit trail.",
+    )
+
+    class Meta:
+        model = Transaction
+        fields = (
+            "date",
+            "player",
+            "team",
+            "transaction_type",
+            "acquiring_team",
+            "notes",
+            "cash_considerations",
+            "mlb_id",
+            "raw_player",
+            "raw_team",
+            "raw_acquiring_team",
+            "raw_transaction_type",
+        )
+
+    def clean(self):
+        cleaned = super().clean()
+        if self.instance.pk:
+            changed = [name for name in self.changed_data if name != "director_note"]
+            if changed and not (cleaned.get("director_note") or "").strip():
+                self.add_error(
+                    "director_note",
+                    "Add a note explaining this change. It stays on the edit trail.",
+                )
+        return cleaned
+
+
+class TransactionEditInline(admin.TabularInline):
+    model = TransactionEdit
+    extra = 0
+    can_delete = False
+    readonly_fields = ("editor", "note", "changes", "created")
+    fields = ("created", "editor", "note", "changes")
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
 @admin.register(Transaction)
-class TransactionAdmin(admin.ModelAdmin):
+class TransactionAdmin(VersionAdmin):
+    form = TransactionAdminForm
     model = Transaction
     list_display = ['date', 'transaction_type', 'calculated_player', 'calculated_team']
     list_filter = ['date', 'team__short_name', 'transaction_type__transaction_type']
     autocomplete_fields = ['team', 'acquiring_team', 'player', 'transaction_type']
+    readonly_fields = ["impact_summary"]
+    inlines = [TransactionEditInline]
     fieldsets = (
         (
             None,
             {
                 "fields": (
-                    ("date",),
-                    ("player"),
-                    ("team"),
-                    ("transaction_type"),
-                    ("acquiring_team"),
-                    ("notes")
+                    "date",
+                    "player",
+                    "team",
+                    "transaction_type",
+                    "acquiring_team",
+                    "cash_considerations",
+                    "notes",
+                    "impact_summary",
+                    "director_note",
                 ),
             },
         ),
     )
+
+    def save_model(self, request, obj, form, change):
+        note = (form.cleaned_data.get("director_note") or "").strip()
+        before = {}
+        if change and obj.pk:
+            previous = Transaction.objects.get(pk=obj.pk)
+            before = {field: _audit_value(getattr(previous, field)) for field in AUDIT_FIELDS}
+        super().save_model(request, obj, form, change)
+        if not change:
+            return
+        after = {field: _audit_value(getattr(obj, field)) for field in AUDIT_FIELDS}
+        diff = {
+            field: [before.get(field), after.get(field)]
+            for field in AUDIT_FIELDS
+            if before.get(field) != after.get(field)
+        }
+        if diff and note:
+            TransactionEdit.objects.create(
+                transaction=obj,
+                editor=request.user,
+                note=note,
+                changes=diff,
+            )
+            request.director_note = note
+
+    def log_change(self, request, obj, message):
+        note = getattr(request, "director_note", "")
+        if note:
+            message = note
+        return super().log_change(request, obj, message)
 
 
 class ContractYearInline(admin.TabularInline):

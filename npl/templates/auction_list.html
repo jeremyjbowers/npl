@@ -12,9 +12,9 @@
     <p class="font-bold">Auction rules</p>
     <ul>
         <li>One bid per club.</li>
-        <li>Nominations are non-binding. You must bid to win.</li>
+        <li>Nominating a player puts him on this Friday's auction. You still have to bid to win him.</li>
         <li>Auctions are blind and expire at 3 PM ET on Friday. The clock does not extend.</li>
-        <li>Bids are in dollars. The winner pays $1 more than the second-highest bid.</li>
+        <li>Bids are in dollars. Each club bids its highest price once. The winner pays $1 more than the second-highest bid.</li>
     </ul>
 </div>
 
@@ -42,7 +42,10 @@
         <tbody>
             {% for auction in auctions %}
             <tr>
-                <td><a href="/players/{{ auction.player.mlb_id }}/">{{ auction.player.name }}</a></td>
+                <td>
+                    <a href="/players/{{ auction.player.mlb_id }}/">{{ auction.player.name }}</a>
+                    {% if auction.auction_kind == "ifa_dollars" %}<span class="text-gray-600">IFA</span>{% endif %}
+                </td>
                 <td>{{ auction.player.scoresheet_id|default:"—" }}</td>
                 <td>{{ auction.player.mlb_id|default:"—" }}</td>
                 <td>{{ auction.player.position|default:"—" }}</td>

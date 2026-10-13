@@ -20,7 +20,14 @@
             {{ p.get_roster_status|default:"" }}
             {% if p.player_level %} · {{ p.player_level }}{% endif %}
             {% if p.is_owned %} · Owned{% else %} · Unowned{% endif %}
+            {% if p.has_appeared_in_majors %} · MLB debut {{ p.mlb_debut_date|date:"M j, Y"|default:"on file" }}{% elif p.has_appeared_in_majors is False %} · Has not appeared in the majors{% else %} · Majors debut not checked yet{% endif %}
         </p>
+        {% if user.is_authenticated and not p.is_owned %}
+        <p class="mt-3">
+            <button type="button" class="btn-line" onclick="nominatePlayer('{{ p.mlb_id }}', 'fa', this)" {% if not p.can_nominate_fa %}disabled title="{{ p.fa_nominate_reason }}"{% endif %}>Nominate for FA</button>
+            <button type="button" class="btn-line" onclick="nominatePlayer('{{ p.mlb_id }}', 'ifa', this)" {% if not p.can_nominate_ifa %}disabled title="{{ p.ifa_nominate_reason }}"{% endif %}>Nominate for IFA</button>
+        </p>
+        {% endif %}
     </header>
 
     <dl class="mb-6 grid grid-cols-2 gap-4 text-xs md:grid-cols-3">
@@ -161,4 +168,10 @@
     <p>No statistics available for this player.</p>
     {% endif %}
 </article>
+{% endblock %}
+
+{% block extrascript %}
+{% if user.is_authenticated and not p.is_owned %}
+{% include "includes/nominate.js.html" %}
+{% endif %}
 {% endblock %}

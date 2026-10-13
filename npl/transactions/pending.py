@@ -203,6 +203,16 @@ def forty_man_delta(code, team, assets):
         for player in players:
             if not player.roster_40man or player.team_id != team.id:
                 delta += 1
+    if code == "il_eos":
+        for asset in assets:
+            player = asset.get("player")
+            if (
+                player is not None
+                and player.roster_40man
+                and not player.roster_eosIL
+                and player.team_id == team.id
+            ):
+                delta -= 1
     if code in FORTY_MAN_DROPS:
         for asset in assets:
             player = asset.get("player")
