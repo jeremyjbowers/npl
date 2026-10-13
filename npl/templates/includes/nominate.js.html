@@ -1,0 +1,38 @@
+<script>
+function getCookie(name) {
+    var cookies = document.cookie ? document.cookie.split(";") : [];
+    for (var i = 0; i < cookies.length; i++) {
+        var cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === name + "=") {
+            return decodeURIComponent(cookie.substring(name.length + 1));
+        }
+    }
+    return null;
+}
+
+function nominatePlayer(playerId, kind, button) {
+    if (!playerId || !button || button.disabled) return;
+    button.disabled = true;
+    fetch("/api/v1/players/" + playerId + "/nominate/?kind=" + encodeURIComponent(kind), {
+        method: "POST",
+        headers: { "X-CSRFToken": getCookie("csrftoken") }
+    })
+    .then(function (response) { return response.json(); })
+    .then(function (data) {
+        var note = document.createElement("p");
+        note.className = "note mb-4";
+        note.textContent = data.message || "Nomination failed.";
+        var content = document.getElementById("content");
+        content.insertBefore(note, content.firstChild);
+        if (data.success) {
+            button.textContent = "Nominated";
+        } else {
+            button.disabled = false;
+        }
+    })
+    .catch(function () {
+        button.disabled = false;
+        alert("Error submitting nomination. Please try again.");
+    });
+}
+</script>

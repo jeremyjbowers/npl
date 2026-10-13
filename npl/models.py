@@ -279,6 +279,14 @@ class Player(BaseModel):
     # Real MLB status
     mlb_org = models.CharField(max_length=255, blank=True, null=True)
     roster_status = models.CharField(max_length=255, blank=True, null=True)
+    mlb_debut_date = models.DateField(blank=True, null=True)
+    has_appeared_in_majors = models.BooleanField(
+        null=True,
+        blank=True,
+        default=None,
+        help_text="True after an MLB debut. False when the stats API has no debut. Empty until that check has run.",
+    )
+    mlb_status_checked = models.DateTimeField(blank=True, null=True)
 
     # Contract status
     mls_time = models.CharField(max_length=255, blank=True, null=True)
@@ -766,6 +774,11 @@ class Transaction(BaseModel):
     is_archive_transaction = models.BooleanField(default=False)
 
     notes = models.TextField(null=True, blank=True)
+    impact_summary = models.TextField(
+        blank=True,
+        default="",
+        help_text="Cap, cash, and roster effect recorded when this row was posted.",
+    )
     proposal = models.ForeignKey(
         "TransactionProposal",
         on_delete=models.SET_NULL,
@@ -1697,6 +1710,7 @@ from npl.transaction_models import (  # noqa: E402,F401
     TransactionAsset,
     TransactionParty,
     TransactionProposal,
+    TransactionEdit,
     Waiver,
     WaiverClaim,
 )

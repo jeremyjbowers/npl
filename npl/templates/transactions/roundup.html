@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Roster check — The NPL{% endblock %}
+
+{% block content %}
+<header class="mb-4">
+    <h1 class="text-2xl font-bold">Roster check</h1>
+    <p class="mt-1 max-w-2xl text-sm">
+        A club over 40 on the 40-man has to waive a player or move him to the end-of-season IL or a foreign league.
+        A club over 85 has to drop or reclassify the extra players.
+        End-of-season IL and the foreign list both need a note with a URL.
+    </p>
+</header>
+
+{% if moves %}
+{% for row in moves %}
+<section class="mb-6">
+    <h2 class="text-lg font-bold">
+        <a class="underline" href="/teams/{{ row.team.short_name|lower }}/">{{ row.team.short_name }}</a>
+    </h2>
+    <p class="text-xs text-gray-700">40-man {{ row.forty }} · 85-man {{ row.reserve }}</p>
+    <ul class="mt-1 list-disc pl-5">
+        {% for line in row.lines %}
+        <li>{{ line }}</li>
+        {% endfor %}
+    </ul>
+</section>
+{% endfor %}
+{% else %}
+<p>No club has a roster move to make.</p>
+{% endif %}
+{% endblock %}

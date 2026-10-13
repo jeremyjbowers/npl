@@ -5,7 +5,7 @@
 {% block content %}
 <header class="mb-4">
     <h1 class="text-2xl font-bold">Transactions</h1>
-    <p class="mt-1 max-w-xl text-sm">This is the processed log. A filing shows up here after directors record it.</p>
+    <p class="mt-1 max-w-xl text-sm">This is the processed log. A filing shows up here after directors record it. <a class="underline" href="/transactions/roundup/">Roster check</a> lists clubs that still have to waive, drop, or reclassify someone.</p>
     {% if user.is_authenticated %}
     <p class="mt-2 text-sm"><a class="underline" href="/transactions/form/">Submit a transaction</a> lists every move a club can file.</p>
     {% else %}
@@ -25,6 +25,7 @@
                 <th scope="col">Transaction</th>
                 <th scope="col">Acquiring team</th>
                 <th scope="col">Notes</th>
+                <th scope="col">Impact</th>
             </tr>
         </thead>
         <tbody>
@@ -35,11 +36,20 @@
                 <td>{{ t.calculated_player|default:"" }}</td>
                 <td>{{ t.transaction_type|default:"" }}</td>
                 <td>{{ t.calculated_acquiring_team|default:"" }}</td>
-                <td class="whitespace-normal">{{ t.notes|default:"" }}</td>
+                <td class="whitespace-normal">
+                    {{ t.notes|default:"" }}
+                    {% for edit in t.edits.all %}
+                    <p class="mt-1 text-xs text-gray-700">Director note{% if edit.created %} · {{ edit.created|date:"M j, Y" }}{% endif %}: {{ edit.note }}</p>
+                    {% endfor %}
+                    {% if user.is_staff %}
+                    <p class="mt-1 text-xs"><a class="underline" href="/admin/npl/transaction/{{ t.id }}/change/">Edit</a></p>
+                    {% endif %}
+                </td>
+                <td class="whitespace-normal">{{ t.impact_summary|default:"" }}</td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="6">No transactions found.</td>
+                <td colspan="7">No transactions found.</td>
             </tr>
             {% endfor %}
         </tbody>

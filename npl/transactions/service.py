@@ -256,7 +256,14 @@ def create_proposal(
 
     from npl.transactions.rules import assert_legal
 
-    assert_legal(team, code, normalized, contract_terms=contract_terms, effective_date=effective_date)
+    assert_legal(
+        team,
+        code,
+        normalized,
+        contract_terms=contract_terms,
+        effective_date=effective_date,
+        notes=notes,
+    )
 
     if kind["requires_agreement"]:
         status = models.TransactionProposal.AWAITING
@@ -430,6 +437,9 @@ def execute_proposal(user, proposal):
 
     txn_type = proposal.transaction_type or transaction_type_for(proposal.kind)
     when = proposal.effective_date or timezone.localdate()
+    from npl.transactions.impact import lines_for_proposal
+
+    impact = " ".join(lines_for_proposal(proposal))
     for asset in proposal.assets.all():
         player_label = asset.raw_label
         if asset.player:
@@ -457,6 +467,7 @@ def execute_proposal(user, proposal):
             raw_transaction_type=txn_type.transaction_type,
             cash_considerations=asset.amount,
             notes=asset.notes or proposal.notes,
+            impact_summary=impact,
             proposal=proposal,
         )
         asset.executed_transaction = ledger
@@ -598,6 +609,8 @@ def _advance_draft(session, pick):
 
 
 def proposal_to_dict(proposal):
+    from npl.transactions.impact import lines_for_proposal
+
     waiver = getattr(proposal, "waiver", None)
     return {
         "id": proposal.id,
@@ -610,6 +623,7 @@ def proposal_to_dict(proposal):
         "effective_date": _iso(proposal.effective_date),
         "processing_week": _iso(proposal.processing_week),
         "notes": proposal.notes,
+        "impact": lines_for_proposal(proposal),
         "contract_terms": proposal.contract_terms,
         "flagged": proposal.flagged,
         "flag_note": proposal.flag_note if proposal.flagged else "",
@@ -699,6 +713,9 @@ def submit_from_form(user, form_type, cleaned, source="web"):
         "claim_details",
         "contract_details",
     )
+    source_url = (cleaned.get("source_url") or "").strip()
+    if source_url and source_url not in (notes or ""):
+        notes = f"{notes}\n{source_url}".strip() if notes else source_url
     effective = cleaned.get("effective_date") or cleaned.get("retroactive_date")
     if form_type == "injured_list":
         effective = next_processing_week()
@@ -776,6 +793,9 @@ def submit_from_form(user, form_type, cleaned, source="web"):
     terms = None
     if cleaned.get("contract_details") or cleaned.get("transaction_details"):
         terms = {"text": cleaned.get("contract_details") or cleaned.get("transaction_details")}
+    if source_url:
+        terms = dict(terms or {})
+        terms["source_url"] = source_url
     return create_proposal(
         user=user,
         team=team,

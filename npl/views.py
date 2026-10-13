@@ -21,8 +21,10 @@ import ujson as json
 from datetime import datetime, timedelta
 import pytz
 
-from npl import models, rosters, utils
+from npl import auctions, models, rosters, utils
+from npl.auctions import NominationError
 from npl.homepage import board_context
+from npl.transactions.impact import lines_for_proposal, roster_roundup
 from .forms import TRANSACTION_FORM_MAP, TRANSACTION_MENU, TransactionTypeForm
 from npl.transactions.service import (
     TransactionError,
@@ -181,6 +183,7 @@ def player_detail(request, playerid):
         models.Player.objects.select_related("team"),
         mlb_id=playerid,
     )
+    auctions.attach_nomination_flags([context["p"]])
     return render(request, "player.html", context)
 
 def team_detail(request, short_name):
@@ -475,6 +478,7 @@ def proposal_detail_page(request, proposal_id):
     context.update({
         "proposal": proposal,
         "can_see_terms": can_see_terms,
+        "impact_lines": lines_for_proposal(proposal),
     })
     return render(request, "transactions/proposal.html", context)
 
@@ -573,6 +577,7 @@ def search(request):
         players_page = paginator.page(paginator.num_pages)
     
     # Pass all players as one unified list
+    auctions.attach_nomination_flags(players_page.object_list)
     context["players"] = players_page
     context["players_page"] = players_page
     context["page_obj"] = players_page
@@ -803,8 +808,10 @@ def auction_test_page(request):
 @login_required
 def nominate_player_api(request, playerid):
     """
-    API endpoint to nominate a player for auction.
-    Creates an inactive auction that admins can review and activate.
+    Put an eligible unowned player on this Friday's auction.
+
+    ``kind=fa`` is the in-season free-agent auction (majors debut required).
+    ``kind=ifa`` is the separate auction for a player who has not debuted.
     """
     context = utils.build_context(request, with_teams=False)
     payload = {
@@ -812,85 +819,43 @@ def nominate_player_api(request, playerid):
         "message": None,
         "nomination_id": None
     }
-    
-    # Check if user has permission to nominate
+
     if not (context['owner'] and context['owner_team']):
         payload['message'] = "Only team owners can nominate players for auction."
         return JsonResponse(payload)
-    
-    # Get the player
+
     try:
         player = models.Player.objects.get(mlb_id=playerid)
     except models.Player.DoesNotExist:
         payload['message'] = "Player not found."
         return JsonResponse(payload)
-    
-    # Check if player is eligible for nomination
-    if player.is_owned:
-        payload['message'] = f"{player.name} is already owned and cannot be nominated."
-        return JsonResponse(payload)
-    
-    # Check if there's already an active auction for this player
-    existing_auction = models.Auction.objects.filter(
-        player=player,
-        active=True
-    ).first()
-    
-    if existing_auction:
-        payload['message'] = f"{player.name} already has an active auction."
-        return JsonResponse(payload)
-    
-    # Check if this user has already nominated this player recently
-    recent_nomination = models.Auction.objects.filter(
-        player=player,
-        is_nomination=True,
-        created__gte=timezone.now() - timedelta(days=7),  # Within last 7 days
-        # We could track who nominated via a custom field, but for now just check existence
-    ).first()
-    
-    if recent_nomination:
-        payload['message'] = f"{player.name} has already been nominated recently."
-        return JsonResponse(payload)
-    
-    # Get nomination details from request
-    reason = request.GET.get('reason', '').strip()
-    if len(reason) > 500:
-        reason = reason[:500]
-    
-    # Calculate next Friday at 3 PM EST for potential auction
-    est = pytz.timezone('US/Eastern')
-    now = datetime.now(est)
-    days_until_friday = (4 - now.weekday()) % 7
-    if days_until_friday == 0 and now.hour >= 15:
-        days_until_friday = 7
-    next_friday = now + timedelta(days=days_until_friday)
-    auction_close_time = next_friday.replace(hour=15, minute=0, second=0, microsecond=0)
-    
-    # Create the nomination (inactive auction)
+
+    kind = (request.POST.get("kind") or request.GET.get("kind") or "fa").strip().lower()
+    reason = (request.POST.get("reason") or request.GET.get("reason") or "").strip()
     try:
-        nomination = models.Auction.objects.create(
-            player=player,
-            closes=auction_close_time,
-            is_nomination=True,
-            min_bid=1,  # Default minimum bid
-            active=False,  # Inactive until admin approves
+        auction = auctions.nominate_player(
+            context["owner_team"], player, kind, reason=reason
         )
-        
-        # Create a nomination record to track who nominated and why
-        models.PlayerNomination.objects.create(
-            auction=nomination,
-            nominating_team=context['owner_team'],
-            reason=reason
-        )
-        
-        payload['success'] = True
-        payload['message'] = f"Successfully nominated {player.name} for auction. An administrator will review this nomination."
-        payload['nomination_id'] = nomination.id
-        
-    except Exception as e:
-        payload['message'] = f"Error creating nomination: {str(e)}"
-    
+    except NominationError as exc:
+        payload["message"] = str(exc)
+        return JsonResponse(payload)
+
+    label = auction.nomination_label
+    closes = auction.closes.strftime("%A, %B %d at %I:%M %p ET")
+    payload["success"] = True
+    payload["nomination_id"] = auction.id
+    payload["message"] = (
+        f"{player.name} is on this week's {label} auction. It closes {closes}. "
+        "Bid your highest price. The winner pays $1 more than the second-highest bid."
+    )
     return JsonResponse(payload)
+
+
+def roster_roundup_page(request):
+    """Which clubs still have to waive, drop, or reclassify a player."""
+    context = utils.build_context(request)
+    context["moves"] = roster_roundup()
+    return render(request, "transactions/roundup.html", context)
 
 def nominations_list(request):
     """View to show current player nominations"""
@@ -924,6 +889,7 @@ def transactions(request):
             "player", "team", "acquiring_team", "transaction_type"
         )
         .defer("player__stats", "player__scoresheet_defense", "player__scoresheet_offense")
+        .prefetch_related("edits")
         .order_by("-date", "-id")
     )
     

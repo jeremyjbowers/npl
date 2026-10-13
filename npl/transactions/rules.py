@@ -58,7 +58,7 @@ IL_ALREADY = {
 DISPOSING_KINDS = MUST_BE_ON_CLUB | {"trade"}
 
 
-def evaluate(team, code, assets, contract_terms=None, proposal_id=None, effective_date=None):
+def evaluate(team, code, assets, contract_terms=None, proposal_id=None, effective_date=None, notes=""):
     """Return human-readable problems. An empty list means the filing can be stored."""
     problems = []
     if code == "trade":
@@ -77,7 +77,7 @@ def evaluate(team, code, assets, contract_terms=None, proposal_id=None, effectiv
     problems.extend(_players_on_club(team, code, assets, players))
     problems.extend(_contract_locks(code, players))
     problems.extend(_roster_state(team, code, players))
-    problems.extend(_published_rules(team, code, assets, players, on_date))
+    problems.extend(_published_rules(team, code, assets, players, on_date, contract_terms, notes))
     problems.extend(_already_pending(team, code, players, proposal_id))
     problems.extend(_money(team, code, assets, contract_terms, proposal_id))
     problems.extend(_forty_man(team, code, assets, proposal_id))
@@ -109,7 +109,7 @@ def _trade_clubs(team, assets):
     return list(clubs.values())
 
 
-def assert_legal(team, code, assets, contract_terms=None, proposal_id=None, effective_date=None):
+def assert_legal(team, code, assets, contract_terms=None, proposal_id=None, effective_date=None, notes=""):
     from npl.transactions.service import TransactionError
 
     problems = evaluate(
@@ -119,6 +119,7 @@ def assert_legal(team, code, assets, contract_terms=None, proposal_id=None, effe
         contract_terms=contract_terms,
         proposal_id=proposal_id,
         effective_date=effective_date,
+        notes=notes,
     )
     if problems:
         raise TransactionError(" ".join(problems))
@@ -374,9 +375,33 @@ def _major_league_contract(player):
     )
 
 
-def _published_rules(team, code, assets, players, on_date):
+_CITATION = re.compile(r"https?://\S+", re.IGNORECASE)
+
+
+def _has_citation(contract_terms, assets, notes=""):
+    parts = [notes or ""]
+    if isinstance(contract_terms, dict):
+        parts.append(str(contract_terms.get("source_url") or ""))
+        parts.append(str(contract_terms.get("text") or ""))
+    for asset in assets:
+        parts.append(str(asset.get("notes") or ""))
+        terms = asset.get("contract_terms") or {}
+        if isinstance(terms, dict):
+            parts.append(str(terms.get("source_url") or ""))
+    return _CITATION.search(" ".join(parts)) is not None
+
+
+def _published_rules(team, code, assets, players, on_date, contract_terms=None, notes=""):
     """Section 8 checks that do not depend on a director's judgment."""
     problems = []
+    if code == "il_eos" and not _has_citation(contract_terms, assets, notes):
+        problems.append(
+            "End-of-season IL needs a note with a URL explaining why this player will not return this season."
+        )
+    if code == "foreign_place" and not _has_citation(contract_terms, assets, notes):
+        problems.append(
+            "A foreign-list assignment needs a note with a URL showing the player is playing in a foreign league."
+        )
     problems.extend(_calendar_rules(code, players, on_date))
     problems.extend(_trade_asset_rules(assets, on_date))
     if code == "il_56":

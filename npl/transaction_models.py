@@ -113,6 +113,29 @@ class TransactionProposal(BaseModel):
         return kind["label"] if kind else self.kind
 
 
+class TransactionEdit(BaseModel):
+    """A director's change to a posted transaction, with the note they added."""
+
+    transaction = models.ForeignKey(
+        Transaction, on_delete=models.CASCADE, related_name="edits"
+    )
+    editor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="transaction_edits",
+    )
+    note = models.TextField()
+    changes = models.JSONField(blank=True, default=dict)
+
+    class Meta:
+        ordering = ["-created"]
+
+    def __unicode__(self):
+        return self.note
+
+
 class TransactionParty(BaseModel):
     ORIGINATOR = "originator"
     COUNTERPARTY = "counterparty"

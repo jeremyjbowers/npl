@@ -240,6 +240,8 @@ def unowned_players(limit=UNOWNED_PLAYER_LIMIT):
 
 def board_context(today=None, now=None):
     """Template context for the four homepage sections."""
+    from npl.transactions.impact import roster_roundup
+
     today = today or timezone.localdate()
     if now is None:
         now = datetime.datetime.now(EASTERN)
@@ -251,4 +253,5 @@ def board_context(today=None, now=None):
         "open_auctions": auctions,
         "unowned_players": players,
         "unowned_players_capped": capped,
+        "roster_moves": roster_roundup(),
     }

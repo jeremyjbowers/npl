@@ -52,7 +52,7 @@ TRANSACTION_MENU = (
             {
                 "code": "injured_list",
                 "label": "Injured List",
-                "hint": "7-day, 56-day, end of season, COVID, or a move between those lists.",
+                "hint": "7-day, 56-day, end of season, COVID, or a move between those lists. End-of-season IL needs a link explaining why he will not return.",
             },
             {
                 "code": "option_minors",
@@ -87,7 +87,7 @@ TRANSACTION_MENU = (
             {
                 "code": "foreign_retirement",
                 "label": "Foreign/Retirement/Death",
-                "hint": "Foreign list, retirement, or death.",
+                "hint": "Foreign list, retirement, or death. A foreign-list move needs a link showing he is playing in a foreign league.",
             },
         ),
     },
@@ -298,6 +298,26 @@ class InjuredListForm(BaseTransactionForm):
         label="Injury Description",
         help_text="Provide details about the injury"
     )
+
+    source_url = forms.URLField(
+        required=False,
+        assume_scheme="https",
+        widget=forms.URLInput(attrs={
+            "class": "input",
+            "placeholder": "https://",
+        }),
+        label="Source URL",
+        help_text="Required for the end-of-season IL. Link to why this player will not return this season.",
+    )
+
+    def clean(self):
+        cleaned = super().clean()
+        if cleaned.get("il_type") == "eos" and not cleaned.get("source_url"):
+            self.add_error(
+                "source_url",
+                "End-of-season IL needs a URL explaining why this player will not return this season.",
+            )
+        return cleaned
 
 
 class OptionToMinorsForm(BaseTransactionForm):
@@ -630,6 +650,26 @@ class ForeignRetirementForm(BaseTransactionForm):
         }),
         label="Details"
     )
+
+    source_url = forms.URLField(
+        required=False,
+        assume_scheme="https",
+        widget=forms.URLInput(attrs={
+            "class": "input",
+            "placeholder": "https://",
+        }),
+        label="Source URL",
+        help_text="Required for a foreign-list assignment. Link to the player in that league.",
+    )
+
+    def clean(self):
+        cleaned = super().clean()
+        if cleaned.get("transaction_reason") == "foreign" and not cleaned.get("source_url"):
+            self.add_error(
+                "source_url",
+                "A foreign-list assignment needs a URL showing the player is playing in a foreign league.",
+            )
+        return cleaned
 
 
 class OffseasonTransactionForm(BaseTransactionForm):
