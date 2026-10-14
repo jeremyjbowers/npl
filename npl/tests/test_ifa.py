@@ -310,3 +310,31 @@ class ButtonTests(TestCase):
         self.assertIsNotNone(kid.ifa_checked)
         page = self.client.get("/players/700010/")
         self.assertNotContains(page, "Nominate for IFA")
+
+    def test_a_refused_signing_batch_is_split_and_debuts_still_save(self):
+        players = [
+            Player.objects.create(mlb_id=str(800000 + number), name=f"Batch {number}", first_name="Batch", last_name=str(number))
+            for number in range(11)
+        ]
+
+        def getter(url):
+            text = unquote(url)
+            ids = text.split("personIds=")[1].split("&")[0].split(",")
+            if "hydrate=transactions" in text and len(ids) > 5:
+                raise RuntimeError("406 Client Error: Not Acceptable")
+            people = []
+            for mlb_id in ids:
+                person = {"id": int(mlb_id), "mlbDebutDate": "2018-03-29", "currentTeam": {"id": 147}}
+                if "hydrate=transactions" in text:
+                    person["transactions"] = []
+                if "sportId=" in text:
+                    person["stats"] = []
+                people.append(person)
+            return {"people": people}
+
+        self.assertEqual(refresh_appearances(players, getter=getter), 11)
+        for player in players:
+            player.refresh_from_db()
+            self.assertTrue(player.has_appeared_in_majors)
+            self.assertIsNotNone(player.ifa_checked)
+            self.assertFalse(player.international_signee)
