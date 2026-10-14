@@ -25,6 +25,7 @@ from npl import auctions, models, rosters, utils
 from npl.auctions import NominationError
 from npl.homepage import board_context
 from npl.transactions.impact import lines_for_proposal, roster_roundup
+from npl.transactions.players import ledger_for_player
 from npl.transactions.trades import group_log, join_parties, sends_for_proposal
 from .forms import TRANSACTION_FORM_MAP, TRANSACTION_MENU, TransactionTypeForm
 from npl.transactions.service import (
@@ -185,6 +186,7 @@ def player_detail(request, playerid):
         mlb_id=playerid,
     )
     auctions.attach_nomination_flags([context["p"]])
+    context["transaction_blocks"] = group_log(ledger_for_player(context["p"]))
     return render(request, "player.html", context)
 
 def team_detail(request, short_name):
@@ -899,7 +901,7 @@ def transactions(request):
     
     transactions_list = (
         models.Transaction.objects.select_related(
-            "player", "team", "acquiring_team", "transaction_type"
+            "player", "team", "acquiring_team", "transaction_type", "trade"
         )
         .defer("player__stats", "player__scoresheet_defense", "player__scoresheet_offense")
         .prefetch_related("edits", "trade__teams")

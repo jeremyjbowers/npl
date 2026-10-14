@@ -40,7 +40,7 @@
     <article class="trade-card mb-6">
         <header class="mb-2">
             <p class="text-xs font-bold">
-                {% if posted_trade %}Trade #{{ posted_trade.id }} · {{ posted_trade.date }}{% else %}Trade{% endif %}
+                {% if posted_trade %}Trade {{ posted_trade.public_id }} · {{ posted_trade.date }}{% else %}Trade{% endif %}
             </p>
             <h2 class="text-lg font-bold">{{ trade_parties }}</h2>
         </header>
@@ -49,7 +49,7 @@
         <ul>
             {% for asset in bucket.pieces %}
             <li>
-                {% if asset.player %}{{ asset.player.name }}{% else %}{{ asset.raw_label|default:asset.asset_type }}{% endif %}
+                {% if asset.player %}{% include "includes/linked_player.html" with player=asset.player label=asset.player.name %}{% else %}{{ asset.raw_label|default:asset.asset_type }}{% endif %}
                 {% if asset.to_team %} to {{ asset.to_team.short_name }}{% endif %}
                 {% if asset.amount %} · ${{ asset.amount|intcomma }}{% endif %}
             </li>
@@ -66,7 +66,7 @@
         <ul>
             {% for asset in proposal.assets.all %}
             <li>
-                {% if asset.player %}{{ asset.player.name }}{% else %}{{ asset.raw_label|default:asset.asset_type }}{% endif %}
+                {% if asset.player %}{% include "includes/linked_player.html" with player=asset.player label=asset.player.name %}{% else %}{{ asset.raw_label|default:asset.asset_type }}{% endif %}
                 {% if asset.from_team %} from {{ asset.from_team.short_name }}{% endif %}
                 {% if asset.to_team %} to {{ asset.to_team.short_name }}{% endif %}
                 {% if asset.amount %} · ${{ asset.amount|intcomma }}{% endif %}

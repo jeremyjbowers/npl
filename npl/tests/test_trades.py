@@ -9,7 +9,7 @@ from django.utils import timezone
 
 from npl.models import Owner, Player, Team, Trade, Transaction
 from npl.transactions.service import agree, create_proposal, execute_proposal
-from npl.transactions.trades import group_log
+from npl.transactions.trades import archive_trade_groups, group_log
 
 User = get_user_model()
 
@@ -58,6 +58,18 @@ class GroupingTests(SimpleTestCase):
         self.assertEqual([row.id for row in blocks[0]["rows"]], [1, 3])
         self.assertEqual(blocks[0]["trade"].id, 9)
         self.assertEqual(blocks[1]["kind"], "rows")
+
+    def test_archive_groups_follow_the_log_and_skip_rows_that_already_have_an_id(self):
+        trade = SimpleNamespace(id=9, date=datetime.date(2026, 6, 1), teams=SimpleNamespace(all=lambda: []))
+        rows = [
+            _row(id=1, raw_team="Alpha", raw_acquiring_team="Beta"),
+            _row(id=2, raw_team="Beta", raw_acquiring_team="Alpha"),
+            _row(id=3, raw_transaction_type="Release", raw_team="Alpha", raw_acquiring_team=""),
+            _row(id=4, raw_team="Alpha", raw_acquiring_team="Gamma"),
+            _row(id=5, trade_id=9, trade=trade, raw_team="Alpha", raw_acquiring_team="Beta"),
+        ]
+        groups = archive_trade_groups(rows)
+        self.assertEqual([[row.id for row in group] for group in groups], [[1, 2], [4]])
 
 
 class PostedTradeTests(TestCase):
@@ -117,15 +129,18 @@ class PostedTradeTests(TestCase):
 
         self.client.force_login(self.user)
         log = self.client.get("/transactions/")
-        self.assertContains(log, f"Trade #{trade.id}")
+        self.assertContains(log, f"Trade {trade.public_id}")
         self.assertContains(log, "Alpha and Beta")
         self.assertContains(log, "Deal Player")
+        self.assertContains(log, f'href="/players/{self.player.mlb_id}/"')
+        self.assertNotContains(log, "None Deal Player")
         self.assertContains(log, 'class="trade-card"')
 
         page = self.client.get(f"/transactions/proposals/{proposal.id}/")
-        self.assertContains(page, f"Trade #{trade.id}")
+        self.assertContains(page, f"Trade {trade.public_id}")
         self.assertContains(page, "Alpha sends")
         self.assertContains(page, "Beta sends")
+        self.assertContains(page, f'href="/players/{self.player.mlb_id}/"')
 
     def test_homepage_boxes_a_sheet_trade_that_has_no_id_yet(self):
         today = timezone.localdate()
