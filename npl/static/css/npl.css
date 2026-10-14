@@ -4,4 +4,3 @@
 
 .trade-card{border:2px solid #111;margin:.75rem 0;padding:.6rem .75rem .75rem}
 .headshot{width:6.5rem;height:6.5rem;flex:none;object-fit:cover;object-position:center 18%;background:#f3f4f6;border:1px solid #d1d5db}
-.headshot-inline{width:1.65rem;height:1.65rem;margin-right:.35rem;display:inline-block;vertical-align:middle;border-radius:999px;object-fit:cover;object-position:center 15%;background:#f3f4f6;border:1px solid #d1d5db}

@@ -3,10 +3,8 @@
 import os
 from unittest.mock import patch
 
-from django.contrib.auth.models import AnonymousUser
 from django.core.management import call_command
 from django.core.management.base import CommandError
-from django.template.loader import render_to_string
 from django.test import TestCase
 
 from npl.models import Player, PlayerStatSeason
@@ -261,9 +259,7 @@ class HeadshotTests(TestCase):
             "d_people:generic:headshot:67:current.png/w_213,q_auto:best/"
             "v1/people/605397/headshot/67/current",
         )
-        self.assertIn("/w_64,q_auto:best/v1/people/605397/", player.mlb_headshot_small_url)
-
-    def test_player_page_and_roster_row_show_the_headshot(self):
+    def test_player_page_shows_the_headshot(self):
         Player.objects.create(
             mlb_id="605397",
             name="Kirby Yates",
@@ -274,9 +270,3 @@ class HeadshotTests(TestCase):
         page = self.client.get("/players/605397/")
         self.assertContains(page, 'class="headshot"')
         self.assertContains(page, "people/605397/headshot/67/current")
-        row = render_to_string(
-            "includes/player_row.html",
-            {"p": Player.objects.get(mlb_id="605397"), "user": AnonymousUser()},
-        )
-        self.assertIn("headshot-inline", row)
-        self.assertIn("/w_64,", row)

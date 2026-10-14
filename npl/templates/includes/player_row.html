@@ -2,7 +2,6 @@
 <tr class="{% if p.player_level == 'MLB' %}majors{% endif %}{% if p.pending_hint %} pending{% endif %}">
     <td>
         {% if not team and p.is_owned %}<span title="Owned">✓</span> {% endif %}
-        <img class="headshot-inline" src="{{ p.mlb_headshot_small_url }}" alt="" width="26" height="26">
         <a href="/players/{{ p.mlb_id }}/">{{ p.name }}</a>
         {% if p.pending_hint %}
         <br>

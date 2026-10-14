@@ -566,10 +566,6 @@ class Player(BaseModel):
         return self.mlb_headshot_url()
 
     @property
-    def mlb_headshot_small_url(self):
-        return self.mlb_headshot_url(64)
-
-    @property
     def age(self):
         if self.birthdate:
             now = datetime.datetime.utcnow().date()
