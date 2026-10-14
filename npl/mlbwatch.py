@@ -27,7 +27,12 @@ STATS_URL = "https://statsapi.mlb.com/api/v1/stats"
 PEOPLE_CHUNK = 50
 # Signing histories are large. A 50-player hydrate is refused with HTTP 406.
 TRANSACTIONS_CHUNK = 10
-MLB_HEADERS = {"Accept": "application/json", "User-Agent": "npl-league-watch"}
+# Datacenter calls are sometimes refused until the request looks like a browser.
+BROWSER_UA = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/120.0.0.0 Safari/537.36"
+)
 
 # sportId=1 clubs. Abbreviation is not on the hydrated person payload.
 MLB_TEAMS = {
@@ -65,7 +70,19 @@ MLB_TEAMS = {
 
 
 def default_getter(url):
-    response = requests.get(url, headers=MLB_HEADERS, timeout=30)
+    """GET a stats API URL.
+
+    The first attempt is a plain request. A 406 is retried once with a browser
+    user agent. Forcing ``Accept: application/json`` is itself a 406 on some
+    MLB edges, so that header is not sent.
+    """
+    response = requests.get(url, timeout=30)
+    if response.status_code == 406:
+        response = requests.get(
+            url,
+            headers={"User-Agent": BROWSER_UA, "Accept": "*/*"},
+            timeout=30,
+        )
     response.raise_for_status()
     return response.json()
 
@@ -86,27 +103,47 @@ def people_url(mlb_ids, hydrate="currentTeam"):
     return f"{PEOPLE_URL}?{query}"
 
 
+def _person_path_url(mlb_id, hydrate):
+    return f"{PEOPLE_URL}/{mlb_id}?{urlencode({'hydrate': hydrate})}"
+
+
 def _fetch_map(mlb_ids, hydrate, getter):
-    """``{mlb_id: person}`` for this hydrate. A refused batch is split and retried."""
+    """Return ``(people_by_id, missing_ids)``.
+
+    ``missing_ids`` were absent from a successful response. A refused batch is
+    split and retried. One player is also tried at ``/people/{id}`` before he
+    is given up. An id that still fails is in neither set.
+    """
     ids = [str(mlb_id) for mlb_id in mlb_ids if mlb_id]
     if not ids:
-        return {}
-    try:
-        payload = getter(people_url(ids, hydrate=hydrate))
-    except Exception:
+        return {}, set()
+    urls = [people_url(ids, hydrate=hydrate)]
+    if len(ids) == 1:
+        urls.append(_person_path_url(ids[0], hydrate))
+    payload = None
+    for url in urls:
+        try:
+            payload = getter(url)
+            break
+        except Exception:
+            payload = None
+    if payload is None:
         if len(ids) == 1:
-            return {}
+            return {}, set()
         mid = len(ids) // 2
-        found = _fetch_map(ids[:mid], hydrate, getter)
-        found.update(_fetch_map(ids[mid:], hydrate, getter))
-        return found
-    return {str(person.get("id")): person for person in payload.get("people") or []}
+        left, left_missing = _fetch_map(ids[:mid], hydrate, getter)
+        right, right_missing = _fetch_map(ids[mid:], hydrate, getter)
+        left.update(right)
+        return left, left_missing | right_missing
+    found = {str(person.get("id")): person for person in payload.get("people") or []}
+    return found, set(ids) - set(found)
 
 
 def _merge_transactions(people, mlb_ids, getter):
     ids = [str(mlb_id) for mlb_id in mlb_ids if mlb_id]
     for group in _chunks(ids, TRANSACTIONS_CHUNK):
-        for pid, person in _fetch_map(group, "transactions", getter).items():
+        fetched, _missing = _fetch_map(group, "transactions", getter)
+        for pid, person in fetched.items():
             target = people.get(pid)
             if target is None or "transactions" not in person:
                 continue
@@ -125,7 +162,8 @@ def _attach_career_stats(people, mlb_ids, getter):
     seen = {pid: set() for pid in ids}
     for sport_id in IFA_SPORT_IDS:
         hydrate = f"stats(group=[hitting,pitching],type=[yearByYear],sportId={sport_id})"
-        for pid, person in _fetch_map(ids, hydrate, getter).items():
+        fetched, _missing = _fetch_map(ids, hydrate, getter)
+        for pid, person in fetched.items():
             target = people.get(pid)
             if target is None:
                 continue
@@ -142,22 +180,22 @@ def _attach_career_stats(people, mlb_ids, getter):
 
 
 def fetch_people(mlb_ids, getter=None):
-    """Return ``{mlb_id: person}`` from the people endpoint, with IFA season lines.
+    """Return ``(people_by_id, missing_ids)`` from the people endpoint.
 
-    Debut and club come from the current-team hydrate. Signing histories are
-    requested on their own, because combining them is what MLB answers with 406.
+    Debut and club use the current-team hydrate. Signing histories are separate.
+    A 406 on a batch is split down to one player instead of aborting the run.
+    ``missing_ids`` are ids MLB answered for and does not have.
     """
     getter = getter or default_getter
     found = {}
+    missing = set()
     for chunk in _chunks([mlb_id for mlb_id in mlb_ids if mlb_id], PEOPLE_CHUNK):
-        payload = getter(people_url(chunk))
-        chunk_people = {}
-        for person in payload.get("people") or []:
-            chunk_people[str(person.get("id"))] = person
+        chunk_people, gone = _fetch_map(chunk, "currentTeam", getter)
+        missing.update(gone)
         _merge_transactions(chunk_people, chunk, getter)
         _attach_career_stats(chunk_people, chunk, getter)
         found.update(chunk_people)
-    return found
+    return found, missing
 
 
 def apply_person(player, person, now=None):
@@ -186,13 +224,14 @@ def refresh_appearances(players, getter=None, now=None):
     getter = getter or default_getter
     now = now or timezone.now()
     players = list(players)
-    people = fetch_people([player.mlb_id for player in players], getter=getter)
+    people, missing = fetch_people([player.mlb_id for player in players], getter=getter)
     saved = 0
     for player in players:
         person = people.get(str(player.mlb_id))
         if person is None:
-            player.mlb_status_checked = now
-            player.save(update_fields=["mlb_status_checked"])
+            if str(player.mlb_id) in missing:
+                player.mlb_status_checked = now
+                player.save(update_fields=["mlb_status_checked"])
             continue
         apply_person(player, person, now=now)
         fields = [
