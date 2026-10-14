@@ -715,7 +715,8 @@ class ProposalRulesAndHintsTests(TestCase):
 
         home = self.client.get("/")
         self.assertEqual(home.status_code, 200)
-        self.assertContains(home, "Full transaction log")
+        self.assertContains(home, 'href="/transactions/trades/"')
+        self.assertContains(home, 'href="/transactions/other/"')
         self.assertNotContains(home, "pending $750,000")
         self.assertNotContains(home, "85-man")
         self.assertNotContains(home, "40-man")

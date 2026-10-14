@@ -207,7 +207,8 @@ class DeadlineCollectorTests(TestCase):
     def test_homepage_renders_the_weekly_board(self):
         response = self.client.get("/")
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Full transaction log")
+        self.assertContains(response, 'href="/transactions/trades/"')
+        self.assertContains(response, 'href="/transactions/other/"')
         self.assertContains(response, "There is no open auction.")
         self.assertContains(response, "Players page")
         self.assertNotContains(response, "85-man")

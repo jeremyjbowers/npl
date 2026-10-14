@@ -1,11 +1,22 @@
 {% extends "base.html" %}
 
-{% block title %}Transactions — The NPL{% endblock %}
+{% block title %}{{ log_title }} — The NPL{% endblock %}
 
 {% block content %}
 <header class="mb-4">
-    <h1 class="text-2xl font-bold">Transactions</h1>
-    <p class="mt-1 max-w-xl text-sm">This is the processed log. A filing shows up here after directors record it. <a class="underline" href="/transactions/roundup/">Roster check</a> lists clubs that still have to waive, drop, or reclassify someone.</p>
+    <h1 class="text-2xl font-bold">{{ log_title }}</h1>
+    <p class="mt-1 max-w-xl text-sm">{{ log_summary }} <a class="underline" href="/transactions/roundup/">Roster check</a> lists clubs that still have to waive, drop, or reclassify someone.</p>
+    <p class="mt-1 text-sm">
+        {% if log_mode == "trades" %}
+        <a class="underline" href="/transactions/other/">Other transactions</a>
+        {% elif log_mode == "other" %}
+        <a class="underline" href="/transactions/trades/">Trades</a>
+        {% else %}
+        <a class="underline" href="/transactions/trades/">Trades</a>
+        and
+        <a class="underline" href="/transactions/other/">other transactions</a>
+        {% endif %}
+    </p>
     {% if user.is_authenticated %}
     <p class="mt-2 text-sm"><a class="underline" href="/transactions/form/">Submit a transaction</a> lists every move a club can file.</p>
     {% else %}
@@ -22,7 +33,7 @@
         {% include "includes/transaction_rows.html" with rows=block.rows show_notes=True %}
     {% endif %}
 {% empty %}
-<p>No transactions found.</p>
+<p>{{ empty_message }}</p>
 {% endfor %}
 
 {% include "includes/pagination.html" %}

@@ -169,3 +169,37 @@ class PostedTradeTests(TestCase):
         self.assertContains(home, "Player B")
         self.assertContains(home, 'class="trade-card"')
         self.assertEqual(home.content.decode().count('class="trade-card"'), 1)
+
+    def test_trades_and_other_transactions_cover_the_log_without_overlap(self):
+        Transaction.objects.create(
+            date=datetime.date(2026, 6, 1),
+            raw_team="Alpha",
+            raw_player="Deal Player",
+            raw_transaction_type="Trade",
+            team=self.team,
+            acquiring_team=self.other,
+            player=self.player,
+        )
+        Transaction.objects.create(
+            date=datetime.date(2026, 6, 2),
+            raw_team="Alpha",
+            raw_player="Released Player",
+            raw_transaction_type="Release",
+            team=self.team,
+        )
+
+        trades = self.client.get("/transactions/trades/")
+        other = self.client.get("/transactions/other/")
+        self.assertContains(trades, "Deal Player")
+        self.assertContains(trades, 'class="trade-card"')
+        self.assertContains(trades, "1 total")
+        self.assertNotContains(trades, "Released Player")
+        self.assertContains(other, "Released Player")
+        self.assertContains(other, "Release")
+        self.assertContains(other, "1 total")
+        self.assertNotContains(other, "Deal Player")
+        self.assertNotContains(other, 'class="trade-card"')
+        self.assertContains(trades, 'href="/transactions/other/"')
+        self.assertContains(other, 'href="/transactions/trades/"')
+        self.assertContains(trades, ">Trades</a>")
+        self.assertContains(trades, ">Other transactions</a>")
