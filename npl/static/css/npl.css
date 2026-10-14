@@ -3,3 +3,4 @@
 .sheet.roster{table-layout:fixed;width:98rem;min-width:98rem}.sheet.roster .c-player{width:14rem}.sheet.roster .c-pos{width:3.5rem}.sheet.roster .c-roster{width:5rem}.sheet.roster .c-age{width:3.5rem}.sheet.roster .c-mlb{width:4rem}.sheet.roster .c-mls{width:5rem}.sheet.roster .c-opt{width:3.5rem}.sheet.roster .c-status{width:5rem}.sheet.roster .c-year{width:7rem}.sheet.roster .c-buyout{width:7rem}.sheet.roster td:first-child,.sheet.roster th:first-child{white-space:normal}.btn-line:disabled{color:#9ca3af;background:#f3f4f6;cursor:not-allowed}
 
 .trade-card{border:2px solid #111;margin:.75rem 0;padding:.6rem .75rem .75rem}
+.headshot{width:6.5rem;height:6.5rem;flex:none;object-fit:cover;object-position:center 18%;background:#f3f4f6;border:1px solid #d1d5db}

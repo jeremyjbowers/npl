@@ -554,9 +554,17 @@ class Player(BaseModel):
         return None
 
 
+    def mlb_headshot_url(self, width=213):
+        """MLB headshot. The d_people fallback is MLB's generic silhouette."""
+        return (
+            "https://img.mlbstatic.com/mlb-photos/image/upload/"
+            f"d_people:generic:headshot:67:current.png/w_{int(width)},q_auto:best/"
+            f"v1/people/{self.mlb_id}/headshot/67/current"
+        )
+
     @property
     def mlb_image_url(self):
-        return f"https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/{self.mlb_id}/headshot/67/current"
+        return self.mlb_headshot_url()
 
     @property
     def age(self):

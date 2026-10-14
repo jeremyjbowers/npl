@@ -5,7 +5,9 @@
 
 {% block content %}
 <article>
-    <header class="mb-6 border-b border-gray-300 pb-4">
+    <header class="mb-6 flex items-start gap-4 border-b border-gray-300 pb-4">
+        <img class="headshot" src="{{ p.mlb_image_url }}" alt="" width="104" height="104">
+        <div class="min-w-0">
         <h1 class="text-2xl font-bold">{{ p.position|default:"" }} {{ p.name }}</h1>
         <p class="mt-1 text-sm">
             {% if p.team %}
@@ -31,6 +33,7 @@
             {% endif %}
         </p>
         {% endif %}
+        </div>
     </header>
 
     <dl class="mb-6 grid grid-cols-2 gap-4 text-xs md:grid-cols-3">
@@ -82,104 +85,12 @@
         {% endif %}
     </section>
 
-    {% if p.hit_stats and p.position != "P" %}
-    <section class="mb-8">
-        <h2 class="mb-2 border-b border-gray-300 pb-1 text-lg font-bold">Hitting Stats</h2>
-        <div class="overflow-x-auto">
-            <table class="sheet">
-                <thead>
-                    <tr>
-                        <th scope="col">Year</th>
-                        <th scope="col">Level</th>
-                        <th scope="col">PA</th>
-                        <th scope="col">wRC+</th>
-                        <th scope="col">HR</th>
-                        <th scope="col">SB</th>
-                        <th scope="col">BB%</th>
-                        <th scope="col">K%</th>
-                        <th scope="col">AVG</th>
-                        <th scope="col">OBP</th>
-                        <th scope="col">SLG</th>
-                        <th scope="col">ISO</th>
-                        <th scope="col">xAVG</th>
-                        <th scope="col">xwOBA</th>
-                        <th scope="col">xSLG</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for stat in p.hit_stats reversed %}
-                    <tr{% if stat.level|upper == "MLB" %} class="majors"{% endif %}>
-                        <td>{{ stat.year }}</td>
-                        <td>{{ stat.level|upper }}</td>
-                        <td>{{ stat.plate_appearances }}</td>
-                        <td>{{ stat.wrc_plus|floatformat:0 }}</td>
-                        <td>{{ stat.hr }}</td>
-                        <td>{{ stat.sb }}</td>
-                        <td>{{ stat.bb_pct|floatformat:1 }}%</td>
-                        <td>{{ stat.k_pct|floatformat:1 }}%</td>
-                        <td>{{ stat.avg|floatformat:3|kill_leading_zero }}</td>
-                        <td>{{ stat.obp|floatformat:3|kill_leading_zero }}</td>
-                        <td>{{ stat.slg|floatformat:3|kill_leading_zero }}</td>
-                        <td>{{ stat.iso|floatformat:3|kill_leading_zero }}</td>
-                        <td>{% if stat.xavg %}{{ stat.xavg|floatformat:3|kill_leading_zero }}{% else %}—{% endif %}</td>
-                        <td>{% if stat.xwoba %}{{ stat.xwoba|floatformat:3|kill_leading_zero }}{% else %}—{% endif %}</td>
-                        <td>{% if stat.xslg %}{{ stat.xslg|floatformat:3|kill_leading_zero }}{% else %}—{% endif %}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </section>
-    {% endif %}
-
-    {% if p.pit_stats and p.position == "P" %}
-    <section class="mb-8">
-        <h2 class="mb-2 border-b border-gray-300 pb-1 text-lg font-bold">Pitching Stats</h2>
-        <div class="overflow-x-auto">
-            <table class="sheet">
-                <thead>
-                    <tr>
-                        <th scope="col">Year</th>
-                        <th scope="col">Level</th>
-                        <th scope="col">G</th>
-                        <th scope="col">GS</th>
-                        <th scope="col">IP</th>
-                        <th scope="col">K/9</th>
-                        <th scope="col">BB/9</th>
-                        <th scope="col">ERA</th>
-                        <th scope="col">xERA</th>
-                        <th scope="col">FIP</th>
-                        <th scope="col">xFIP</th>
-                        <th scope="col">SIERA</th>
-                        <th scope="col">Stuff+</th>
-                        <th scope="col">Loc+</th>
-                        <th scope="col">Pitch+</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for stat in p.pit_stats reversed %}
-                    <tr{% if stat.level|upper == "MLB" %} class="majors"{% endif %}>
-                        <td>{{ stat.year }}</td>
-                        <td>{{ stat.level|upper }}</td>
-                        <td>{{ stat.g }}</td>
-                        <td>{{ stat.gs }}</td>
-                        <td>{{ stat.ip }}</td>
-                        <td>{{ stat.k_9|floatformat:1|default:"—" }}</td>
-                        <td>{{ stat.bb_9|floatformat:1|default:"—" }}</td>
-                        <td>{{ stat.era|floatformat:2|default:"—" }}</td>
-                        <td>{% if stat.xERA %}{{ stat.xERA|floatformat:2 }}{% else %}—{% endif %}</td>
-                        <td>{{ stat.fip|floatformat:2|default:"—" }}</td>
-                        <td>{{ stat.xfip|floatformat:2|default:"—" }}</td>
-                        <td>{% if stat.siera %}{{ stat.siera|floatformat:2 }}{% else %}—{% endif %}</td>
-                        <td>{% if stat.sp_stuff %}{{ stat.sp_stuff|floatformat:1 }}{% else %}—{% endif %}</td>
-                        <td>{% if stat.sp_location %}{{ stat.sp_location|floatformat:1 }}{% else %}—{% endif %}</td>
-                        <td>{% if stat.sp_pitching %}{{ stat.sp_pitching|floatformat:1 }}{% else %}—{% endif %}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </section>
+    {% if p.simple_position == "P" %}
+    {% include "includes/pitching_stats.html" %}
+    {% include "includes/hitting_stats.html" %}
+    {% else %}
+    {% include "includes/hitting_stats.html" %}
+    {% include "includes/pitching_stats.html" %}
     {% endif %}
 
     {% if not p.hit_stats and not p.pit_stats %}

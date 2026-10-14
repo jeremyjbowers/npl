@@ -210,6 +210,25 @@ class ApplyTests(TestCase):
         self.assertContains(response, "AAA")
         self.assertContains(response, "2024")
 
+    def test_rhp_page_leads_with_pitching_and_keeps_batting(self):
+        self.player.position = "RHP"
+        self.player.stats = None
+        self.player.save()
+        PlayerStatSeason.objects.create(
+            player=self.player,
+            season=2024,
+            classification="1-mlb",
+            level="MLB",
+            hit_stats={"pa": 4, "hr": 0, "avg": 0.25},
+            pitch_stats={"g": 17, "gs": 17, "ip": 94.1, "so": 89, "era": 3.64, "k_9": 8.5},
+        )
+        response = self.client.get("/players/592450/")
+        body = response.content.decode()
+        self.assertContains(response, "Pitching Stats")
+        self.assertContains(response, "94.1")
+        self.assertContains(response, "Hitting Stats")
+        self.assertLess(body.find("Pitching Stats"), body.find("Hitting Stats"))
+
 
 class CommandTests(TestCase):
     def test_missing_url_refuses_to_run(self):
@@ -229,3 +248,25 @@ class CommandTests(TestCase):
         self.assertEqual(season.hit_stats["hr"], 4)
         self.assertEqual(player.mlb_org, "NYY")
         self.assertEqual(player.hit_stats()[0]["plate_appearances"], 12)
+
+
+class HeadshotTests(TestCase):
+    def test_url_is_the_mlb_headshot_for_that_id(self):
+        player = Player(mlb_id="605397", name="Kirby Yates")
+        self.assertEqual(
+            player.mlb_image_url,
+            "https://img.mlbstatic.com/mlb-photos/image/upload/"
+            "d_people:generic:headshot:67:current.png/w_213,q_auto:best/"
+            "v1/people/605397/headshot/67/current",
+        )
+    def test_player_page_shows_the_headshot(self):
+        Player.objects.create(
+            mlb_id="605397",
+            name="Kirby Yates",
+            first_name="Kirby",
+            last_name="Yates",
+            position="RHP",
+        )
+        page = self.client.get("/players/605397/")
+        self.assertContains(page, 'class="headshot"')
+        self.assertContains(page, "people/605397/headshot/67/current")

@@ -25,6 +25,9 @@ IFA_SPORT_IDS = (11, 12, 13, 14, 15, 16, 31, 32)
 PEOPLE_URL = "https://statsapi.mlb.com/api/v1/people"
 STATS_URL = "https://statsapi.mlb.com/api/v1/stats"
 PEOPLE_CHUNK = 50
+# Signing histories are large. A 50-player hydrate is refused with HTTP 406.
+TRANSACTIONS_CHUNK = 10
+MLB_HEADERS = {"Accept": "application/json", "User-Agent": "npl-league-watch"}
 
 # sportId=1 clubs. Abbreviation is not on the hydrated person payload.
 MLB_TEAMS = {
@@ -62,7 +65,7 @@ MLB_TEAMS = {
 
 
 def default_getter(url):
-    response = requests.get(url, timeout=30)
+    response = requests.get(url, headers=MLB_HEADERS, timeout=30)
     response.raise_for_status()
     return response.json()
 
@@ -73,7 +76,7 @@ def _chunks(values, size):
         yield values[start : start + size]
 
 
-def people_url(mlb_ids, hydrate="currentTeam,transactions"):
+def people_url(mlb_ids, hydrate="currentTeam"):
     query = urlencode(
         {
             "personIds": ",".join(str(mlb_id) for mlb_id in mlb_ids),
@@ -83,39 +86,67 @@ def people_url(mlb_ids, hydrate="currentTeam,transactions"):
     return f"{PEOPLE_URL}?{query}"
 
 
+def _fetch_map(mlb_ids, hydrate, getter):
+    """``{mlb_id: person}`` for this hydrate. A refused batch is split and retried."""
+    ids = [str(mlb_id) for mlb_id in mlb_ids if mlb_id]
+    if not ids:
+        return {}
+    try:
+        payload = getter(people_url(ids, hydrate=hydrate))
+    except Exception:
+        if len(ids) == 1:
+            return {}
+        mid = len(ids) // 2
+        found = _fetch_map(ids[:mid], hydrate, getter)
+        found.update(_fetch_map(ids[mid:], hydrate, getter))
+        return found
+    return {str(person.get("id")): person for person in payload.get("people") or []}
+
+
+def _merge_transactions(people, mlb_ids, getter):
+    ids = [str(mlb_id) for mlb_id in mlb_ids if mlb_id]
+    for group in _chunks(ids, TRANSACTIONS_CHUNK):
+        for pid, person in _fetch_map(group, "transactions", getter).items():
+            target = people.get(pid)
+            if target is None or "transactions" not in person:
+                continue
+            target["transactions"] = person.get("transactions") or []
+
+
 def _attach_career_stats(people, mlb_ids, getter):
     """Merge minor-league, NPB, and KBO year lines onto these people payloads.
 
-    A sport response that omits someone, or any failed request, leaves the
-    chunk unmarked so we do not store a partial season count.
+    A player is ready only when every sport came back and his signing list did
+    too. One refused player does not drop the rest of the chunk.
     """
     ids = [str(mlb_id) for mlb_id in mlb_ids if mlb_id]
     if not ids or not people:
         return
+    seen = {pid: set() for pid in ids}
     for sport_id in IFA_SPORT_IDS:
         hydrate = f"stats(group=[hitting,pitching],type=[yearByYear],sportId={sport_id})"
-        try:
-            payload = getter(people_url(ids, hydrate=hydrate))
-        except Exception:
-            return
-        seen = set()
-        for person in payload.get("people") or []:
-            pid = str(person.get("id"))
-            seen.add(pid)
+        for pid, person in _fetch_map(ids, hydrate, getter).items():
             target = people.get(pid)
             if target is None:
                 continue
+            seen.setdefault(pid, set()).add(sport_id)
             target.setdefault("stats", [])
             target["stats"].extend(person.get("stats") or [])
-        if not set(ids).issubset(seen):
-            return
+    needed = set(IFA_SPORT_IDS)
     for pid in ids:
-        if pid in people:
-            people[pid]["_ifa_ready"] = True
+        person = people.get(pid)
+        if person is None:
+            continue
+        if seen.get(pid) == needed and "transactions" in person:
+            person["_ifa_ready"] = True
 
 
 def fetch_people(mlb_ids, getter=None):
-    """Return ``{mlb_id: person}`` from the people endpoint, with IFA season lines."""
+    """Return ``{mlb_id: person}`` from the people endpoint, with IFA season lines.
+
+    Debut and club come from the current-team hydrate. Signing histories are
+    requested on their own, because combining them is what MLB answers with 406.
+    """
     getter = getter or default_getter
     found = {}
     for chunk in _chunks([mlb_id for mlb_id in mlb_ids if mlb_id], PEOPLE_CHUNK):
@@ -123,6 +154,7 @@ def fetch_people(mlb_ids, getter=None):
         chunk_people = {}
         for person in payload.get("people") or []:
             chunk_people[str(person.get("id"))] = person
+        _merge_transactions(chunk_people, chunk, getter)
         _attach_career_stats(chunk_people, chunk, getter)
         found.update(chunk_people)
     return found
