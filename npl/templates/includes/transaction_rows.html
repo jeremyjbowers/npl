@@ -18,8 +18,8 @@
             <tr id="transaction-{{ t.id }}">
                 <td>{{ t.date|default:"" }}</td>
                 <td>{{ t.calculated_team|default:"" }}</td>
-                <td>{{ t.calculated_player|default:"" }}</td>
-                <td>{{ t.transaction_type|default:"" }}</td>
+                <td>{% include "includes/linked_player.html" with player_id=t.player_id label=t.player_display %}</td>
+                <td>{{ t.transaction_type|default:t.raw_transaction_type }}</td>
                 <td>{{ t.calculated_acquiring_team|default:"" }}</td>
                 {% if show_notes %}
                 <td class="whitespace-normal">

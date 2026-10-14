@@ -1,0 +1,7 @@
+{% if player_id %}
+<a class="underline" href="/players/{{ player_id }}/">{{ label }}</a>
+{% elif player %}
+<a class="underline" href="/players/{{ player.mlb_id }}/">{{ label|default:player.name }}</a>
+{% else %}
+{{ label }}
+{% endif %}

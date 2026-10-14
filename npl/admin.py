@@ -364,8 +364,9 @@ class LedgerReceiptInline(admin.TabularInline):
 
 @admin.register(Trade)
 class TradeAdmin(admin.ModelAdmin):
-    list_display = ["id", "date", "season"]
+    list_display = ["public_id", "date", "season"]
     list_filter = ["date"]
+    readonly_fields = ["public_id"]
     filter_horizontal = ["teams"]
     inlines = [LedgerReceiptInline]
     date_hierarchy = "date"

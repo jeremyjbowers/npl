@@ -1,5 +1,6 @@
 import datetime
 import os
+import uuid
 
 from dateutil import parser
 from dateutil.relativedelta import *
@@ -908,6 +909,18 @@ class Transaction(BaseModel):
         return self.raw_player
 
     @property
+    def player_display(self):
+        """Name to show in the log. The sheet text stays as it was written."""
+        raw = (self.raw_player or "").strip()
+        if raw in {"-", "—"}:
+            raw = ""
+        if raw:
+            return raw
+        if self.player_id and getattr(self, "player", None) and self.player.name:
+            return self.player.name
+        return ""
+
+    @property
     def calculated_team(self):
         if self.team:
             return self.team.nickname
@@ -1479,8 +1492,18 @@ class Trade(BaseModel):
     and then slots for players and picks that can be selected from.
     On save, the view will create the Trade object and then two
     related TradeReceipt objects containing the players and picks.
+
+    ``public_id`` is the id the site shows. It is a UUID so backfilled
+    deals and newly posted deals share one kind of id. Ledger lines keep
+    the numeric primary key as their foreign key.
     """
 
+    public_id = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
+        help_text="Stable id for this trade. Shown on the transaction log.",
+    )
     date = models.DateField()
     season = models.IntegerField(blank=True, null=True)
     trade_summary = models.TextField(blank=True, null=True)
@@ -1498,7 +1521,7 @@ class Trade(BaseModel):
         else:
             clubs = ""
         when = self.date.isoformat() if self.date else ""
-        return f"Trade #{self.pk} {when} {clubs}".strip()
+        return f"Trade {self.public_id} {when} {clubs}".strip()
 
     def set_season(self):
         if self.date:
@@ -1601,7 +1624,7 @@ class TradeReceipt(BaseModel):
 
     def __unicode__(self):
         if self.trade:
-            return "Trade %s: %s" % (self.trade.id, self.team)
+            return "Trade %s: %s" % (self.trade.public_id, self.team)
         return self.team.abbreviation
 
     def summary(self):

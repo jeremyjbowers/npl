@@ -67,6 +67,21 @@
         {% if user.is_staff %}<a href="/admin/npl/player/{{ p.mlb_id }}/change/" class="ml-2">Edit</a>{% endif %}
     </p>
 
+    <section class="mb-8">
+        <h2 class="mb-2 border-b border-gray-300 pb-1 text-lg font-bold">Transactions</h2>
+        {% if transaction_blocks %}
+            {% for block in transaction_blocks %}
+                {% if block.kind == "trade" %}
+                    {% include "includes/trade_card.html" with show_notes=True %}
+                {% else %}
+                    {% include "includes/transaction_rows.html" with rows=block.rows show_notes=True %}
+                {% endif %}
+            {% endfor %}
+        {% else %}
+        <p>No transactions are recorded for this player.</p>
+        {% endif %}
+    </section>
+
     {% if p.hit_stats and p.position != "P" %}
     <section class="mb-8">
         <h2 class="mb-2 border-b border-gray-300 pb-1 text-lg font-bold">Hitting Stats</h2>

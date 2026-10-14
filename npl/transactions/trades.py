@@ -4,7 +4,8 @@ A trade is one record: an id and a date, naming every club. The ledger
 lines under it are the receipts. Older sheet rows have no trade id, so
 pieces that sit next to each other, on the same date, between the same
 two clubs, are shown as one deal. A different pair of clubs stays a
-different deal.
+different deal. ``persist_archive_trades`` writes that same clustering
+onto trade records.
 """
 
 from collections import defaultdict
@@ -73,6 +74,83 @@ def _pair(row):
     return tuple(sorted(sides))
 
 
+def _take_unlinked_cluster(rows, index, used):
+    """Trade rows with no id yet that sit together are one deal.
+
+    The next row has to be the same date and the same two clubs. A
+    different deal, a non-trade, or a row that already has a trade id
+    ends the cluster. This is the same rule the log uses before a
+    backfill has written ids.
+    """
+    row = rows[index]
+    pair = _pair(row)
+    members = [row]
+    used.add(row.id)
+    if not pair or not row.date:
+        return members
+    for later in rows[index + 1 :]:
+        if later.id in used or getattr(later, "trade_id", None):
+            break
+        if not is_trade_row(later) or later.date != row.date or _pair(later) != pair:
+            break
+        members.append(later)
+        used.add(later.id)
+    return members
+
+
+def archive_trade_groups(rows):
+    """Clusters of old trade rows that do not belong to a trade yet."""
+    rows = list(rows)
+    used = set()
+    groups = []
+    for index, row in enumerate(rows):
+        if row.id in used or getattr(row, "trade_id", None) or not is_trade_row(row):
+            continue
+        groups.append(_take_unlinked_cluster(rows, index, used))
+    return groups
+
+
+def persist_archive_trades():
+    """Create one trade, with a UUID, for each unlinked cluster.
+
+    Rows are read in the same order as the transaction log. A second run
+    leaves existing trades where they are.
+    """
+    from npl.models import Trade, Transaction
+
+    rows = list(
+        Transaction.objects.select_related("transaction_type", "team", "acquiring_team").order_by(
+            "-date", "-id"
+        )
+    )
+    already_linked = sum(1 for row in rows if is_trade_row(row) and getattr(row, "trade_id", None))
+    created = 0
+    linked = 0
+    undated = 0
+    for group in archive_trade_groups(rows):
+        if not group[0].date:
+            undated += len(group)
+            continue
+        trade = Trade(date=group[0].date)
+        trade.save()
+        team_ids = []
+        for row in group:
+            for team_id in (getattr(row, "team_id", None), getattr(row, "acquiring_team_id", None)):
+                if team_id and team_id not in team_ids:
+                    team_ids.append(team_id)
+        if team_ids:
+            trade.teams.add(*team_ids)
+        Transaction.objects.filter(pk__in=[row.pk for row in group]).update(trade=trade)
+        created += 1
+        linked += len(group)
+    return {
+        "trades": created,
+        "receipts": linked,
+        "undated": undated,
+        "already_linked": already_linked,
+    }
+
+
 def _trade_block(rows):
     trade = rows[0].trade if getattr(rows[0], "trade_id", None) else None
     return {
@@ -108,18 +186,7 @@ def group_log(rows):
             blocks.append(_trade_block(members))
             continue
         if is_trade_row(row):
-            pair = _pair(row)
-            members = [row]
-            used.add(row.id)
-            if pair and row.date:
-                for later in rows[index + 1 :]:
-                    if later.id in used or getattr(later, "trade_id", None):
-                        break
-                    if not is_trade_row(later) or later.date != row.date or _pair(later) != pair:
-                        break
-                    members.append(later)
-                    used.add(later.id)
-            blocks.append(_trade_block(members))
+            blocks.append(_trade_block(_take_unlinked_cluster(rows, index, used)))
             continue
         used.add(row.id)
         blocks.append({"kind": "rows", "rows": [row]})
