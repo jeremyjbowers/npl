@@ -1,3 +1,4 @@
+{% load humanize %}
 <article class="trade-card"{% if block.trade %} id="trade-{{ block.trade.public_id }}"{% endif %}>
     <header class="mb-2">
         <p class="text-xs font-bold">
@@ -6,38 +7,33 @@
         </p>
         <h3 class="text-lg font-bold">{{ block.parties }}</h3>
     </header>
-    <div class="overflow-x-auto">
-        <table class="sheet">
-            <thead>
-                <tr>
-                    <th scope="col">From</th>
-                    <th scope="col">Piece</th>
-                    <th scope="col">To</th>
-                    {% if show_notes %}
-                    <th scope="col">Notes</th>
+    <div class="trade-columns">
+        {% for bucket in block.receipts %}
+        <section class="trade-column">
+            <h4 class="font-bold">{% if bucket.team %}<a class="underline" href="/teams/{{ bucket.team.short_name|lower }}/">{{ bucket.label }}</a>{% else %}{{ bucket.label }}{% endif %} received</h4>
+            <ul class="mt-1 list-disc pl-5">
+                {% for t in bucket.rows %}
+                <li id="transaction-{{ t.id }}">
+                    {% include "includes/linked_player.html" with player_id=t.player_id label=t.player_display %}
+                    {% if t.cash_considerations %} · ${{ t.cash_considerations|intcomma }}{% endif %}
+                    {% if t.team %}
+                    from <a class="underline" href="/teams/{{ t.team.short_name|lower }}/">{{ t.team.short_name }}</a>
+                    {% elif t.calculated_team %}
+                    from {{ t.calculated_team }}
                     {% endif %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for t in block.rows %}
-                <tr id="transaction-{{ t.id }}">
-                    <td>{{ t.calculated_team|default:"" }}</td>
-                    <td>{% include "includes/linked_player.html" with player_id=t.player_id label=t.player_display %}</td>
-                    <td>{{ t.calculated_acquiring_team|default:"" }}</td>
                     {% if show_notes %}
-                    <td class="whitespace-normal">
-                        {{ t.notes|default:"" }}
-                        {% for edit in t.edits.all %}
-                        <p class="mt-1 text-xs text-gray-700">Director note{% if edit.created %} · {{ edit.created|date:"M j, Y" }}{% endif %}: {{ edit.note }}</p>
-                        {% endfor %}
-                        {% if user.is_staff %}
-                        <p class="mt-1 text-xs"><a class="underline" href="/admin/npl/transaction/{{ t.id }}/change/">Edit</a></p>
-                        {% endif %}
-                    </td>
+                    {% if t.notes %}<span class="block whitespace-normal text-xs">{{ t.notes }}</span>{% endif %}
+                    {% for edit in t.edits.all %}
+                    <span class="mt-1 block text-xs text-gray-700">Director note{% if edit.created %} · {{ edit.created|date:"M j, Y" }}{% endif %}: {{ edit.note }}</span>
+                    {% endfor %}
+                    {% if user.is_staff %}
+                    <span class="mt-1 block text-xs"><a class="underline" href="/admin/npl/transaction/{{ t.id }}/change/">Edit</a></span>
                     {% endif %}
-                </tr>
+                    {% endif %}
+                </li>
                 {% endfor %}
-            </tbody>
-        </table>
+            </ul>
+        </section>
+        {% endfor %}
     </div>
 </article>

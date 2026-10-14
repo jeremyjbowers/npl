@@ -26,7 +26,13 @@ from npl.auctions import NominationError
 from npl.homepage import board_context
 from npl.transactions.impact import lines_for_proposal, roster_roundup
 from npl.transactions.players import ledger_for_player
-from npl.transactions.trades import group_log, join_parties, sends_for_proposal
+from npl.transactions.trades import (
+    group_log,
+    join_parties,
+    receives_for_proposal,
+    trade_card_prefetches,
+    trade_rows_q,
+)
 from .forms import TRANSACTION_FORM_MAP, TRANSACTION_MENU, TransactionTypeForm
 from npl.transactions.service import (
     TransactionError,
@@ -491,7 +497,7 @@ def proposal_detail_page(request, proposal_id):
         "proposal": proposal,
         "can_see_terms": can_see_terms,
         "impact_lines": lines_for_proposal(proposal),
-        "sends": sends_for_proposal(proposal),
+        "receives": receives_for_proposal(proposal),
         "trade_parties": join_parties(party_names),
         "posted_trade": posted_trade,
     })
@@ -896,18 +902,42 @@ def nominations_list(request):
 
     return render(request, "nominations_list.html", context)
 
-def transactions(request):
+LOG_PAGES = {
+    "all": {
+        "title": "Transactions",
+        "summary": "This is the processed log. A filing shows up here after directors record it.",
+        "empty": "No transactions found.",
+    },
+    "trades": {
+        "title": "Trades",
+        "summary": "Deals only. Releases, options, signings, and the rest of the log are listed as other transactions.",
+        "empty": "No trades found.",
+    },
+    "other": {
+        "title": "Other transactions",
+        "summary": "Releases, options, signings, and the other moves that are not trades.",
+        "empty": "No other transactions found.",
+    },
+}
+
+
+def transactions(request, mode="all"):
     context = utils.build_context(request)
-    
+    page = LOG_PAGES.get(mode, LOG_PAGES["all"])
+
     transactions_list = (
         models.Transaction.objects.select_related(
             "player", "team", "acquiring_team", "transaction_type", "trade"
         )
         .defer("player__stats", "player__scoresheet_defense", "player__scoresheet_offense")
-        .prefetch_related("edits", "trade__teams")
+        .prefetch_related(*trade_card_prefetches())
         .order_by("-date", "-id")
     )
-    
+    if mode == "trades":
+        transactions_list = transactions_list.filter(trade_rows_q())
+    elif mode == "other":
+        transactions_list = transactions_list.exclude(trade_rows_q())
+
     # Set up pagination (250 transactions per page)
     paginator = Paginator(transactions_list, 250)
     page_number = request.GET.get('page')
@@ -924,7 +954,11 @@ def transactions(request):
     context['transactions'] = transactions_page
     context['page_obj'] = transactions_page
     context["blocks"] = group_log(transactions_page.object_list)
-    
+    context["log_mode"] = mode if mode in LOG_PAGES else "all"
+    context["log_title"] = page["title"]
+    context["log_summary"] = page["summary"]
+    context["empty_message"] = page["empty"]
+
     return render(request, 'transactions.html', context)
 
 def robots_txt(request):

@@ -131,15 +131,19 @@ class PostedTradeTests(TestCase):
         log = self.client.get("/transactions/")
         self.assertContains(log, f"Trade {trade.public_id}")
         self.assertContains(log, "Alpha and Beta")
+        self.assertContains(log, ">Beta</a> received")
+        self.assertContains(log, ">Alpha</a> received")
         self.assertContains(log, "Deal Player")
+        self.assertContains(log, "$500,000")
         self.assertContains(log, f'href="/players/{self.player.mlb_id}/"')
         self.assertNotContains(log, "None Deal Player")
         self.assertContains(log, 'class="trade-card"')
 
         page = self.client.get(f"/transactions/proposals/{proposal.id}/")
         self.assertContains(page, f"Trade {trade.public_id}")
-        self.assertContains(page, "Alpha sends")
-        self.assertContains(page, "Beta sends")
+        self.assertContains(page, ">Alpha</a> received")
+        self.assertContains(page, ">Beta</a> received")
+        self.assertContains(page, "$500,000")
         self.assertContains(page, f'href="/players/{self.player.mlb_id}/"')
 
     def test_homepage_boxes_a_sheet_trade_that_has_no_id_yet(self):
@@ -165,7 +169,43 @@ class PostedTradeTests(TestCase):
         )
         home = self.client.get("/")
         self.assertContains(home, "Alpha and Beta")
+        self.assertContains(home, ">Alpha</a> received")
+        self.assertContains(home, ">Beta</a> received")
         self.assertContains(home, "Player A")
         self.assertContains(home, "Player B")
         self.assertContains(home, 'class="trade-card"')
         self.assertEqual(home.content.decode().count('class="trade-card"'), 1)
+
+    def test_trades_and_other_transactions_cover_the_log_without_overlap(self):
+        Transaction.objects.create(
+            date=datetime.date(2026, 6, 1),
+            raw_team="Alpha",
+            raw_player="Deal Player",
+            raw_transaction_type="Trade",
+            team=self.team,
+            acquiring_team=self.other,
+            player=self.player,
+        )
+        Transaction.objects.create(
+            date=datetime.date(2026, 6, 2),
+            raw_team="Alpha",
+            raw_player="Released Player",
+            raw_transaction_type="Release",
+            team=self.team,
+        )
+
+        trades = self.client.get("/transactions/trades/")
+        other = self.client.get("/transactions/other/")
+        self.assertContains(trades, "Deal Player")
+        self.assertContains(trades, 'class="trade-card"')
+        self.assertContains(trades, "1 total")
+        self.assertNotContains(trades, "Released Player")
+        self.assertContains(other, "Released Player")
+        self.assertContains(other, "Release")
+        self.assertContains(other, "1 total")
+        self.assertNotContains(other, "Deal Player")
+        self.assertNotContains(other, 'class="trade-card"')
+        self.assertContains(trades, 'href="/transactions/other/"')
+        self.assertContains(other, 'href="/transactions/trades/"')
+        self.assertContains(trades, ">Trades</a>")
+        self.assertContains(trades, ">Other transactions</a>")

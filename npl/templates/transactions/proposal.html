@@ -44,18 +44,22 @@
             </p>
             <h2 class="text-lg font-bold">{{ trade_parties }}</h2>
         </header>
-        {% for bucket in sends %}
-        <h3 class="mt-3 font-bold">{{ bucket.club.short_name }} sends</h3>
-        <ul>
-            {% for asset in bucket.pieces %}
-            <li>
-                {% if asset.player %}{% include "includes/linked_player.html" with player=asset.player label=asset.player.name %}{% else %}{{ asset.raw_label|default:asset.asset_type }}{% endif %}
-                {% if asset.to_team %} to {{ asset.to_team.short_name }}{% endif %}
-                {% if asset.amount %} · ${{ asset.amount|intcomma }}{% endif %}
-            </li>
-            {% endfor %}
-        </ul>
+        <div class="trade-columns">
+        {% for bucket in receives %}
+        <section class="trade-column">
+            <h3 class="font-bold">{% if bucket.club %}<a class="underline" href="/teams/{{ bucket.club.short_name|lower }}/">{{ bucket.club.short_name }}</a>{% else %}A club{% endif %} received</h3>
+            <ul class="mt-1 list-disc pl-5">
+                {% for asset in bucket.pieces %}
+                <li>
+                    {% if asset.player %}{% include "includes/linked_player.html" with player=asset.player label=asset.player.name %}{% else %}{{ asset.raw_label|default:asset.asset_type }}{% endif %}
+                    {% if asset.from_team %} from <a class="underline" href="/teams/{{ asset.from_team.short_name|lower }}/">{{ asset.from_team.short_name }}</a>{% endif %}
+                    {% if asset.amount %} · ${{ asset.amount|intcomma }}{% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+        </section>
         {% endfor %}
+        </div>
         {% if can_see_terms and proposal.notes %}
         <p class="mt-3">{{ proposal.notes }}</p>
         {% endif %}

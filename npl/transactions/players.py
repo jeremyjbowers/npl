@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from nameparser import HumanName
 
 from npl.transactions.catalog import sheet_asset_type
+from npl.transactions.trades import trade_card_prefetches
 
 SKIP_LABELS = {"", "-", "—"}
 FUZZY_SCORE = 93
@@ -276,6 +277,6 @@ def ledger_for_player(player):
             "player__scoresheet_defense",
             "player__scoresheet_offense",
         )
-        .prefetch_related("edits", "trade__teams")
+        .prefetch_related(*trade_card_prefetches())
         .order_by("-date", "-id")
     )

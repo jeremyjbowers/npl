@@ -8,6 +8,7 @@ from django.db.models import F
 from django.utils import timezone
 
 from npl import models
+from npl.transactions.trades import trade_card_prefetches
 
 EASTERN = pytz.timezone("US/Eastern")
 HOMEPAGE_WEEK_LIMIT = 6
@@ -85,7 +86,7 @@ def _transaction_queryset():
             "player__scoresheet_defense",
             "player__scoresheet_offense",
         )
-        .prefetch_related("trade__teams")
+        .prefetch_related(*trade_card_prefetches())
         .order_by("-date", "-id")
     )
 

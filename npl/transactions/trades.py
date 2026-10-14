@@ -22,6 +22,23 @@ def is_trade_row(row):
     return raw == "trade"
 
 
+def trade_rows_q():
+    """Ledger lines that belong on the trades page.
+
+    The complement is every other transaction. A line already attached to
+    a trade stays with that deal even when its label is blank.
+    """
+    from django.db.models import Q
+
+    trade_label = r"^\s*trade\s*$"
+    return (
+        Q(trade__isnull=False)
+        | Q(transaction_type__code__iregex=trade_label)
+        | Q(transaction_type__transaction_type__iregex=trade_label)
+        | Q(raw_transaction_type__iregex=trade_label)
+    )
+
+
 def _label(team, raw):
     if team is not None and getattr(team, "short_name", None):
         return team.short_name
@@ -151,14 +168,69 @@ def persist_archive_trades():
     }
 
 
+def receipts_for(rows):
+    """Pieces grouped by the club that received them, clubs in name order."""
+    buckets = []
+    index = {}
+    for row in rows:
+        team = getattr(row, "acquiring_team", None)
+        label = _label(team, getattr(row, "raw_acquiring_team", None)) or "Unknown"
+        if getattr(row, "acquiring_team_id", None):
+            key = ("id", row.acquiring_team_id)
+        else:
+            key = ("raw", label.lower())
+        if key not in index:
+            index[key] = {
+                "label": label,
+                "team": team if getattr(team, "short_name", None) else None,
+                "rows": [],
+            }
+            buckets.append(index[key])
+        index[key]["rows"].append(row)
+    buckets.sort(key=lambda bucket: bucket["label"].lower())
+    return buckets
+
+
+def trade_card_prefetches():
+    """Load every piece of a trade so the card can say what each club received."""
+    from django.db.models import Prefetch
+
+    from npl.models import Transaction
+
+    receipt_rows = (
+        Transaction.objects.select_related("player", "team", "acquiring_team", "transaction_type")
+        .defer("player__stats", "player__scoresheet_defense", "player__scoresheet_offense")
+        .prefetch_related("edits")
+    )
+    return [
+        "edits",
+        "trade__teams",
+        Prefetch("trade__receipts", queryset=receipt_rows),
+    ]
+
+
+def _display_rows(rows):
+    """Use every receipt on the trade when those rows were already loaded."""
+    if not rows or not getattr(rows[0], "trade_id", None):
+        return rows
+    trade = getattr(rows[0], "trade", None)
+    cache = getattr(trade, "_prefetched_objects_cache", None) or {}
+    if "receipts" not in cache:
+        return rows
+    fetched = list(trade.receipts.all())
+    return fetched or rows
+
+
 def _trade_block(rows):
+    shown = _display_rows(rows)
     trade = rows[0].trade if getattr(rows[0], "trade_id", None) else None
     return {
         "kind": "trade",
         "trade": trade,
         "date": trade.date if trade is not None and trade.date else rows[0].date,
-        "parties": parties_for(rows, trade),
-        "rows": rows,
+        "parties": parties_for(shown, trade),
+        "rows": shown,
+        "receipts": receipts_for(shown),
     }
 
 
@@ -200,17 +272,18 @@ def group_log(rows):
     return merged
 
 
-def sends_for_proposal(proposal):
-    """Pieces grouped by the club that sends them, originating club first."""
+def receives_for_proposal(proposal):
+    """Pieces grouped by the club that receives them."""
     buckets = []
     index = {}
     for asset in proposal.assets.all():
-        club = asset.from_team or proposal.originating_team
+        club = asset.to_team
         key = club.pk if club is not None else 0
         if key not in index:
             index[key] = {"club": club, "pieces": []}
             buckets.append(index[key])
         index[key]["pieces"].append(asset)
-    origin = proposal.originating_team_id
-    buckets.sort(key=lambda bucket: (0 if bucket["club"] is not None and bucket["club"].pk == origin else 1))
+    buckets.sort(
+        key=lambda bucket: "" if bucket["club"] is None else (bucket["club"].short_name or "").lower()
+    )
     return buckets
