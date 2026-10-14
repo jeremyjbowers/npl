@@ -6,7 +6,7 @@
 <section class="mx-auto max-w-xl">
     <header class="mb-4">
         <h1 class="text-2xl font-bold">Submit a transaction</h1>
-        <p class="text-sm">Step {{ step }} of {{ total_steps }}. Pick the move, then fill in the details.</p>
+        <p class="text-sm">Step {{ step }} of {{ total_steps }}. Choose a move.</p>
         <progress class="mt-2 w-full" value="{{ step }}" max="{{ total_steps }}">{{ step }}/{{ total_steps }}</progress>
     </header>
 
@@ -17,29 +17,18 @@
         {% if league_phase_label %}<p class="mt-1">The league is in the <strong>{{ league_phase_label|lower }}</strong>.</p>{% endif %}
     </div>
 
-    <form method="post" class="space-y-4">
-        {% csrf_token %}
-        {% for error in form.transaction_type.errors %}<p class="text-xs text-red-700">{{ error }}</p>{% endfor %}
-        {% for group in transaction_menu %}
-        <fieldset>
-            <legend class="text-xs font-bold">{{ group.label }}</legend>
-            <div class="choice-list mt-1">
-                {% for option in group.options %}
-                <label class="choice">
-                    <input type="radio" name="transaction_type" value="{{ option.code }}" {% if form.transaction_type.value == option.code %}checked{% endif %} required>
-                    <span>
-                        <span class="font-bold">{{ option.label }}</span>
-                        <span class="mt-0.5 block text-xs text-gray-600">{{ option.hint }}</span>
-                    </span>
-                </label>
-                {% endfor %}
-            </div>
-        </fieldset>
-        {% endfor %}
-        <div class="flex gap-2">
-            <button type="submit" class="btn">Continue</button>
-            <a href="/transactions/" class="btn-line">Cancel</a>
-        </div>
-    </form>
+    {% for group in transaction_menu %}
+    <section class="mb-4">
+        <h2 class="text-xs font-bold text-gray-600">{{ group.label }}</h2>
+        <ul class="mt-1">
+            {% for option in group.options %}
+            <li class="border-b border-gray-200">
+                <a class="block py-2 font-bold underline" href="/transactions/form/step2/?type={{ option.code }}">{{ option.label }}</a>
+            </li>
+            {% endfor %}
+        </ul>
+    </section>
+    {% endfor %}
+    <p><a href="/transactions/" class="btn-line">Cancel</a></p>
 </section>
 {% endblock %}

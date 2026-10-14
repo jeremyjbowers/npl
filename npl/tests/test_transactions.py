@@ -740,10 +740,12 @@ class ProposalRulesAndHintsTests(TestCase):
         self.assertNotContains(other, "File a transaction")
 
         form = self.client.get("/transactions/form/")
+        self.assertContains(form, 'href="/transactions/form/step2/?type=trade"')
         self.assertContains(form, "Trade Proposal")
-        self.assertContains(form, "salary coverage can be included.")
+        self.assertNotContains(form, "salary coverage can be included.")
+        self.assertContains(form, 'href="/transactions/form/step2/?type=waiver_claim"')
         self.assertContains(form, "Waiver Claim")
-        self.assertContains(form, "Claim a player another club has placed on waivers.")
+        self.assertNotContains(form, 'type="radio"')
 
         log = self.client.get("/transactions/")
         self.assertContains(log, "lists every move a club can file")
@@ -1153,12 +1155,16 @@ class FilingIlAndOptionsTests(TestCase):
 
     def test_menu_sends_aa_and_a_callups_through_a_purchase(self):
         menu = self.client.get("/transactions/form/")
-        self.assertContains(menu, "The player is sent to Triple-A and needs an option year left.")
-        self.assertContains(menu, "Bring an optioned player back from Triple-A.")
+        self.assertContains(menu, 'href="/transactions/form/step2/?type=option_minors"')
+        self.assertContains(menu, "Option to Minor Leagues")
+        self.assertContains(menu, 'href="/transactions/form/step2/?type=recall_option"')
+        self.assertContains(menu, "Recall an Option")
+        self.assertContains(menu, 'href="/transactions/form/step2/?type=purchase_contract"')
+        self.assertNotContains(menu, "The player is sent to Triple-A and needs an option year left.")
         purchase_hint = (
             "A player at Double-A or Single-A is brought onto the 40-man by purchasing his contract, "
             "not by recalling an option."
         )
-        self.assertContains(menu, purchase_hint)
+        self.assertNotContains(menu, purchase_hint)
         purchase = self.client.get("/transactions/form/step2/?type=purchase_contract")
         self.assertContains(purchase, purchase_hint)

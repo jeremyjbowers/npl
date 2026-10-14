@@ -13,8 +13,8 @@ from npl.transactions.catalog import ASSET_LABELS
 from npl.transactions.coverage import problems_for_trade
 
 
-# What a manager can file from the site. The form page lists these with the
-# hint, so the choices are visible without opening a dropdown.
+# What a manager can file from the site. Each headline on the menu links
+# straight to that filing. Hints stay here for the detail pages.
 TRANSACTION_MENU = (
     {
         "label": "Deals",
