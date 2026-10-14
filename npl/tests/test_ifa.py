@@ -2,15 +2,17 @@
 
 import datetime
 from types import SimpleNamespace
+from unittest.mock import patch
 from urllib.parse import unquote
 
+import requests
 from django.contrib.auth import get_user_model
 from django.test import SimpleTestCase, TestCase
 from django.utils import timezone
 
 from npl import ifa
 from npl.auctions import NominationError, nominate_player
-from npl.mlbwatch import refresh_appearances
+from npl.mlbwatch import default_getter, refresh_appearances
 from npl.models import Contract, Owner, Player, Season, Team, Transaction, TransactionType
 
 User = get_user_model()
@@ -338,3 +340,70 @@ class ButtonTests(TestCase):
             self.assertTrue(player.has_appeared_in_majors)
             self.assertIsNotNone(player.ifa_checked)
             self.assertFalse(player.international_signee)
+
+    def test_a_refused_debut_batch_is_split_and_the_run_continues(self):
+        players = [
+            Player.objects.create(
+                mlb_id=str(810000 + number),
+                name=f"Debut {number}",
+                first_name="Debut",
+                last_name=str(number),
+            )
+            for number in range(11)
+        ]
+
+        def getter(url):
+            text = unquote(url)
+            if "personIds=" not in text:
+                mlb_id = text.split("/people/")[1].split("?")[0]
+                ids = [mlb_id]
+            else:
+                ids = text.split("personIds=")[1].split("&")[0].split(",")
+            if "hydrate=currentTeam" in text and "sportId=" not in text and len(ids) > 5:
+                raise RuntimeError("406 Client Error: Not Acceptable")
+            people = []
+            for mlb_id in ids:
+                person = {"id": int(mlb_id)}
+                if "hydrate=currentTeam" in text and "sportId=" not in text:
+                    person["mlbDebutDate"] = "2019-04-01"
+                    person["currentTeam"] = {"id": 147}
+                if "hydrate=transactions" in text:
+                    person["transactions"] = []
+                if "sportId=" in text:
+                    person["stats"] = []
+                people.append(person)
+            return {"people": people}
+
+        self.assertEqual(refresh_appearances(players, getter=getter), 11)
+        for player in players:
+            player.refresh_from_db()
+            self.assertTrue(player.has_appeared_in_majors)
+            self.assertEqual(player.mlb_org, "NYY")
+
+    def test_a_406_is_retried_once_with_a_browser_user_agent(self):
+        class Response:
+            def __init__(self, status):
+                self.status_code = status
+
+            def raise_for_status(self):
+                if self.status_code >= 400:
+                    raise requests.HTTPError(str(self.status_code))
+
+            def json(self):
+                return {"people": []}
+
+        calls = []
+
+        def fake_get(url, headers=None, timeout=None):
+            calls.append(headers)
+            if headers is None:
+                return Response(406)
+            return Response(200)
+
+        with patch("npl.mlbwatch.requests.get", fake_get):
+            payload = default_getter("https://statsapi.mlb.com/api/v1/people?personIds=1&hydrate=currentTeam")
+
+        self.assertEqual(payload, {"people": []})
+        self.assertIsNone(calls[0])
+        self.assertIn("Mozilla", calls[1]["User-Agent"])
+        self.assertEqual(calls[1]["Accept"], "*/*")
