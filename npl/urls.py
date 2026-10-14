@@ -53,6 +53,8 @@ urlpatterns = [
     path("transactions/proposals/<int:proposal_id>/respond/", views.proposal_respond, name='proposal_respond'),
     path("transactions/proposals/<int:proposal_id>/", views.proposal_detail_page, name='proposal_detail'),
     path("transactions/roundup/", views.roster_roundup_page, name="roster_roundup"),
+    path("transactions/trades/", views.transactions, {"mode": "trades"}),
+    path("transactions/other/", views.transactions, {"mode": "other"}),
     path("transactions/", views.transactions),
     path("account/tokens/", api_tokens, name="api_tokens"),
     

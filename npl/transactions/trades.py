@@ -22,6 +22,23 @@ def is_trade_row(row):
     return raw == "trade"
 
 
+def trade_rows_q():
+    """Ledger lines that belong on the trades page.
+
+    The complement is every other transaction. A line already attached to
+    a trade stays with that deal even when its label is blank.
+    """
+    from django.db.models import Q
+
+    trade_label = r"^\s*trade\s*$"
+    return (
+        Q(trade__isnull=False)
+        | Q(transaction_type__code__iregex=trade_label)
+        | Q(transaction_type__transaction_type__iregex=trade_label)
+        | Q(raw_transaction_type__iregex=trade_label)
+    )
+
+
 def _label(team, raw):
     if team is not None and getattr(team, "short_name", None):
         return team.short_name
