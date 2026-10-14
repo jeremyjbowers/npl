@@ -1,0 +1,49 @@
+{% if p.pit_stats %}
+<section class="mb-8">
+    <h2 class="mb-2 border-b border-gray-300 pb-1 text-lg font-bold">Pitching Stats</h2>
+    <div class="overflow-x-auto">
+        <table class="sheet">
+            <thead>
+                <tr>
+                    <th scope="col">Year</th>
+                    <th scope="col">Level</th>
+                    <th scope="col">G</th>
+                    <th scope="col">GS</th>
+                    <th scope="col">IP</th>
+                    <th scope="col">K/9</th>
+                    <th scope="col">BB/9</th>
+                    <th scope="col">ERA</th>
+                    <th scope="col">xERA</th>
+                    <th scope="col">FIP</th>
+                    <th scope="col">xFIP</th>
+                    <th scope="col">SIERA</th>
+                    <th scope="col">Stuff+</th>
+                    <th scope="col">Loc+</th>
+                    <th scope="col">Pitch+</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for stat in p.pit_stats reversed %}
+                <tr{% if stat.level|upper == "MLB" %} class="majors"{% endif %}>
+                    <td>{{ stat.year }}</td>
+                    <td>{{ stat.level|upper }}</td>
+                    <td>{{ stat.g }}</td>
+                    <td>{{ stat.gs }}</td>
+                    <td>{{ stat.ip }}</td>
+                    <td>{{ stat.k_9|floatformat:1|default:"—" }}</td>
+                    <td>{{ stat.bb_9|floatformat:1|default:"—" }}</td>
+                    <td>{{ stat.era|floatformat:2|default:"—" }}</td>
+                    <td>{% if stat.xERA %}{{ stat.xERA|floatformat:2 }}{% else %}—{% endif %}</td>
+                    <td>{{ stat.fip|floatformat:2|default:"—" }}</td>
+                    <td>{{ stat.xfip|floatformat:2|default:"—" }}</td>
+                    <td>{% if stat.siera %}{{ stat.siera|floatformat:2 }}{% else %}—{% endif %}</td>
+                    <td>{% if stat.sp_stuff %}{{ stat.sp_stuff|floatformat:1 }}{% else %}—{% endif %}</td>
+                    <td>{% if stat.sp_location %}{{ stat.sp_location|floatformat:1 }}{% else %}—{% endif %}</td>
+                    <td>{% if stat.sp_pitching %}{{ stat.sp_pitching|floatformat:1 }}{% else %}—{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endif %}

@@ -1,0 +1,50 @@
+{% load npl_tags %}
+{% if p.hit_stats %}
+<section class="mb-8">
+    <h2 class="mb-2 border-b border-gray-300 pb-1 text-lg font-bold">Hitting Stats</h2>
+    <div class="overflow-x-auto">
+        <table class="sheet">
+            <thead>
+                <tr>
+                    <th scope="col">Year</th>
+                    <th scope="col">Level</th>
+                    <th scope="col">PA</th>
+                    <th scope="col">wRC+</th>
+                    <th scope="col">HR</th>
+                    <th scope="col">SB</th>
+                    <th scope="col">BB%</th>
+                    <th scope="col">K%</th>
+                    <th scope="col">AVG</th>
+                    <th scope="col">OBP</th>
+                    <th scope="col">SLG</th>
+                    <th scope="col">ISO</th>
+                    <th scope="col">xAVG</th>
+                    <th scope="col">xwOBA</th>
+                    <th scope="col">xSLG</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for stat in p.hit_stats reversed %}
+                <tr{% if stat.level|upper == "MLB" %} class="majors"{% endif %}>
+                    <td>{{ stat.year }}</td>
+                    <td>{{ stat.level|upper }}</td>
+                    <td>{{ stat.plate_appearances }}</td>
+                    <td>{{ stat.wrc_plus|floatformat:0 }}</td>
+                    <td>{{ stat.hr }}</td>
+                    <td>{{ stat.sb }}</td>
+                    <td>{{ stat.bb_pct|floatformat:1 }}%</td>
+                    <td>{{ stat.k_pct|floatformat:1 }}%</td>
+                    <td>{{ stat.avg|floatformat:3|kill_leading_zero }}</td>
+                    <td>{{ stat.obp|floatformat:3|kill_leading_zero }}</td>
+                    <td>{{ stat.slg|floatformat:3|kill_leading_zero }}</td>
+                    <td>{{ stat.iso|floatformat:3|kill_leading_zero }}</td>
+                    <td>{% if stat.xavg %}{{ stat.xavg|floatformat:3|kill_leading_zero }}{% else %}—{% endif %}</td>
+                    <td>{% if stat.xwoba %}{{ stat.xwoba|floatformat:3|kill_leading_zero }}{% else %}—{% endif %}</td>
+                    <td>{% if stat.xslg %}{{ stat.xslg|floatformat:3|kill_leading_zero }}{% else %}—{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endif %}
