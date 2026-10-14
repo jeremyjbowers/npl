@@ -288,16 +288,3 @@
   background: #f3f4f6;
   border: 1px solid #d1d5db;
 }
-
-.headshot-inline {
-  width: 1.65rem;
-  height: 1.65rem;
-  margin-right: 0.35rem;
-  display: inline-block;
-  vertical-align: middle;
-  border-radius: 999px;
-  object-fit: cover;
-  object-position: center 15%;
-  background: #f3f4f6;
-  border: 1px solid #d1d5db;
-}
