@@ -26,7 +26,13 @@ from npl.auctions import NominationError
 from npl.homepage import board_context
 from npl.transactions.impact import lines_for_proposal, roster_roundup
 from npl.transactions.players import ledger_for_player
-from npl.transactions.trades import group_log, join_parties, sends_for_proposal, trade_rows_q
+from npl.transactions.trades import (
+    group_log,
+    join_parties,
+    receives_for_proposal,
+    trade_card_prefetches,
+    trade_rows_q,
+)
 from .forms import TRANSACTION_FORM_MAP, TRANSACTION_MENU, TransactionTypeForm
 from npl.transactions.service import (
     TransactionError,
@@ -491,7 +497,7 @@ def proposal_detail_page(request, proposal_id):
         "proposal": proposal,
         "can_see_terms": can_see_terms,
         "impact_lines": lines_for_proposal(proposal),
-        "sends": sends_for_proposal(proposal),
+        "receives": receives_for_proposal(proposal),
         "trade_parties": join_parties(party_names),
         "posted_trade": posted_trade,
     })
@@ -924,7 +930,7 @@ def transactions(request, mode="all"):
             "player", "team", "acquiring_team", "transaction_type", "trade"
         )
         .defer("player__stats", "player__scoresheet_defense", "player__scoresheet_offense")
-        .prefetch_related("edits", "trade__teams")
+        .prefetch_related(*trade_card_prefetches())
         .order_by("-date", "-id")
     )
     if mode == "trades":
