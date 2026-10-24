@@ -2,6 +2,7 @@ asgiref==3.8.1
 beautifulsoup4==4.13.4
 boto3==1.38.28
 botocore==1.38.28
+brotli==1.2.1
 cachetools==5.5.2
 certifi==2025.4.26
 charset-normalizer==3.4.2
@@ -53,6 +54,6 @@ typing-extensions==4.14.0
 tzlocal==5.3.1
 ujson==5.10.0
 uritemplate==4.2.0
-urllib3==2.4.0
+urllib3==2.8.0
 uvicorn==0.34.3
 webencodings==0.5.1
