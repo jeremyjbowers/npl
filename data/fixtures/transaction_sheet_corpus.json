@@ -1,0 +1,1547 @@
+{
+  "source": {
+    "spreadsheet_id": "1UQv_vnBBWUT8BiFRd7tAbvW4COWJ61BNkme7iyzf5po",
+    "tabs": [
+      "2025 Transactions",
+      "2026 Transactions"
+    ],
+    "captured": "2026-11-01",
+    "recognized_rows": {
+      "2025": 3581,
+      "2026": 3541
+    },
+    "undated_rows": {
+      "2025": 0,
+      "2026": 2
+    }
+  },
+  "unmapped_labels": [],
+  "labels": [
+    {
+      "label": "Trade",
+      "code": "trade",
+      "counts": {
+        "2025": 765,
+        "2026": 817
+      },
+      "example": {
+        "year": 2026,
+        "cells": [
+          "10/13/2025",
+          "Valkyries",
+          "Cash Reserves",
+          "",
+          "",
+          "Trade",
+          "Speedsters",
+          "$750,000"
+        ]
+      }
+    },
+    {
+      "label": "Release",
+      "code": "release",
+      "counts": {
+        "2025": 411,
+        "2026": 384
+      },
+      "example": {
+        "year": 2026,
+        "cells": [
+          "12/29/2025",
+          "DockHounds",
+          "Wade, Tyler",
+          "",
+          "642180",
+          "Release",
+          "-",
+          ""
+        ]
+      }
+    },
+    {
+      "label": "IL: 7 Day",
+      "code": "il_7",
+      "counts": {
+        "2025": 302,
+        "2026": 311
+      },
+      "example": {
+        "year": 2026,
+        "cells": [
+          "3/23/2026",
+          "Bears",
+          "Dobbins, Hunter",
+          "1082",
+          "690928",
+          "IL: 7 Day",
+          "-",
+          ""
+        ]
+      }
+    },
+    {
+      "label": "Recall Option",
+      "code": "recall_option",
+      "counts": {
+        "2025": 207,
+        "2026": 229
+      },
+      "example": {
+        "year": 2026,
+        "cells": [
+          "3/30/2026",
+          "King",
+          "Jimenez, Leo",
+          "517",
+          "677870",
+          "Recall Option",
+          "-",
+          ""
+        ]
+      }
+    },
+    {
+      "label": "IL: Activate",
+      "code": "il_activate",
+      "counts": {
+        "2025": 219,
+        "2026": 214
+      },
+      "example": {
+        "year": 2026,
+        "cells": [
+          "4/6/2026",
+          "Bosses",
+          "Grissom, Vaughn",
+          "521",
+          "687093",
+          "IL: Activate",
+          "-",
+          ""
+        ]
+      }
+    },
+    {
+      "label": "Option to Minors",
+      "code": "option_minors",
+      "counts": {
+        "2025": 411,
+        "2026": 0
+      },
+      "example": {
+        "year": 2025,
+        "cells": [
+          "3/17/2025",
+          "Guys",
+          "Garrett, Stone",
+          "1647",
+          "656448",
+          "Option to Minors",
+          "-",
+          ""
+        ]
+      }
+    },
+    {
+      "label": "Option to AAA",
+      "code": "option_minors",
+      "counts": {
+        "2025": 0,
+        "2026": 399
+      },
+      "example": {
+        "year": 2026,
+        "cells": [
+          "3/23/2026",
+          "TOOTBLANs",
+          "Caissie, Owen",
+          "1682",
+          "683357",
+          "Option to AAA",
+          "-",
+          ""
+        ]
+      }
+    },
+    {
+      "label": "Waiver Request: Outright",
+      "code": "waiver_request_outright",
+      "counts": {
+        "2025": 184,
+        "2026": 88
+      },
+      "example": {
+        "year": 2026,
+        "cells": [
+          "1/12/2026",
+          "Ducksnorts",
+          "Diaz, Yilber",
+          "1122",
+          "700270",
+          "Waiver Request: Outright",
+          "-",
+          ""
+        ]
+      }
+    },
+    {
+      "label": "In Season FA",
+      "code": "in_season_fa",
+      "counts": {
+        "2025": 100,
+        "2026": 104
+      },
+      "example": {
+        "year": 2026,
+        "cells": [
+          "4/2/2026",
+          "Hitmen",
+          "Fernandez, Jose",
+          "",
+          "699912",
+          "In Season FA",
+          "-",
+          "$2,888,890"
+        ]
+      }
+    },
+    {
+      "label": "IFA Signing",
+      "code": "ifa_signing",
+      "counts": {
+        "2025": 103,
+        "2026": 100
+      },
+      "example": {
+        "year": 2026,
+        "cells": [
+          "2/9/2026",
+          "DockHounds",
+          "Hernandez, Luis",
+          "",
+          "836582",
+          "IFA Signing",
+          "-",
+          "$7,000,000"
+        ]
+      }
+    },
+    {
+      "label": "Contract: MLB Signing",
+      "code": "mlb_signing",
+      "counts": {
+        "2025": 195,
+        "2026": 0
+      },
+      "example": {
+        "year": 2025,
+        "cells": [
+          "1/13/2025",
+          "Guys",
+          "Manaea, Sean",
+          "1044",
+          "640455",
+          "Contract: MLB Signing",
+          "-",
+          "3 Yrs, $55,860,000 (100 points)"
+        ]
+      }
+    },
+    {
+      "label": "Contract Purchased",
+      "code": "purchase_contract",
+      "counts": {
+        "2025": 189,
+        "2026": 0
+      },
+      "example": {
+        "year": 2025,
+        "cells": [
+          "12/20/2024",
+          "Ducksnorts",
+          "Senzatela, Antonio",
+          "1691",
+          "622608",
+          "Contract Purchased",
+          "-",
+          ""
+        ]
+      }
+    },
+    {
+      "label": "Waivers: Cleared",
+      "code": "waiver_cleared_outright",
+      "counts": {
+        "2025": 160,
+        "2026": 0
+      },
+      "example": {
+        "year": 2025,
+        "cells": [
+          "1/6/2025",
+          "Gatherers",
+          "Pache, Cristian",
+          "623",
+          "665506",
+          "Waivers: Cleared",
+          "-",
+          ""
+        ]
+      }
+    },
+    {
+      "label": "Contract: Purchased",
+      "code": "purchase_contract",
+      "counts": {
+        "2025": 0,
+        "2026": 159
+      },
+      "example": {
+        "year": 2026,
+        "cells": [
+          "12/29/2025",
+          "Ducksnorts",
+          "Stone, Gavin",
+          "1037",
+          "694813",
+          "Contract: Purchased",
+          "-",
+          ""
+        ]
+      }
+    },
+    {
+      "label": "IL: 56 Day",
+      "code": "il_56",
+      "counts": {
+        "2025": 79,
+        "2026": 64
+      },
+      "example": {
+        "year": 2026,
+        "cells": [
+          "4/6/2026",
+          "Bears",
+          "Montgomery, Jordan",
+          "4070",
+          "656756",
+          "IL: 56 Day",
+          "-",
+          ""
+        ]
+      }
+    },
+    {
+      "label": "MLB Signing",
+      "code": "mlb_signing",
+      "counts": {
+        "2025": 0,
+        "2026": 140
+      },
+      "example": {
+        "year": 2026,
+        "cells": [
+          "1/19/2026",
+          "Guys",
+          "Turner, Trea",
+          "1507",
+          "607208",
+          "MLB Signing",
+          "-",
+          "4 yr, 99,588,300"
+        ]
+      }
+    },
+    {
+      "label": "Non-Tender",
+      "code": "non_tender",
+      "counts": {
+        "2025": 0,
+        "2026": 135
+      },
+      "example": {
+        "year": 2026,
+        "cells": [
+          "12/29/2025",
+          "DockHounds",
+          "Ellard, Fraser",
+          "",
+          "686642",
+          "Non-Tender",
+          "-",
+          ""
+        ]
+      }
+    },
+    {
+      "label": "Cleared: OR Waivers",
+      "code": "waiver_cleared_outright",
+      "counts": {
+        "2025": 0,
+        "2026": 128
+      },
+      "example": {
+        "year": 2026,
+        "cells": [
+          "1/5/2026",
+          "Dockhounds",
+          "Jarvis, Bryce",
+          "5028",
+          "686826",
+          "Cleared: OR Waivers",
+          "-",
+          ""
+        ]
+      }
+    },
+    {
+      "label": "Nontender",
+      "code": "non_tender",
+      "counts": {
+        "2025": 106,
+        "2026": 0
+      },
+      "example": {
+        "year": 2025,
+        "cells": [
+          "12/20/2024",
+          "Kodiaks",
+          "Ruiz, Esteury",
+          "584",
+          "665923",
+          "Nontender",
+          "-",
+          ""
+        ]
+      }
+    },
+    {
+      "label": "IL: EOS",
+      "code": "il_eos",
+      "counts": {
+        "2025": 37,
+        "2026": 45
+      },
+      "example": {
+        "year": 2026,
+        "cells": [
+          "3/23/2026",
+          "Starks",
+          "Megill, Tylor",
+          "1744",
+          "656731",
+          "IL: EOS",
+          "-",
+          ""
+        ]
+      }
+    },
+    {
+      "label": "Minor League Signing",
+      "code": "minor_signing",
+      "counts": {
+        "2025": 0,
+        "2026": 60
+      },
+      "example": {
+        "year": 2026,
+        "cells": [
+          "2/23/2026",
+          "DockHounds",
+          "Lynch, Daniel",
+          "101",
+          "663738",
+          "Minor League Signing",
+          "-",
+          "1 yr, $760,000"
+        ]
+      }
+    },
+    {
+      "label": "Outright Waivers",
+      "code": "waiver_request_outright",
+      "counts": {
+        "2025": 0,
+        "2026": 54
+      },
+      "example": {
+        "year": 2026,
+        "cells": [
+          "12/30/2025",
+          "DockHounds",
+          "Jarvis, Bryce",
+          "5028",
+          "686826",
+          "Outright Waivers",
+          "-",
+          ""
+        ]
+      }
+    },
+    {
+      "label": "Claimed: OR Waivers",
+      "code": "waiver_claimed",
+      "counts": {
+        "2025": 0,
+        "2026": 22
+      },
+      "example": {
+        "year": 2026,
+        "cells": [
+          "1/4/2026",
+          "DockHounds",
+          "Koss, Christian",
+          "",
+          "683766",
+          "Claimed: OR Waivers",
+          "-",
+          ""
+        ]
+      }
+    },
+    {
+      "label": "Waiver Claim",
+      "code": "waiver_claimed",
+      "counts": {
+        "2025": 17,
+        "2026": 0
+      },
+      "example": {
+        "year": 2025,
+        "cells": [
+          "1/6/2025",
+          "Bulldog",
+          "Dubin, Shawn",
+          "151",
+          "681869",
+          "Waiver Claim",
+          "King",
+          ""
+        ]
+      }
+    },
+    {
+      "label": "Contract: Extension",
+      "code": "extension",
+      "counts": {
+        "2025": 15,
+        "2026": 0
+      },
+      "example": {
+        "year": 2025,
+        "cells": [
+          "3/31/2025",
+          "Tobacconists",
+          "Holmes, Clay",
+          "1255",
+          "605280",
+          "Contract: Extension",
+          "-",
+          "4 yr, $35M"
+        ]
+      }
+    },
+    {
+      "label": "Contract: Exercise Option",
+      "code": "exercise_option",
+      "counts": {
+        "2025": 12,
+        "2026": 0
+      },
+      "example": {
+        "year": 2025,
+        "cells": [
+          "12/20/2024",
+          "Kodiaks",
+          "Chapman, Matt",
+          "",
+          "656305",
+          "Contract: Exercise Option",
+          "-",
+          ""
+        ]
+      }
+    },
+    {
+      "label": "Extension",
+      "code": "extension",
+      "counts": {
+        "2025": 0,
+        "2026": 11
+      },
+      "example": {
+        "year": 2026,
+        "cells": [
+          "3/25/2026",
+          "Tobacconists",
+          "Moreno, Gabriel",
+          "1399",
+          "672515",
+          "Extension",
+          "-",
+          "5 yrs, $52,288,000"
+        ]
+      }
+    },
+    {
+      "label": "Restricted List",
+      "code": "restricted_place",
+      "counts": {
+        "2025": 4,
+        "2026": 7
+      },
+      "example": {
+        "year": 2026,
+        "cells": [
+          "12/29/2025",
+          "Hitmen",
+          "Clase, Emmanuel",
+          "255",
+          "661403",
+          "Restricted List",
+          "-",
+          ""
+        ]
+      }
+    },
+    {
+      "label": "Activate",
+      "code": "il_activate",
+      "counts": {
+        "2025": 0,
+        "2026": 10
+      },
+      "example": {
+        "year": 2026,
+        "cells": [
+          "5/18/2026",
+          "GmbH",
+          "Yelich, Christian",
+          "1611",
+          "592885",
+          "Activate",
+          "-",
+          ""
+        ]
+      }
+    },
+    {
+      "label": "Contract: Qualifying Offer",
+      "code": "qualifying_offer",
+      "counts": {
+        "2025": 10,
+        "2026": 0
+      },
+      "example": {
+        "year": 2025,
+        "cells": [
+          "12/20/2024",
+          "Gatherers",
+          "Lugo, Seth",
+          "29",
+          "607625",
+          "Contract: Qualifying Offer",
+          "-",
+          ""
+        ]
+      }
+    },
+    {
+      "label": "release",
+      "code": "release",
+      "counts": {
+        "2025": 10,
+        "2026": 0
+      },
+      "example": {
+        "year": 2025,
+        "cells": [
+          "3/17/2025",
+          "Hitmen",
+          "Ruiz, Esteury",
+          "584",
+          "665923",
+          "release",
+          "-",
+          ""
+        ]
+      }
+    },
+    {
+      "label": "56 Day IL",
+      "code": "il_56",
+      "counts": {
+        "2025": 0,
+        "2026": 9
+      },
+      "example": {
+        "year": 2026,
+        "cells": [
+          "3/2/2026",
+          "Starks",
+          "Houck, Tanner",
+          "15",
+          "656557",
+          "56 Day IL",
+          "-",
+          ""
+        ]
+      }
+    },
+    {
+      "label": "Contract: Decline Option",
+      "code": "decline_option",
+      "counts": {
+        "2025": 8,
+        "2026": 0
+      },
+      "example": {
+        "year": 2025,
+        "cells": [
+          "12/20/2024",
+          "Valkyries",
+          "Antone, Tejay",
+          "1354",
+          "622088",
+          "Contract: Decline Option",
+          "-",
+          "-$178,100"
+        ]
+      }
+    },
+    {
+      "label": "Decline Option",
+      "code": "decline_option",
+      "counts": {
+        "2025": 0,
+        "2026": 8
+      },
+      "example": {
+        "year": 2026,
+        "cells": [
+          "1/2/2026",
+          "Bosses",
+          "Ibanez, Andy",
+          "465",
+          "628451",
+          "Decline Option",
+          "-",
+          "$138,000"
+        ]
+      }
+    },
+    {
+      "label": "Foreign List",
+      "code": "foreign_place",
+      "counts": {
+        "2025": 2,
+        "2026": 6
+      },
+      "example": {
+        "year": 2026,
+        "cells": [
+          "12/29/2025",
+          "Hitmen",
+          "Manning, Matt",
+          "117",
+          "666159",
+          "Foreign List",
+          "-",
+          ""
+        ]
+      }
+    },
+    {
+      "label": "Qualifying Offer",
+      "code": "qualifying_offer",
+      "counts": {
+        "2025": 0,
+        "2026": 8
+      },
+      "example": {
+        "year": 2026,
+        "cells": [
+          "12/29/2025",
+          "Hitmen",
+          "Turner, Trea",
+          "1507",
+          "607208",
+          "Qualifying Offer",
+          "-",
+          ""
+        ]
+      }
+    },
+    {
+      "label": "Waivers: Claimed",
+      "code": "waiver_claimed",
+      "counts": {
+        "2025": 7,
+        "2026": 0
+      },
+      "example": {
+        "year": 2025,
+        "cells": [
+          "4/28/2025",
+          "Bosses",
+          "Young, Jared",
+          "1421",
+          "676724",
+          "Waivers: Claimed",
+          "-",
+          ""
+        ]
+      }
+    },
+    {
+      "label": "Exercise Option",
+      "code": "exercise_option",
+      "counts": {
+        "2025": 0,
+        "2026": 6
+      },
+      "example": {
+        "year": 2026,
+        "cells": [
+          "1/3/2026",
+          "Valkyries",
+          "Okert, Steven",
+          "4155",
+          "595345",
+          "Exercise Option",
+          "-",
+          "1 Yr, $925,000"
+        ]
+      }
+    },
+    {
+      "label": "IN Season FA",
+      "code": "in_season_fa",
+      "counts": {
+        "2025": 0,
+        "2026": 6
+      },
+      "example": {
+        "year": 2026,
+        "cells": [
+          "7/16/2026",
+          "Valkyries",
+          "Antone, Tejay",
+          "",
+          "622088",
+          "IN Season FA",
+          "-",
+          "$760,000"
+        ]
+      }
+    },
+    {
+      "label": "Rule 5 Draft",
+      "code": "rule5_draft",
+      "counts": {
+        "2025": 6,
+        "2026": 0
+      },
+      "example": {
+        "year": 2025,
+        "cells": [
+          "2/3/2025",
+          "Calling",
+          "Maton, Nick",
+          "",
+          "665155",
+          "Rule 5 Draft",
+          "King",
+          "$100k fee"
+        ]
+      }
+    },
+    {
+      "label": "RL: Activate",
+      "code": "restricted_activate",
+      "counts": {
+        "2025": 2,
+        "2026": 3
+      },
+      "example": {
+        "year": 2026,
+        "cells": [
+          "6/8/2026",
+          "Kodiaks",
+          "Mlodzinski, Carmen",
+          "1053",
+          "669387",
+          "RL: Activate",
+          "-",
+          ""
+        ]
+      }
+    },
+    {
+      "label": "Waiver Request: Rule 5",
+      "code": "waiver_request_rule5",
+      "counts": {
+        "2025": 5,
+        "2026": 0
+      },
+      "example": {
+        "year": 2025,
+        "cells": [
+          "2/10/2025",
+          "Bears",
+          "Kessinger, Grae",
+          "1528",
+          "666197",
+          "Waiver Request: Rule 5",
+          "-",
+          ""
+        ]
+      }
+    },
+    {
+      "label": "Contract Amnesty",
+      "code": "contract_amnesty",
+      "counts": {
+        "2025": 0,
+        "2026": 4
+      },
+      "example": {
+        "year": 2026,
+        "cells": [
+          "12/24/2025",
+          "Ryne",
+          "Eflin, Zach",
+          "28",
+          "621107",
+          "Contract Amnesty",
+          "",
+          ""
+        ]
+      }
+    },
+    {
+      "label": "Contract: Exercise Vesting Option",
+      "code": "exercise_vesting_option",
+      "counts": {
+        "2025": 3,
+        "2026": 0
+      },
+      "example": {
+        "year": 2025,
+        "cells": [
+          "12/20/2024",
+          "Ropes",
+          "Urshela, Gio",
+          "480",
+          "570482",
+          "Contract: Exercise Vesting Option",
+          "-",
+          ""
+        ]
+      }
+    },
+    {
+      "label": "EOS IL",
+      "code": "il_eos",
+      "counts": {
+        "2025": 0,
+        "2026": 3
+      },
+      "example": {
+        "year": 2026,
+        "cells": [
+          "3/2/2026",
+          "Quails",
+          "Rodriguez, Randy",
+          "1090",
+          "678495",
+          "EOS IL",
+          "-",
+          ""
+        ]
+      }
+    },
+    {
+      "label": "Free Agent Signing",
+      "code": "mlb_signing",
+      "counts": {
+        "2025": 3,
+        "2026": 0
+      },
+      "example": {
+        "year": 2025,
+        "cells": [
+          "3/31/2025",
+          "Valkyries",
+          "Capra, Vinny",
+          "",
+          "681962",
+          "Free Agent Signing",
+          "-",
+          "$740,000"
+        ]
+      }
+    },
+    {
+      "label": "IL: End of Season",
+      "code": "il_eos",
+      "counts": {
+        "2025": 2,
+        "2026": 0
+      },
+      "example": {
+        "year": 2025,
+        "cells": [
+          "2/24/2025",
+          "Sickos",
+          "Musgrove, Joe",
+          "1054",
+          "605397",
+          "IL: End of Season",
+          "-",
+          ""
+        ]
+      }
+    },
+    {
+      "label": "Rule 5 Waiver Request",
+      "code": "waiver_request_rule5",
+      "counts": {
+        "2025": 0,
+        "2026": 2
+      },
+      "example": {
+        "year": 2026,
+        "cells": [
+          "7/16/2026",
+          "Quails",
+          "Winn, Cole",
+          "311",
+          "668390",
+          "Rule 5 Waiver Request",
+          "-",
+          ""
+        ]
+      }
+    },
+    {
+      "label": "Minors Signing",
+      "code": "minor_signing",
+      "counts": {
+        "2025": 0,
+        "2026": 1
+      },
+      "example": {
+        "year": 2026,
+        "cells": [
+          "3/16/2026",
+          "Bosses",
+          "Frazier, Adam",
+          "432",
+          "624428",
+          "Minors Signing",
+          "-",
+          "NR 1Yr, $997,000"
+        ]
+      }
+    },
+    {
+      "label": "Option Declined",
+      "code": "decline_option",
+      "counts": {
+        "2025": 1,
+        "2026": 0
+      },
+      "example": {
+        "year": 2025,
+        "cells": [
+          "12/27/2024",
+          "TOOTBLANS",
+          "Gott, Trevor",
+          "251",
+          "641627",
+          "Option Declined",
+          "-",
+          "-$176,500"
+        ]
+      }
+    },
+    {
+      "label": "R5 Waiver Request: Cleared/Returned",
+      "code": "waiver_returned_rule5",
+      "counts": {
+        "2025": 1,
+        "2026": 0
+      },
+      "example": {
+        "year": 2025,
+        "cells": [
+          "2/17/2025",
+          "Bears",
+          "Kessinger, Grae",
+          "1528",
+          "666197",
+          "R5 Waiver Request: Cleared/Returned",
+          "Perwar",
+          "-$50k from R5 selection fee"
+        ]
+      }
+    },
+    {
+      "label": "Reinstate: Foreign List",
+      "code": "foreign_reinstate",
+      "counts": {
+        "2025": 0,
+        "2026": 1
+      },
+      "example": {
+        "year": 2026,
+        "cells": [
+          "12/30/2025",
+          "Bosses",
+          "Ponce, Cody",
+          "",
+          "664074",
+          "Reinstate: Foreign List",
+          "-",
+          ""
+        ]
+      }
+    },
+    {
+      "label": "Restricted List - Activate",
+      "code": "restricted_activate",
+      "counts": {
+        "2025": 0,
+        "2026": 1
+      },
+      "example": {
+        "year": 2026,
+        "cells": [
+          "6/29/2026",
+          "Kodiaks",
+          "Rojas, Johan",
+          "1665",
+          "679032",
+          "Restricted List - Activate",
+          "-",
+          ""
+        ]
+      }
+    },
+    {
+      "label": "Restricted List: Activate",
+      "code": "restricted_activate",
+      "counts": {
+        "2025": 1,
+        "2026": 0
+      },
+      "example": {
+        "year": 2025,
+        "cells": [
+          "8/25/2025",
+          "Hitmen",
+          "Alvarado, Jose",
+          "1302",
+          "621237",
+          "Restricted List: Activate",
+          "-",
+          ""
+        ]
+      }
+    },
+    {
+      "label": "Restricted List: Place",
+      "code": "restricted_place",
+      "counts": {
+        "2025": 1,
+        "2026": 0
+      },
+      "example": {
+        "year": 2025,
+        "cells": [
+          "9/1/2025",
+          "Perwar",
+          "Ortiz, Luis",
+          "1068",
+          "682847",
+          "Restricted List: Place",
+          "-",
+          ""
+        ]
+      }
+    },
+    {
+      "label": "Retirement",
+      "code": "retirement",
+      "counts": {
+        "2025": 0,
+        "2026": 1
+      },
+      "example": {
+        "year": 2026,
+        "cells": [
+          "1/19/2026",
+          "Bosses",
+          "Heaney, Andrew",
+          "81",
+          "571760",
+          "Retirement",
+          "-",
+          ""
+        ]
+      }
+    },
+    {
+      "label": "Returned: Rule 5 Waivers",
+      "code": "waiver_returned_rule5",
+      "counts": {
+        "2025": 0,
+        "2026": 1
+      },
+      "example": {
+        "year": 2026,
+        "cells": [
+          "7/20/2026",
+          "Villagers",
+          "Winn, Cole",
+          "311",
+          "668390",
+          "Returned: Rule 5 Waivers",
+          "-",
+          ""
+        ]
+      }
+    },
+    {
+      "label": "Waiver Request: Claim",
+      "code": "waiver_claimed",
+      "counts": {
+        "2025": 1,
+        "2026": 0
+      },
+      "example": {
+        "year": 2025,
+        "cells": [
+          "3/17/2025",
+          "Calling",
+          "Maton, Nick",
+          "",
+          "665155",
+          "Waiver Request: Claim",
+          "-",
+          ""
+        ]
+      }
+    },
+    {
+      "label": "Waivers Claim",
+      "code": "waiver_claimed",
+      "counts": {
+        "2025": 1,
+        "2026": 0
+      },
+      "example": {
+        "year": 2025,
+        "cells": [
+          "1/6/2025",
+          "Bulldog",
+          "Elder, Bryce",
+          "1016",
+          "693821",
+          "Waivers Claim",
+          "King",
+          ""
+        ]
+      }
+    },
+    {
+      "label": "Waivers: Rule 5",
+      "code": "waiver_request_rule5",
+      "counts": {
+        "2025": 1,
+        "2026": 0
+      },
+      "example": {
+        "year": 2025,
+        "cells": [
+          "5/12/2025",
+          "Guys",
+          "Trammell, Taylor",
+          "668",
+          "666211",
+          "Waivers: Rule 5",
+          "-",
+          ""
+        ]
+      }
+    }
+  ],
+  "pieces": [
+    {
+      "label": "Draft Pick",
+      "asset_type": "draft_pick",
+      "qualifier": "rule4",
+      "counts": {
+        "2025": 103,
+        "2026": 116
+      },
+      "example": {
+        "year": 2026,
+        "cells": [
+          "12/24/2025",
+          "DockHounds",
+          "Draft Pick",
+          "",
+          "",
+          "Trade",
+          "Guys",
+          "DockHounds 1st"
+        ]
+      }
+    },
+    {
+      "label": "Cash Reserves",
+      "asset_type": "cash",
+      "qualifier": "",
+      "counts": {
+        "2025": 53,
+        "2026": 55
+      },
+      "example": {
+        "year": 2026,
+        "cells": [
+          "10/13/2025",
+          "Valkyries",
+          "Cash Reserves",
+          "",
+          "",
+          "Trade",
+          "Speedsters",
+          "$750,000"
+        ]
+      }
+    },
+    {
+      "label": "IFA Cap Space",
+      "asset_type": "ifa_pool",
+      "qualifier": "",
+      "counts": {
+        "2025": 26,
+        "2026": 49
+      },
+      "example": {
+        "year": 2026,
+        "cells": [
+          "10/13/2025",
+          "Speedsters",
+          "IFA Cap Space",
+          "",
+          "",
+          "Trade",
+          "Valkyries",
+          "$2,375,000"
+        ]
+      }
+    },
+    {
+      "label": "Carried Salary",
+      "asset_type": "carried_salary",
+      "qualifier": "",
+      "counts": {
+        "2025": 25,
+        "2026": 25
+      },
+      "example": {
+        "year": 2026,
+        "cells": [
+          "1/2/2026",
+          "Perwar",
+          "Carried Salary",
+          "",
+          "",
+          "Trade",
+          "Starks",
+          "$2M of Wilmer Flores"
+        ]
+      }
+    },
+    {
+      "label": "Future Considerations",
+      "asset_type": "future_considerations",
+      "qualifier": "",
+      "counts": {
+        "2025": 23,
+        "2026": 14
+      },
+      "example": {
+        "year": 2026,
+        "cells": [
+          "12/24/2025",
+          "DockHounds",
+          "Future Considerations",
+          "",
+          "",
+          "Trade",
+          "Perwar",
+          ""
+        ]
+      }
+    },
+    {
+      "label": "Cash Considerations",
+      "asset_type": "cash",
+      "qualifier": "",
+      "counts": {
+        "2025": 10,
+        "2026": 0
+      },
+      "example": {
+        "year": 2025,
+        "cells": [
+          "3/3/2025",
+          "Rabbits",
+          "Cash Considerations",
+          "",
+          "",
+          "Trade",
+          "Tobacconists",
+          "$10,000"
+        ]
+      }
+    },
+    {
+      "label": "Draft pick",
+      "asset_type": "draft_pick",
+      "qualifier": "rule4",
+      "counts": {
+        "2025": 10,
+        "2026": 0
+      },
+      "example": {
+        "year": 2025,
+        "cells": [
+          "7/7/2025",
+          "Perwar",
+          "Draft pick",
+          "",
+          "",
+          "Trade",
+          "Valkyries",
+          "Perwar 3rd"
+        ]
+      }
+    },
+    {
+      "label": "Cash reserves",
+      "asset_type": "cash",
+      "qualifier": "",
+      "counts": {
+        "2025": 0,
+        "2026": 9
+      },
+      "example": {
+        "year": 2026,
+        "cells": [
+          "5/18/2026",
+          "Bulldog",
+          "Cash reserves ",
+          "",
+          "",
+          "Trade",
+          "Ducksnorts",
+          "$150,000"
+        ]
+      }
+    },
+    {
+      "label": "Carried Salary Obligation",
+      "asset_type": "carried_salary",
+      "qualifier": "",
+      "counts": {
+        "2025": 2,
+        "2026": 0
+      },
+      "example": {
+        "year": 2025,
+        "cells": [
+          "12/20/2024",
+          "Perwar",
+          "Carried Salary Obligation",
+          "",
+          "",
+          "Trade",
+          "Bosses",
+          "$11,000,000 Wilmer Flores 2025 salary"
+        ]
+      }
+    },
+    {
+      "label": "R5 Draft Pick",
+      "asset_type": "draft_pick",
+      "qualifier": "rule5",
+      "counts": {
+        "2025": 0,
+        "2026": 2
+      },
+      "example": {
+        "year": 2026,
+        "cells": [
+          "2/9/2026",
+          "DockHounds",
+          "R5 Draft Pick",
+          "",
+          "",
+          "Trade",
+          "Quails",
+          "DockHounds 1st"
+        ]
+      }
+    },
+    {
+      "label": "IFA Pool $",
+      "asset_type": "ifa_pool",
+      "qualifier": "",
+      "counts": {
+        "2025": 1,
+        "2026": 0
+      },
+      "example": {
+        "year": 2025,
+        "cells": [
+          "4/28/2025",
+          "Perwar",
+          "IFA Pool $",
+          "",
+          "",
+          "Trade",
+          "Hitmen",
+          "$400k"
+        ]
+      }
+    },
+    {
+      "label": "IFA Pool Space",
+      "asset_type": "ifa_pool",
+      "qualifier": "",
+      "counts": {
+        "2025": 1,
+        "2026": 0
+      },
+      "example": {
+        "year": 2025,
+        "cells": [
+          "6/9/2025",
+          "Valkyries",
+          "IFA Pool Space",
+          "",
+          "",
+          "Trade",
+          "DockHounds",
+          ""
+        ]
+      }
+    }
+  ]
+}
