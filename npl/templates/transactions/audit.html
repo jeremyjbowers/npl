@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Transaction audit — The NPL{% endblock %}
+
+{% block content %}
+<header class="mb-4">
+    <h1 class="text-2xl font-bold">Transaction audit</h1>
+    <p class="mt-1 max-w-3xl text-sm">
+        Every transaction type the site defines is filed, posted to the ledger, and then discarded.
+        Rosters, books, and the public log stay as they were.
+        The counts are the dated rows on the
+        <a class="underline" href="https://docs.google.com/spreadsheets/d/1UQv_vnBBWUT8BiFRd7tAbvW4COWJ61BNkme7iyzf5po/">league sheet</a>,
+        in the 2025 Transactions and 2026 Transactions tabs.
+        That workbook does not include transaction logs from earlier seasons.
+        {{ audit_recognized_2025 }} dated rows in 2025 and {{ audit_recognized_2026 }} in 2026 mapped to a defined type.
+    </p>
+    <p class="mt-2 text-sm">
+        Ran {{ audit_ran_at }}.
+        <strong>{{ audit_passed }} passed</strong>,
+        <strong>{{ audit_failed }} failed</strong>.
+    </p>
+</header>
+
+{% if audit_failures %}
+<section class="note mb-6">
+    <h2 class="font-bold">Failed checks</h2>
+    <ul class="mt-1 list-disc pl-5">
+        {% for check in audit_failures %}
+        <li><span class="font-bold">{{ check.name }}.</span> {{ check.detail }}</li>
+        {% endfor %}
+    </ul>
+</section>
+{% endif %}
+
+<section class="mb-8">
+    <h2 class="mb-2 text-lg font-bold">Defined types</h2>
+    <div class="overflow-x-auto">
+        <table class="sheet">
+            <thead>
+                <tr>
+                    <th scope="col">Type</th>
+                    <th scope="col">Category</th>
+                    <th scope="col">Filed by</th>
+                    <th scope="col">2025</th>
+                    <th scope="col">2026</th>
+                    <th scope="col">Sheet labels</th>
+                    <th scope="col">Result</th>
+                    <th scope="col">What the check did</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for kind in audit_kinds %}
+                <tr{% if not kind.passed %} class="band"{% endif %}>
+                    <td>{{ kind.label }}</td>
+                    <td>{{ kind.category }}</td>
+                    <td>{{ kind.filer }}</td>
+                    <td>{{ kind.count_2025 }}</td>
+                    <td>{{ kind.count_2026 }}</td>
+                    <td>{{ kind.sheet_names }}</td>
+                    <td>{% if kind.passed %}Pass{% else %}Fail{% endif %}</td>
+                    <td>{{ kind.detail }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="mb-8">
+    <h2 class="mb-2 text-lg font-bold">Labels from the sheet</h2>
+    <p class="mb-2 max-w-3xl text-sm">
+        One sample row from each label clubs and directors actually wrote in 2025 and 2026.
+        The same words have to resolve to one defined type.
+    </p>
+    <div class="overflow-x-auto">
+        <table class="sheet">
+            <thead>
+                <tr>
+                    <th scope="col">Sheet label</th>
+                    <th scope="col">Type</th>
+                    <th scope="col">2025</th>
+                    <th scope="col">2026</th>
+                    <th scope="col">Sample</th>
+                    <th scope="col">Result</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in audit_labels %}
+                <tr{% if not row.passed %} class="band"{% endif %}>
+                    <td>{{ row.label }}</td>
+                    <td>{{ row.type_label }}</td>
+                    <td>{{ row.count_2025 }}</td>
+                    <td>{{ row.count_2026 }}</td>
+                    <td>{{ row.example }}</td>
+                    <td>{% if row.passed %}Pass{% else %}Fail{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="mb-8">
+    <h2 class="mb-2 text-lg font-bold">Pieces named in the Player column</h2>
+    <p class="mb-2 max-w-3xl text-sm">
+        Trades log cash, cap-related money, draft picks, and a player to be named later in the Player column.
+        Each of those words is filed as its own trade and then discarded.
+    </p>
+    <div class="overflow-x-auto">
+        <table class="sheet">
+            <thead>
+                <tr>
+                    <th scope="col">Player column</th>
+                    <th scope="col">Stored as</th>
+                    <th scope="col">2025</th>
+                    <th scope="col">2026</th>
+                    <th scope="col">Sample</th>
+                    <th scope="col">Result</th>
+                    <th scope="col">What the check did</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in audit_pieces %}
+                <tr{% if not row.passed %} class="band"{% endif %}>
+                    <td>{{ row.label }}</td>
+                    <td>{{ row.asset_label }}{% if row.qualifier == "rule5" %} (Rule 5){% elif row.qualifier == "rule4" %} (Rule 4){% endif %}</td>
+                    <td>{{ row.count_2025 }}</td>
+                    <td>{{ row.count_2026 }}</td>
+                    <td>{{ row.example }}</td>
+                    <td>{% if row.passed %}Pass{% else %}Fail{% endif %}</td>
+                    <td>{{ row.detail }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

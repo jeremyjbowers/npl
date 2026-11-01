@@ -63,6 +63,7 @@
             <div class="nav-dropdown-panel">
                 <a href="/admin/" class="block py-0.5 text-sm underline">Django admin</a>
                 <a href="/admin/npl/transactionproposal/" class="block py-0.5 text-sm underline">Review proposals</a>
+                <a href="/transactions/audit/" class="block py-0.5 text-sm underline">Transaction audit</a>
                 <a href="/auctions/test/" class="block py-0.5 text-sm underline">Auction test</a>
             </div>
         </div>
@@ -98,6 +99,7 @@
         {% endif %}
         {% if user.is_staff %}
         <a href="/admin/npl/transactionproposal/" class="block underline">Review proposals</a>
+        <a href="/transactions/audit/" class="block underline">Transaction audit</a>
         {% endif %}
         <div>
             <p class="mb-1 font-bold">Teams</p>

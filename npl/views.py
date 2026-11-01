@@ -1,7 +1,7 @@
 import csv
 import datetime
 import itertools
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseForbidden
 from django.views.decorators.csrf import csrf_exempt
 
 from django.shortcuts import render, get_object_or_404, redirect
@@ -877,6 +877,19 @@ def roster_roundup_page(request):
     context = utils.build_context(request)
     context["moves"] = roster_roundup()
     return render(request, "transactions/roundup.html", context)
+
+
+@login_required
+def transaction_audit_page(request):
+    """Director view of the transaction-type checks. Filings are rolled back."""
+    if not request.user.is_staff:
+        return HttpResponseForbidden("Directors only.")
+    from npl.transactions.audit import director_audit
+
+    report = director_audit(request.user)
+    context = utils.build_context(request)
+    context.update(report)
+    return render(request, "transactions/audit.html", context)
 
 def nominations_list(request):
     """View to show current player nominations"""
