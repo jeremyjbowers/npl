@@ -428,6 +428,7 @@ class ApiTokenTests(TestCase):
         self.user = User.objects.create_user(email="token@example.com", password="secret")
         self.other = User.objects.create_user(email="other-token@example.com", password="secret")
         self.owner = Owner.objects.create(name="Token", user=self.user)
+        Owner.objects.create(name="Other Token", user=self.other)
         self.team = Team.objects.create(full_name="Token Club", short_name="Tok", abbreviation="TOK")
         self.team.owners.add(self.owner)
         self.player = Player.objects.create(
@@ -455,16 +456,14 @@ class ApiTokenTests(TestCase):
             {"action": "create", "name": "Trade agent", "scope": "read_write"},
         )
         self.assertEqual(created.status_code, 302)
+        token = self.user.api_tokens.get()
+        secret = token.token_secret
+        self.assertTrue(secret.startswith("npl_"))
         shown = self.client.get("/account/tokens/")
         self.assertEqual(shown.status_code, 200)
-        secret = shown.context["revealed"]["secret"]
-        self.assertTrue(secret.startswith("npl_"))
         self.assertContains(shown, secret)
-        again = self.client.get("/account/tokens/")
-        self.assertIsNone(again.context["revealed"])
-        self.assertNotContains(again, secret)
-
-        token = self.user.api_tokens.get()
+        again = self.client.get("/my/api-keys/")
+        self.assertContains(again, secret)
         revoked = self.client.post("/account/tokens/", {"action": "revoke", "token_id": token.id})
         self.assertEqual(revoked.status_code, 302)
         token.refresh_from_db()

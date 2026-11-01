@@ -1,3 +1,4 @@
+# WSGI entry. The MCP server at /mcp is config.dev.asgi:application.
 import os
 
 settings_file = "config.dev.settings"

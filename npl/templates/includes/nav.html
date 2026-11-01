@@ -36,7 +36,7 @@
                     {% if user.is_authenticated %}
                     <a href="/transactions/form/" class="block py-0.5 text-sm underline">Submit a transaction</a>
                     <a href="/transactions/list/" class="block py-0.5 text-sm underline">My submissions</a>
-                    <a href="/account/tokens/" class="block py-0.5 text-sm underline">API tokens</a>
+                    <a href="/my/api-keys/" class="block py-0.5 text-sm underline">API keys</a>
                     {% endif %}
                     <a href="/transactions/trades/" class="block py-0.5 text-sm underline">Trades</a>
                     <a href="/transactions/other/" class="block py-0.5 text-sm underline">Other transactions</a>
@@ -94,7 +94,7 @@
         {% if user.is_authenticated %}
         <a href="/transactions/form/" class="block underline">Submit a transaction</a>
         <a href="/transactions/list/" class="block underline">My submissions</a>
-        <a href="/account/tokens/" class="block underline">API tokens</a>
+        <a href="/my/api-keys/" class="block underline">API keys</a>
         {% endif %}
         {% if user.is_staff %}
         <a href="/admin/npl/transactionproposal/" class="block underline">Review proposals</a>

@@ -1,36 +1,48 @@
 {% extends "base.html" %}
 
-{% block title %}API tokens — The NPL{% endblock %}
+{% block title %}API keys — The NPL{% endblock %}
 
 {% block content %}
 <article class="max-w-3xl">
     <header class="mb-4">
-        <h1 class="text-2xl font-bold">API tokens</h1>
-        <p class="mt-1">Tokens let an agent call the transaction API and MCP tools as you. A token only sees the clubs you own.</p>
+        <h1 class="text-2xl font-bold">API keys</h1>
     </header>
 
+    {% if needs_owner %}
+    <p>This account is not linked to an owner, so it cannot hold an API key.</p>
+    {% else %}
     <div class="note mb-4">
-        <p><strong>Read</strong> can list kinds, proposals, drafts, and the MCP tool list.</p>
-        <p><strong>Read and write</strong> can also submit proposals, agree, decline, withdraw, claim waivers, and make draft picks.</p>
-        <p class="mt-2">Send the secret as <code>Authorization: Bearer npl_…</code>.</p>
+        <p>Send the key as <code>Authorization: Bearer npl_…</code>.</p>
+        <p class="mt-2"><strong>Read</strong> can look up rosters, players, drafts, trades, auctions, and your wishlist, and can list transaction proposals.</p>
+        <p><strong>Read and write</strong> can do that and submit proposals, agree, decline, withdraw, claim waivers, and make draft picks.</p>
+        <p class="mt-2">A key only acts for the clubs you own. You only see your own keys. The secret stays on this page so you can copy it again.</p>
     </div>
 
-    {% if revealed %}
-    <div class="note mb-4">
-        <p class="font-bold">{{ revealed.name }} ({{ revealed.scope }})</p>
-        <p class="my-2">Copy this token now. It is stored hashed, and this page will not show it again.</p>
-        <input type="text" readonly value="{{ revealed.secret }}" onclick="this.select()" class="w-full">
-    </div>
+    {% if mcp_secret %}
+    <section class="note mb-4">
+        <p class="font-bold">MCP client</p>
+        <p class="my-2">Paste this into a client that accepts a remote MCP URL. The JSON API is the same key under <code>/api/mcp/v1/</code>.</p>
+        <pre class="overflow-x-auto whitespace-pre-wrap text-xs">{
+  "mcpServers": {
+    "npl": {
+      "url": "{{ mcp_url }}",
+      "headers": {
+        "Authorization": "Bearer {{ mcp_secret }}"
+      }
+    }
+  }
+}</pre>
+    </section>
     {% endif %}
 
     <section class="mb-8">
-        <h2 class="mb-2 text-lg font-bold">New token</h2>
-        <form method="post" class="space-y-3">
+        <h2 class="mb-2 text-lg font-bold">New key</h2>
+        <form method="post" action="" class="space-y-3">
             {% csrf_token %}
             <input type="hidden" name="action" value="create">
             <div>
-                <label class="mb-1 block text-xs font-bold" for="token-name">Name</label>
-                <input id="token-name" name="name" maxlength="80" required placeholder="Trade agent">
+                <label class="mb-1 block text-xs font-bold" for="api-key-label">Label</label>
+                <input id="api-key-label" name="name" maxlength="80" placeholder="laptop, claude, trade agent">
                 <p class="mt-1 text-xs text-gray-600">A label for you, such as the agent that will use it.</p>
             </div>
             <fieldset>
@@ -38,23 +50,21 @@
                 <label class="mr-4"><input type="radio" name="scope" value="{{ read_scope }}" checked> Read</label>
                 <label><input type="radio" name="scope" value="{{ write_scope }}"> Read and write</label>
             </fieldset>
-            <button class="btn" type="submit">Generate token</button>
+            <button class="btn" type="submit">Generate key</button>
         </form>
     </section>
 
     <section>
-        <h2 class="mb-2 text-lg font-bold">Your tokens</h2>
+        <h2 class="mb-2 text-lg font-bold">Your keys</h2>
         {% if tokens %}
         <div class="overflow-x-auto">
             <table class="sheet">
                 <thead>
                     <tr>
-                        <th scope="col">Name</th>
+                        <th scope="col">Label</th>
                         <th scope="col">Access</th>
-                        <th scope="col">Starts with</th>
-                        <th scope="col">Created</th>
-                        <th scope="col">Last used</th>
-                        <th scope="col"></th>
+                        <th scope="col">Key</th>
+                        <th scope="col">Status</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -62,14 +72,20 @@
                     <tr>
                         <td>{{ token.name }}</td>
                         <td>{{ token.get_scope_display }}</td>
-                        <td><code>{{ token.token_prefix }}…</code></td>
-                        <td>{{ token.created|date:"N j, Y" }}</td>
-                        <td>{% if token.last_used_at %}{{ token.last_used_at|date:"N j, Y, P" }}{% else %}Never{% endif %}</td>
                         <td>
-                            {% if token.revoked_at %}
-                            Revoked {{ token.revoked_at|date:"N j" }}
+                            {% if token.token_secret %}
+                            <input type="text" readonly value="{{ token.token_secret }}" onclick="this.select()" class="w-full font-mono text-xs">
                             {% else %}
-                            <form method="post">
+                            <span class="text-gray-600">Not stored. Generate a new key to see the text.</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if token.revoked_at or not token.active %}
+                            Revoked
+                            {% else %}
+                            <span class="mb-1 block">Active</span>
+                            {% if token.last_used_at %}<span class="mb-1 block text-xs text-gray-600">Used {{ token.last_used_at|date:"N j, Y, P" }}</span>{% endif %}
+                            <form method="post" action="">
                                 {% csrf_token %}
                                 <input type="hidden" name="action" value="revoke">
                                 <input type="hidden" name="token_id" value="{{ token.id }}">
@@ -83,8 +99,9 @@
             </table>
         </div>
         {% else %}
-        <p>You have not created a token yet.</p>
+        <p>You do not have any API keys yet.</p>
         {% endif %}
     </section>
+    {% endif %}
 </article>
 {% endblock %}

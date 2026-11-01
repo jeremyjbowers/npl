@@ -1,3 +1,4 @@
+# WSGI entry. The MCP server at /mcp is config.do_app_platform.asgi:application.
 import os
 
 settings_file = "config.do_app_platform.settings"

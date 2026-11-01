@@ -549,9 +549,10 @@ class Rule5Selection(BaseModel):
 
 
 class ApiToken(BaseModel):
-    """Bearer credential for the transaction API and MCP tools.
+    """Bearer credential for the league API and MCP server.
 
-    The secret is shown once at creation and stored only as a hash.
+    The secret is stored so the owner can read it again on the API keys page.
+    Authentication uses the SHA-256 hash. Other accounts cannot see the secret.
     """
 
     READ = "read"
@@ -570,6 +571,7 @@ class ApiToken(BaseModel):
     token_prefix = models.CharField(max_length=16)
     token_hash = models.CharField(max_length=64, unique=True)
     scope = models.CharField(max_length=16, choices=SCOPE_CHOICES)
+    token_secret = models.CharField(max_length=128, blank=True, default="")
     last_used_at = models.DateTimeField(blank=True, null=True)
     revoked_at = models.DateTimeField(blank=True, null=True)
 
@@ -581,4 +583,8 @@ class ApiToken(BaseModel):
 
     @property
     def is_active(self):
-        return self.revoked_at is None
+        return self.active and self.revoked_at is None
+
+    @property
+    def allows_write(self):
+        return self.scope == self.READ_WRITE and self.is_active

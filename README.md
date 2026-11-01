@@ -42,3 +42,11 @@ I recommend editing your `/etc/hosts` to add a line like this:
 ```
 
 Then you can see the site at `http://localhost.nationalpastime.org:8000` in your browser.
+
+## API keys and MCP
+
+Owners generate and revoke bearer tokens at `/my/api-keys/` after signing in. The same key calls the transaction API and the league MCP server. See `documents/MCP.md`. Remote MCP clients need the ASGI app:
+
+```
+uvicorn config.dev.asgi:application --host 127.0.0.1 --port 8000
+```

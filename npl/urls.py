@@ -5,6 +5,7 @@ from django.shortcuts import redirect
 from npl import views
 from npl import auth
 from npl.transactions import api as transaction_api
+from npl.mcp_app import views as mcp_views
 from npl.token_views import api_tokens
 
 def admin_login_redirect(request):
@@ -29,6 +30,20 @@ urlpatterns = [
     path('api/v1/drafts/', transaction_api.drafts),
     path('api/v1/drafts/<int:session_id>/pick/', transaction_api.draft_pick),
     path('api/v1/mcp/tools/', transaction_api.mcp_tools),
+    path("api/mcp/v1/season/", mcp_views.season_context),
+    path("api/mcp/v1/teams/", mcp_views.teams_list),
+    path("api/mcp/v1/roster/", mcp_views.my_roster),
+    path("api/mcp/v1/compliance/", mcp_views.my_compliance),
+    path("api/mcp/v1/teams/<str:abbreviation>/roster/", mcp_views.team_roster),
+    path("api/mcp/v1/teams/<str:abbreviation>/compliance/", mcp_views.team_compliance),
+    path("api/mcp/v1/teams/<str:abbreviation>/ledger/", mcp_views.team_ledger),
+    path("api/mcp/v1/ledger/", mcp_views.my_ledger),
+    path("api/mcp/v1/players/search/", mcp_views.players_search),
+    path("api/mcp/v1/draft-picks/", mcp_views.draft_picks),
+    path("api/mcp/v1/trades/", mcp_views.trades_list),
+    path("api/mcp/v1/transactions/", mcp_views.transactions_list),
+    path("api/mcp/v1/wishlist/", mcp_views.my_wishlist),
+    path("api/mcp/v1/auctions/", mcp_views.auctions_list),
     path('api/v1/wishlist/bulk/', views.wishlist_bulk),
     path('api/v1/wishlist/interesting/<str:playerid>/', views.interesting_action),
     path('auctions/', views.auction_list),
@@ -56,6 +71,7 @@ urlpatterns = [
     path("transactions/trades/", views.transactions, {"mode": "trades"}),
     path("transactions/other/", views.transactions, {"mode": "other"}),
     path("transactions/", views.transactions),
+    path("my/api-keys/", api_tokens, name="my_api_keys"),
     path("account/tokens/", api_tokens, name="api_tokens"),
     
     path("players/search/", views.search),
