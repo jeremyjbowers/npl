@@ -1,4 +1,4 @@
-"""Bearer tokens for the transaction API and MCP tools."""
+"""Bearer tokens for the league API and MCP server."""
 
 import hashlib
 import secrets
@@ -36,6 +36,7 @@ def generate_token(user, name, scope):
         name=name,
         token_prefix=raw[:12],
         token_hash=hash_token(raw),
+        token_secret=raw,
         scope=scope,
     )
     return token, raw
@@ -45,7 +46,11 @@ def authenticate(raw):
     if not raw or not raw.startswith(TOKEN_PREFIX):
         return None
     token = (
-        models.ApiToken.objects.filter(token_hash=hash_token(raw.strip()), revoked_at__isnull=True)
+        models.ApiToken.objects.filter(
+            token_hash=hash_token(raw.strip()),
+            revoked_at__isnull=True,
+            active=True,
+        )
         .select_related("user")
         .first()
     )
@@ -59,7 +64,8 @@ def mark_used(token):
 
 
 def revoke(token):
-    if token.revoked_at is None:
-        token.revoked_at = timezone.now()
-        token.save(update_fields=["revoked_at", "last_modified"])
+    if token.revoked_at is None or token.active:
+        token.revoked_at = token.revoked_at or timezone.now()
+        token.active = False
+        token.save(update_fields=["revoked_at", "active", "last_modified"])
     return token

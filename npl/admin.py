@@ -562,6 +562,7 @@ class ApiTokenAdmin(admin.ModelAdmin):
     list_display = ['name', 'user', 'scope', 'token_prefix', 'created', 'last_used_at', 'revoked_at']
     list_filter = ['scope']
     search_fields = ['name', 'user__email', 'token_prefix']
+    # token_secret and token_hash stay off this form. The owner reads the secret on /my/api-keys/.
     fields = ['user', 'name', 'scope', 'token_prefix', 'created', 'last_used_at', 'revoked_at']
     readonly_fields = ['user', 'name', 'scope', 'token_prefix', 'created', 'last_used_at', 'revoked_at']
     actions = ['revoke_tokens']
@@ -574,7 +575,10 @@ class ApiTokenAdmin(admin.ModelAdmin):
 
     @admin.action(description="Revoke selected tokens")
     def revoke_tokens(self, request, queryset):
-        updated = queryset.filter(revoked_at__isnull=True).update(revoked_at=timezone.now())
+        updated = queryset.filter(revoked_at__isnull=True).update(
+            revoked_at=timezone.now(),
+            active=False,
+        )
         self.message_user(request, f"Revoked {updated} token{'s' if updated != 1 else ''}.")
 
 

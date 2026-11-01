@@ -1,10 +1,9 @@
-"""MCP tool manifest for the transaction service.
+"""Tool manifest for the transaction API.
 
-An MCP server can advertise these tools and forward each call to the matching
-function in npl.transactions.service. The HTTP API under /api/v1/ is the same
-surface. Callers authenticate with Authorization: Bearer and an owner token
-from /account/tokens/. Read tokens can list. Read-write tokens can submit.
-This module does not depend on an MCP library.
+The league MCP server itself lives in npl.mcp_app and is served at /mcp.
+These transaction tools are the write side. Callers authenticate with
+Authorization: Bearer and a key from /my/api-keys/. Read keys can list.
+Read-write keys can submit. This module does not depend on an MCP library.
 """
 
 from npl.transactions.catalog import ASSET_TYPES, KINDS
