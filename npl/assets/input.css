@@ -279,6 +279,11 @@
   column-gap: 1.25rem;
 }
 
+.nav-dropdown-end .nav-dropdown-panel {
+  left: auto;
+  right: 0;
+}
+
 .headshot {
   width: 6.5rem;
   height: 6.5rem;
