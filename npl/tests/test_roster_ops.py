@@ -217,6 +217,7 @@ class AuditAndPageTests(TestCase):
         )
         self.kind = TransactionType.objects.get(code="release")
         Season.objects.create(year=2026, phase=Season.REGULAR, is_current=True)
+        self.client.force_login(self.user)
 
     def test_a_change_requires_a_director_note(self):
         row = Transaction.objects.create(

@@ -3,12 +3,22 @@
 import os
 from unittest.mock import patch
 
+from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import TestCase
 
 from npl.models import Player, PlayerStatSeason
 from npl.ulmg_import import apply_player, import_rows, stat_lines
+
+
+def _login(client):
+    user = get_user_model().objects.create_user(
+        email=f"viewer-{get_user_model().objects.count()}@example.com",
+        password="secret",
+    )
+    client.force_login(user)
+    return user
 
 
 def _row(**overrides):
@@ -205,6 +215,7 @@ class ApplyTests(TestCase):
             }
         }
         self.player.save()
+        _login(self.client)
         response = self.client.get("/players/592450/")
         self.assertContains(response, "Minors")
         self.assertContains(response, "AAA")
@@ -222,6 +233,7 @@ class ApplyTests(TestCase):
             hit_stats={"pa": 4, "hr": 0, "avg": 0.25},
             pitch_stats={"g": 17, "gs": 17, "ip": 94.1, "so": 89, "era": 3.64, "k_9": 8.5},
         )
+        _login(self.client)
         response = self.client.get("/players/592450/")
         body = response.content.decode()
         self.assertContains(response, "Pitching Stats")
@@ -267,6 +279,7 @@ class HeadshotTests(TestCase):
             last_name="Yates",
             position="RHP",
         )
+        _login(self.client)
         page = self.client.get("/players/605397/")
         self.assertContains(page, 'class="headshot"')
         self.assertContains(page, "people/605397/headshot/67/current")

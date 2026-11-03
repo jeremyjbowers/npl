@@ -23,12 +23,15 @@ class AccountNavTests(TestCase):
         )
         self.team.owners.add(self.owner)
 
-    def test_anonymous_nav_has_login_and_no_api_keys(self):
+    def test_anonymous_visitor_is_sent_to_login(self):
         response = self.client.get("/")
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'href="/accounts/login/"')
-        self.assertNotContains(response, "API keys")
-        self.assertNotContains(response, reverse("my_api_keys"))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/accounts/login/", response.url)
+        login = self.client.get("/accounts/login/")
+        self.assertEqual(login.status_code, 200)
+        self.assertContains(login, 'href="/accounts/login/"')
+        self.assertNotContains(login, "API keys")
+        self.assertNotContains(login, reverse("my_api_keys"))
 
     def test_signed_in_account_menu_links_api_keys(self):
         self.client.force_login(self.user)
