@@ -36,7 +36,6 @@
                     {% if user.is_authenticated %}
                     <a href="/transactions/form/" class="block py-0.5 text-sm underline">Submit a transaction</a>
                     <a href="/transactions/list/" class="block py-0.5 text-sm underline">My submissions</a>
-                    <a href="/my/api-keys/" class="block py-0.5 text-sm underline">API keys</a>
                     {% endif %}
                     <a href="/transactions/trades/" class="block py-0.5 text-sm underline">Trades</a>
                     <a href="/transactions/other/" class="block py-0.5 text-sm underline">Other transactions</a>
@@ -68,11 +67,20 @@
             </div>
         </div>
         {% endif %}
-        {% if owner_team %}
-        <a href="/teams/{{ owner_team.short_name|lower }}/" class="font-bold underline">My Team</a>
-        {% endif %}
         {% if user.is_authenticated %}
-        <a href="/accounts/logout/" class="underline">Log out</a>
+        <div class="nav-dropdown nav-dropdown-end">
+            <button type="button" class="underline" aria-haspopup="true" aria-label="Account">
+                {% if owner_team %}{{ owner_team.abbreviation|default:owner_team.short_name }}{% else %}Account{% endif %} ▼
+            </button>
+            <div class="nav-dropdown-panel">
+                {% if owner_team %}
+                <a href="/teams/{{ owner_team.short_name|lower }}/" class="block py-0.5 text-sm font-bold underline">My Team</a>
+                {% endif %}
+                <a href="/transactions/list/" class="block py-0.5 text-sm underline">My submissions</a>
+                <a href="{% url 'my_api_keys' %}" class="block py-0.5 text-sm underline">API keys</a>
+                <a href="/accounts/logout/" class="block py-0.5 text-sm underline">Log out</a>
+            </div>
+        </div>
         {% else %}
         <a href="/accounts/login/" class="underline">Log in</a>
         {% endif %}
@@ -94,8 +102,15 @@
         <a href="/players/search/" class="block underline">Players</a>
         {% if user.is_authenticated %}
         <a href="/transactions/form/" class="block underline">Submit a transaction</a>
-        <a href="/transactions/list/" class="block underline">My submissions</a>
-        <a href="/my/api-keys/" class="block underline">API keys</a>
+        <div>
+            <p class="mb-1 font-bold">Account</p>
+            {% if owner_team %}
+            <a href="/teams/{{ owner_team.short_name|lower }}/" class="block py-0.5 font-bold underline">My Team</a>
+            {% endif %}
+            <a href="/transactions/list/" class="block py-0.5 underline">My submissions</a>
+            <a href="{% url 'my_api_keys' %}" class="block py-0.5 underline">API keys</a>
+            <a href="/accounts/logout/" class="block py-0.5 underline">Log out</a>
+        </div>
         {% endif %}
         {% if user.is_staff %}
         <a href="/admin/npl/transactionproposal/" class="block underline">Review proposals</a>
@@ -113,13 +128,8 @@
             <label class="mb-1 block text-xs font-bold" for="mobile-search">Find a player</label>
             <input id="mobile-search" type="text" name="name" placeholder="find a player" class="w-full">
         </form>
-        <p>
-            {% if owner_team %}<a href="/teams/{{ owner_team.short_name|lower }}/" class="mr-4 font-bold underline">My Team</a>{% endif %}
-            {% if user.is_authenticated %}
-            <a href="/accounts/logout/" class="underline">Log out</a>
-            {% else %}
-            <a href="/accounts/login/" class="underline">Log in</a>
-            {% endif %}
-        </p>
+        {% if not user.is_authenticated %}
+        <a href="/accounts/login/" class="block underline">Log in</a>
+        {% endif %}
     </div>
 </div>

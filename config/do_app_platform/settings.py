@@ -35,9 +35,15 @@ DATABASE_URL = os.environ.get("DATABASE_URL", None)
 # runtime. During the image build it can be unset or an empty placeholder,
 # and parsing that crashes the buildpack's collectstatic step.
 _db_scheme = (DATABASE_URL or "").split("://", 1)[0]
+# ASGI gives each request its own thread and shuts that thread down when the
+# response is finished. A persistent connection is abandoned on the Postgres
+# side, and crawlers fill the reserved slots. The next request, including
+# the redirect after generating an API key, then fails with
+# "remaining connection slots are reserved". Close the connection at the end
+# of the request instead.
 if _db_scheme in {"postgres", "postgresql", "pgsql"}:
     DATABASES = {
-        "default": dj_database_url.parse(DATABASE_URL, conn_max_age=60),
+        "default": dj_database_url.parse(DATABASE_URL, conn_max_age=0),
     }
 
 STATIC_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_LOCATION}/"
