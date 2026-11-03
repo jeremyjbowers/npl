@@ -3,6 +3,7 @@
 import datetime
 import uuid
 
+from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from django.test import SimpleTestCase, TestCase
 
@@ -223,6 +224,9 @@ class BackfillTests(TestCase):
         call_command("backfill_trades")
         call_command("backfill_transaction_players")
         trade = Transaction.objects.get(raw_player="Aaron Judge", transaction_type=self.trade_type).trade
+        self.client.force_login(
+            get_user_model().objects.create_user(email="backfill@example.com", password="secret")
+        )
 
         page = self.client.get(f"/players/{self.judge.mlb_id}/")
         self.assertContains(page, "Transactions")

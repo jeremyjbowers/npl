@@ -5,6 +5,7 @@ from datetime import date, timedelta
 from types import SimpleNamespace
 
 import pytz
+from django.contrib.auth import get_user_model
 from django.test import SimpleTestCase, TestCase
 from django.utils import timezone
 
@@ -88,6 +89,10 @@ class WeekGroupingTests(SimpleTestCase):
 
 
 class DeadlineCollectorTests(TestCase):
+    def setUp(self):
+        user = get_user_model().objects.create_user(email="home@example.com", password="secret")
+        self.client.force_login(user)
+
     def test_past_season_date_is_omitted_and_future_ifa_deadline_is_included(self):
         today = date(2026, 6, 1)
         Season.objects.create(

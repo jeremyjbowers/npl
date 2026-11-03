@@ -114,6 +114,7 @@ class ProposalServiceTests(TestCase):
             last_name="Turner",
             team=self.team,
         )
+        self.client.force_login(self.user)
 
     def test_trade_requires_agreement(self):
         with self.assertRaises(TransactionError):
@@ -611,6 +612,7 @@ class ProposalRulesAndHintsTests(TestCase):
             roster_40man=True,
             options=1,
         )
+        self.client.force_login(self.user)
 
     def test_illegal_filings_are_rejected(self):
         stranger = Player.objects.create(
@@ -705,6 +707,9 @@ class ProposalRulesAndHintsTests(TestCase):
                 {"asset_type": "cash", "amount": 250_000},
             ],
         )
+        # A signed-in owner of another club can read the board without the
+        # "File a transaction" link that only the club's managers see.
+        self.client.force_login(self.other)
         page = self.client.get("/teams/rules/")
         self.assertEqual(page.status_code, 200)
         self.assertContains(page, "Pending trade")

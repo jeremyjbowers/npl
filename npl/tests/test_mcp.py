@@ -325,7 +325,10 @@ class McpReadApiTests(TestCase):
         body = auctions.json()["auctions"][0]
         self.assertEqual(body["my_bid"], 6)
         self.assertTrue(body["has_bids"])
-        self.assertNotIn("77", auctions.content.decode())
+        # Blind auctions publish my_bid only. Other clubs' amounts stay hidden.
+        self.assertNotIn(77, body.values())
+        self.assertNotIn("amount", body)
+        self.assertNotIn("bids", body)
 
         books = self._get("/api/mcp/v1/ledger/?year=2026", self.raw)
         self.assertEqual(books.json()["entries"][0]["amount"], 125000)

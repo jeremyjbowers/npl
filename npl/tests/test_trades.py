@@ -91,6 +91,7 @@ class PostedTradeTests(TestCase):
         )
         self.user.is_staff = True
         self.user.save(update_fields=["is_staff"])
+        self.client.force_login(self.user)
 
     def test_posting_a_trade_creates_one_parent_over_the_receipts(self):
         proposal = create_proposal(
