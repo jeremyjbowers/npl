@@ -133,7 +133,9 @@ def money_moves(code, team, assets, contract_terms=None):
         if bonus and team is not None:
             moves.append((team.id, "ifa", -bonus))
     # A release and an amnesty both take the salary off the books. Amnesty
-    # does not add a penalty on top of voiding the contract.
+    # does not add a penalty on top of voiding the contract. A nontender
+    # absolves the salary the same way: the obligation returns to cap space,
+    # and there is no cash charge. NPL Rules 8.4.2.
     if code in ("release", "contract_amnesty", "non_tender") and team is not None:
         for asset in assets:
             player = asset.get("player")

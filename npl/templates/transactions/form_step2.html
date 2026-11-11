@@ -84,6 +84,14 @@
         <ul class="mt-1 list-disc pl-5">
             <li>A foreign-list assignment needs a link showing the player is playing in a foreign league.</li>
         </ul>
+        {% elif transaction_type == 'non_tender' %}
+        <h2 class="font-bold">Non-tender</h2>
+        <ul class="mt-1 list-disc pl-5">
+            <li>Offseason only. A nontender during the season is turned away.</li>
+            <li>Arbitration or pre-arbitration contracts only. A guaranteed contract, including an extension, cannot be nontendered.</li>
+            <li>The player becomes a free agent. There is no salary-cap or cash cost, and the salary obligation comes off the books.</li>
+            <li>Doing nothing tenders the player. After the nontender deadline, file a release. That release can include termination pay.</li>
+        </ul>
         {% elif transaction_type == 'purchase_contract' %}
         <h2 class="font-bold">Purchase contract</h2>
         <ul class="mt-1 list-disc pl-5">

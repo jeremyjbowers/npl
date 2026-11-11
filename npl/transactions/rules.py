@@ -12,7 +12,16 @@ from django.conf import settings
 from django.utils import timezone
 
 from npl import models
-from npl.sheetload import OPTION_CLASSES, cash_is_overdrawn, settle_books
+from npl.sheetload import (
+    ARBITRATION,
+    GUARANTEED,
+    OPTION_CLASSES,
+    PRE_ARB_0,
+    PRE_ARB_1,
+    PRE_ARB_2,
+    cash_is_overdrawn,
+    settle_books,
+)
 from npl.transactions.coverage import iter_payer_ids, problems_for_trade
 from npl.transactions.pending import (
     FORTY_MAN_ADDS,
@@ -48,6 +57,9 @@ MUST_BE_ON_CLUB = {
 }
 
 FREE_AGENT_SIGNINGS = {"mlb_signing", "in_season_fa", "minor_signing", "ifa_signing"}
+
+# Sections 5.1 and 5.3. An extension is guaranteed salary and cannot be nontendered.
+TENDER_CLASSES = {ARBITRATION, PRE_ARB_0, PRE_ARB_1, PRE_ARB_2}
 
 IL_ALREADY = {
     "il_7": "roster_7dayIL",
@@ -434,6 +446,8 @@ def _published_rules(team, code, assets, players, on_date, contract_terms=None, 
                 problems.append(
                     f"{player.name} is on the injured list and cannot be sent to the minors. NPL Rules 8.2."
                 )
+    if code == "non_tender":
+        problems.extend(_nontender_contract(team, players))
     if code == "rule5_draft":
         forty = models.Player.objects.filter(team=team, roster_40man=True).count()
         if forty >= 40:
@@ -455,6 +469,44 @@ def _published_rules(team, code, assets, players, on_date, contract_terms=None, 
                 problems.append(
                     f"{giver.short_name} does not have ${amount:,} of carried salary on the books. NPL Rules 8.7.5.2.4."
                 )
+    return problems
+
+
+def _nontender_contract(team, players):
+    """Arbitration and pre-arbitration only. A guaranteed deal stays on the books.
+
+    NPL Rules 8.4.2, 5.1, and 5.3. Missing contract years are left for directors.
+    """
+    problems = []
+    for player in players:
+        if not (player.roster_40man or player.roster_outrighted):
+            problems.append(
+                f"{player.name} is not on the 40-man or assigned outright. "
+                "A nontender is for an arbitration or pre-arbitration contract. NPL Rules 8.4.2."
+            )
+            continue
+        years = list(
+            models.ContractYear.objects.filter(
+                contract__player=player,
+                contract__team_id=team.id,
+                year__gte=settings.LEAGUE_YEAR,
+            ).order_by("year")
+        )
+        if not years:
+            continue
+        if any(year.salary_class == GUARANTEED for year in years):
+            problems.append(
+                f"{player.name} has a guaranteed contract and cannot be nontendered. "
+                "An extension is guaranteed salary. NPL Rules 8.4.2."
+            )
+            continue
+        earliest = years[0]
+        if earliest.salary_class not in TENDER_CLASSES:
+            label = earliest.salary_label or earliest.salary_class
+            problems.append(
+                f"{player.name} is not on an arbitration or pre-arbitration contract ({label}). "
+                "NPL Rules 8.4.2."
+            )
     return problems
 
 

@@ -118,6 +118,10 @@ KINDS = {
 }
 
 KINDS["contract_amnesty"]["effect"] = "Dropped without penalty. The contract is voided."
+KINDS["non_tender"]["effect"] = (
+    "Offseason only. Arbitration or pre-arbitration, not a guaranteed contract. "
+    "The club is absolved of the salary. There is no cap or cash cost."
+)
 
 # Lowercased labels from the 2025 and 2026 transaction tabs.
 SHEET_ALIASES = {
@@ -190,6 +194,7 @@ FORM_TYPE_TO_CODE = {
     "purchase_contract": "purchase_contract",
     "recall_option": "recall_option",
     "release_player": "release",
+    "non_tender": "non_tender",
     "waiver_request": "waiver_request_outright",
     "waiver_claim": "waiver_claimed",
     "restricted_list": "restricted_place",

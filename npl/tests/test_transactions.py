@@ -614,6 +614,107 @@ class ProposalRulesAndHintsTests(TestCase):
         )
         self.client.force_login(self.user)
 
+    def test_nontender_follows_the_rule_guide(self):
+        from npl.forms import NonTenderForm
+        from npl.models import Contract, ContractYear, Season
+        from npl.sheetload import ARBITRATION, GUARANTEED, PRE_ARB_0
+        from npl.transactions.pending import money_moves
+
+        Season.objects.create(year=2026, phase=Season.OFFSEASON, is_current=True)
+        menu = self.client.get("/transactions/form/")
+        self.assertContains(menu, 'href="/transactions/form/step2/?type=non_tender"')
+        self.assertContains(menu, "Non-Tender")
+        page = self.client.get("/transactions/form/step2/?type=non_tender")
+        self.assertContains(page, "Offseason only")
+        self.assertContains(page, "no salary-cap or cash cost")
+
+        def contract(player, year, salary_class, amount=760_000):
+            deal = Contract.objects.create(player=player, team=self.team, total_years=1, total_amount=amount)
+            ContractYear.objects.create(contract=deal, year=year, amount=amount, salary_class=salary_class)
+
+        contract(self.player, 2026, ARBITRATION, 2_400_000)
+        proposal = create_proposal(
+            user=self.user,
+            team=self.team,
+            code="non_tender",
+            assets=[{"asset_type": "player", "player": self.player}],
+        )
+        self.assertEqual(proposal.kind, "non_tender")
+        moves = money_moves(
+            "non_tender",
+            self.team,
+            [{"asset_type": "player", "player": self.player}],
+        )
+        self.assertIn((self.team.id, "cap", 2_400_000), moves)
+        self.assertFalse(any(field == "cash" for _team, field, _delta in moves))
+
+        guaranteed = Player.objects.create(
+            mlb_id="200010",
+            name="Extended Player",
+            first_name="Extended",
+            last_name="Player",
+            team=self.team,
+            roster_40man=True,
+        )
+        contract(guaranteed, 2026, ARBITRATION, 900_000)
+        contract(guaranteed, 2027, GUARANTEED, 8_000_000)
+        with self.assertRaises(TransactionError) as extended:
+            create_proposal(
+                user=self.user,
+                team=self.team,
+                code="non_tender",
+                assets=[{"asset_type": "player", "player": guaranteed}],
+            )
+        self.assertIn("guaranteed", str(extended.exception))
+        self.assertIn("8.4.2", str(extended.exception))
+
+        minor = Player.objects.create(
+            mlb_id="200011",
+            name="Farm Player",
+            first_name="Farm",
+            last_name="Player",
+            team=self.team,
+            roster_doubleA=True,
+        )
+        with self.assertRaises(TransactionError) as farm:
+            create_proposal(
+                user=self.user,
+                team=self.team,
+                code="non_tender",
+                assets=[{"asset_type": "player", "player": minor}],
+            )
+        self.assertIn("8.4.2", str(farm.exception))
+
+        outright = Player.objects.create(
+            mlb_id="200012",
+            name="Outright Player",
+            first_name="Outright",
+            last_name="Player",
+            team=self.team,
+            roster_outrighted=True,
+        )
+        contract(outright, 2026, PRE_ARB_0, 760_000)
+
+        form = NonTenderForm(user=self.user)
+        ids = set(form.fields["player"].queryset.values_list("mlb_id", flat=True))
+        self.assertIn(self.player.mlb_id, ids)
+        self.assertIn(outright.mlb_id, ids)
+        self.assertNotIn(minor.mlb_id, ids)
+
+        posted = self.client.post(
+            "/transactions/form/step2/?type=non_tender",
+            {"team": str(self.team.id), "player": outright.mlb_id, "notes": ""},
+        )
+        self.assertEqual(posted.status_code, 302, posted.content[:800])
+        kept = TransactionProposal.objects.get(assets__player=outright)
+        self.assertEqual(kept.kind, "non_tender")
+        refused = self.client.post(
+            "/transactions/form/step2/?type=non_tender",
+            {"team": str(self.team.id), "player": guaranteed.mlb_id, "notes": ""},
+        )
+        self.assertEqual(refused.status_code, 200)
+        self.assertContains(refused, "guaranteed contract")
+
     def test_illegal_filings_are_rejected(self):
         stranger = Player.objects.create(
             mlb_id="200002",
@@ -782,6 +883,9 @@ class ProposalRulesAndHintsTests(TestCase):
         with self.assertRaises(TransactionError) as option:
             filing(code="option_minors")
         self.assertIn("8.3.2.1", str(option.exception))
+
+        tendered = filing(code="non_tender")
+        self.assertEqual(tendered.kind, "non_tender")
 
         season.phase = Season.REGULAR
         season.save(update_fields=["phase"])

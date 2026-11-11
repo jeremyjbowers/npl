@@ -44,6 +44,11 @@ TRANSACTION_MENU = (
                 "label": "Offseason Transactions",
                 "hint": "A spring invitation, or a signing, trade, or extension written out as one note.",
             },
+            {
+                "code": "non_tender",
+                "label": "Non-Tender",
+                "hint": "Offseason only. Decline to tender an arbitration or pre-arbitration contract. A guaranteed contract cannot be nontendered, and there is no cap or cash cost.",
+            },
         ),
     },
     {
@@ -475,6 +480,40 @@ class ReleasePlayerForm(BaseTransactionForm):
         }),
         label="Reason",
         help_text="Explain the reason for the release"
+    )
+
+
+class NonTenderForm(BaseTransactionForm):
+    """Offseason nontender of an arbitration or pre-arbitration contract.
+
+    NPL Rules 8.4.2, 5.1, and 5.3. A guaranteed contract, including an
+    extension, cannot be nontendered. There is no cap or cash cost.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setup_player_field(
+            label="Player",
+            help_text="Arbitration or pre-arbitration player on the 40-man or assigned outright. A guaranteed contract cannot be nontendered.",
+        )
+
+    def get_player_queryset(self):
+        if self.user_team:
+            return Player.objects.filter(team=self.user_team, active=True).filter(
+                Q(roster_40man=True) | Q(roster_outrighted=True)
+            )
+        return Player.objects.none()
+
+    notes = forms.CharField(
+        required=False,
+        max_length=500,
+        widget=forms.Textarea(attrs={
+            "class": "textarea",
+            "rows": 3,
+            "placeholder": "Optional note",
+        }),
+        label="Notes",
+        help_text="Doing nothing tenders the player. After the nontender deadline, file a release instead.",
     )
 
 
@@ -1016,6 +1055,7 @@ TRANSACTION_FORM_MAP = {
     'purchase_contract': PurchaseContractForm,
     'recall_option': RecallOptionForm,
     'release_player': ReleasePlayerForm,
+    'non_tender': NonTenderForm,
     'waiver_request': WaiverRequestForm,
     'waiver_claim': WaiverClaimForm,
     'limbo_assignment': LimboAssignmentForm,
