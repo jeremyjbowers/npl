@@ -24,6 +24,7 @@ The form covers:
 
 - Trades. Any number of clubs can be in one trade. The filing is the list of pieces, and each piece says who gives it and who gets it.
 - Signings: offseason MLB (points), in-season free agent (dollars, one year), minor-league contract, extension, and IFA
+- Non-tender of an arbitration or pre-arbitration contract (offseason only; no cap or cash cost)
 - Offseason transactions
 - Injured list (7-day, 56-day, end of season, COVID, a move between lists, and activation)
 - Option to the minors, recall, and purchase of a contract
@@ -75,7 +76,7 @@ Section 8 of the rules also blocks a filing before it is stored, and the message
 
 - Injured-list placement in the offseason, a backdated IL date, or a 56-day IL when the 40-man is not full (8.2, 8.2.1).
 - An option in September or the offseason, or of a player who is on the injured list (8.3.2.1, 8.2).
-- A nontender during the season (8.4.2).
+- A nontender during the season, of a guaranteed contract, or of a player who is not on an arbitration or pre-arbitration contract (8.4.2, 5.1, 5.3).
 - A major-league contract traded in the postseason (8.7.2). Directors set that phase when the July 31 deadline passes, and move back to the offseason after the World Series.
 - A draft pick more than one draft ahead, or a 40-man player named as the player to be named later (8.7.1). Cap space, cash, IFA dollars, and coverage of a named player's salary can be traded. Coverage of one year cannot go past that year's salary.
 - Outright waivers for a player who is not on the 40-man (8.8.2.1).

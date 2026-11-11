@@ -1830,6 +1830,7 @@ class TransactionSubmission(BaseModel):
             'purchase_contract': 'Purchase a Contract',
             'recall_option': 'Recall an Option',
             'release_player': 'Release Player',
+            'non_tender': 'Non-Tender',
             'waiver_request': 'Waiver Request',
             'waiver_claim': 'Waiver Claim',
             'limbo_assignment': 'In Limbo Assignment',
