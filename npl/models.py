@@ -793,6 +793,14 @@ class PlayerStatSeason(BaseModel):
 
     player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="stat_seasons")
     season = models.IntegerField()
+    team = models.ForeignKey(
+        Team,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="player_seasons",
+        help_text="The NPL club for a simulated line. MLB lines leave this empty.",
+    )
     is_career = models.BooleanField(default=False)
     classification = models.CharField(max_length=255, blank=True, default="")
     level = models.CharField(max_length=255, blank=True, default="")
@@ -814,8 +822,9 @@ class PlayerStatSeason(BaseModel):
         ordering = ["-season", "classification"]
         constraints = [
             models.UniqueConstraint(
-                fields=["player", "season", "classification", "is_career"],
+                fields=["player", "season", "classification", "is_career", "team"],
                 name="npl_stat_season_player_year_class",
+                nulls_distinct=False,
             )
         ]
         indexes = [

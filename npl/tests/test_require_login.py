@@ -24,6 +24,8 @@ class RequireLoginTests(TestCase):
         for path in (
             "/",
             "/teams/gates/",
+            "/schedule/",
+            "/leaders/",
             "/players/search/",
             "/auctions/",
             "/transactions/",

@@ -45,6 +45,7 @@
             </div>
 
             <a href="{% url 'schedule' %}" class="underline">Schedule</a>
+            <a href="{% url 'leaders' %}" class="underline">Leaders</a>
             <a href="https://docs.google.com/spreadsheets/d/1On6uRXLRQ3pzl2FHYRgWKCedsCdl6UNbNaSF6pwlGiw/" class="underline">Rosters</a>
             <a href="https://npldash.onrender.com/" class="underline">Season Stats</a>
             <a href="/players/search/" class="underline">Players</a>
@@ -103,6 +104,7 @@
         <a href="/transactions/other/" class="block underline">Other transactions</a>
         <a href="/transactions/roundup/" class="block underline">Roster check</a>
         <a href="{% url 'schedule' %}" class="block underline">Schedule</a>
+        <a href="{% url 'leaders' %}" class="block underline">Leaders</a>
         <a href="/players/search/" class="block underline">Players</a>
         {% if user.is_authenticated %}
         <a href="/transactions/form/" class="block underline">Submit a transaction</a>

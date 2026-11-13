@@ -6,6 +6,7 @@ franchise sheet and is left alone.
 """
 
 from django.db import transaction
+from django.db.models import Q
 
 from npl import models
 from npl.game_models import NPL_SIM
@@ -60,14 +61,14 @@ def _totals(season):
         for side, team_id, scored, allowed in sides:
             block = box.get(side) or {}
             for line in block.get("batting") or []:
-                row = _player(batting, line.get("player_id"), BATTING_KEYS)
+                row = _player(batting, line.get("player_id"), team_id, BATTING_KEYS)
                 if row is None:
                     continue
                 row["g"] += 1
                 for key in BATTING_KEYS:
                     row[key] += int(line.get(key) or 0)
             for index, line in enumerate(block.get("pitching") or []):
-                row = _player(pitching, line.get("player_id"), PITCHING_KEYS)
+                row = _player(pitching, line.get("player_id"), team_id, PITCHING_KEYS)
                 if row is None:
                     continue
                 row["g"] += 1
@@ -82,47 +83,82 @@ def _totals(season):
                 record["wins"] += 1
             elif scored < allowed:
                 record["losses"] += 1
-        for key, label in (("win_id", "w"), ("loss_id", "l"), ("save_id", "sv")):
-            player_id = box.get(key)
-            row = _player(pitching, player_id, PITCHING_KEYS)
-            if row is not None:
-                row[label] += 1
+        if game.road_score > game.home_score:
+            win_team, loss_team = game.series.road_team_id, game.series.home_team_id
+        elif game.home_score > game.road_score:
+            win_team, loss_team = game.series.home_team_id, game.series.road_team_id
+        else:
+            win_team = loss_team = None
+        if win_team:
+            for key, label, club_id in (
+                ("win_id", "w", win_team),
+                ("loss_id", "l", loss_team),
+                ("save_id", "sv", win_team),
+            ):
+                row = _player(pitching, box.get(key), club_id, PITCHING_KEYS)
+                if row is not None:
+                    row[label] += 1
     return {"batting": batting, "pitching": pitching, "teams": teams}
 
 
-def _player(store, player_id, keys):
-    if not player_id:
+def _player(store, player_id, team_id, keys):
+    if not player_id or not team_id:
         return None
-    row = store.get(player_id)
+    key = (player_id, team_id)
+    row = store.get(key)
     if row is None:
         row = {key: 0 for key in keys}
         row["g"] = 0
-        store[player_id] = row
+        store[key] = row
     return row
 
 
 def _write_players(season, totals):
     played = set(totals["batting"]) | set(totals["pitching"])
     existing = models.PlayerStatSeason.objects.filter(season=season.year, classification=NPL_SIM, is_career=False)
-    deleted, _ = existing.exclude(player_id__in=played).delete()
-    known = set(models.Player.objects.filter(mlb_id__in=played).values_list("mlb_id", flat=True))
+    known = set(
+        models.Player.objects.filter(mlb_id__in={player_id for player_id, _team_id in played}).values_list("mlb_id", flat=True)
+    )
+    played = {key for key in played if key[0] in known}
+    if played:
+        keep = Q()
+        for player_id, team_id in played:
+            keep |= Q(player_id=player_id, team_id=team_id)
+        deleted, _ = existing.exclude(keep).delete()
+    else:
+        deleted, _ = existing.delete()
+        return 0, deleted
+    clubs = {team.pk: team for team in models.Team.objects.filter(pk__in={team_id for _player_id, team_id in played})}
     written = 0
-    for player_id in played & known:
+    for player_id, team_id in played:
+        team = clubs.get(team_id)
+        if team is None:
+            continue
         models.PlayerStatSeason.objects.update_or_create(
             player_id=player_id,
             season=season.year,
             classification=NPL_SIM,
             is_career=False,
+            team_id=team_id,
             defaults={
                 "level": "NPL",
                 "is_mlb": False,
                 "minors": False,
-                "hit_stats": _hit_stats(totals["batting"].get(player_id)),
-                "pitch_stats": _pitch_stats(totals["pitching"].get(player_id)),
+                "hit_stats": _stamp(_hit_stats(totals["batting"].get((player_id, team_id))), team),
+                "pitch_stats": _stamp(_pitch_stats(totals["pitching"].get((player_id, team_id))), team),
             },
         )
         written += 1
     return written, deleted
+
+
+def _stamp(stats, team):
+    if not stats:
+        return None
+    stats["team"] = team.abbreviation or team.short_name or ""
+    stats["team_short"] = (team.short_name or "").lower()
+    stats["team_id"] = team.pk
+    return stats
 
 
 def _write_teams(season, totals):
@@ -179,6 +215,8 @@ def _hit_stats(row):
     stats["babip"] = _ratio(row["h"] - row["hr"], balls)
     stats["k_pct"] = None if not row["pa"] else round(100.0 * row["k"] / row["pa"], 1)
     stats["bb_pct"] = None if not row["pa"] else round(100.0 * row["bb"] / row["pa"], 1)
+    if stats["avg"] is not None and stats["slg"] is not None:
+        stats["iso"] = stats["slg"] - stats["avg"]
     return stats
 
 

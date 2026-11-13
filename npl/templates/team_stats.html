@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% load npl_tags %}
+
+{% block title %}{{ team.abbreviation }} {{ year }} stats — The NPL{% endblock %}
+
+{% block content %}
+<h1 class="mb-2 text-2xl font-bold">
+    {% if team.short_name %}<a href="/teams/{{ team.short_name|lower }}/">{{ team.name }}</a>{% else %}{{ team.name }}{% endif %}
+</h1>
+<p class="mb-4 text-xs">
+    {{ year }} simulated stats
+    {% if record %} · {{ record.wins }}–{{ record.losses }}, {{ record.runs_scored }} runs scored, {{ record.runs_allowed }} allowed{% endif %}
+    · <a href="{% url 'team_schedule_year' team.short_name|lower year %}">Schedule</a>
+    · <a href="{% url 'leaders_year' year %}">Leaders</a>
+</p>
+
+<h2 class="mb-2 text-lg font-bold">Hitting</h2>
+{% if not hitters %}
+<p class="mb-6">No hitting lines for {{ year }}.</p>
+{% else %}
+<div class="mb-6 overflow-x-auto">
+    <table class="sheet">
+        <thead>
+            <tr>
+                <th>Player</th><th>G</th><th>PA</th><th>AB</th><th>R</th><th>H</th><th>2B</th><th>3B</th><th>HR</th><th>RBI</th><th>BB</th><th>K</th><th>AVG</th><th>OBP</th><th>SLG</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in hitters %}
+            <tr>
+                <td><a href="/players/{{ row.player.mlb_id }}/">{{ row.player.name }}</a></td>
+                <td>{{ row.stats.g }}</td>
+                <td>{{ row.stats.pa }}</td>
+                <td>{{ row.stats.ab }}</td>
+                <td>{{ row.stats.r }}</td>
+                <td>{{ row.stats.h }}</td>
+                <td>{{ row.stats.doubles }}</td>
+                <td>{{ row.stats.triples }}</td>
+                <td>{{ row.stats.hr }}</td>
+                <td>{{ row.stats.rbi }}</td>
+                <td>{{ row.stats.bb }}</td>
+                <td>{{ row.stats.k }}</td>
+                <td>{{ row.stats.avg|floatformat:3|kill_leading_zero }}</td>
+                <td>{{ row.stats.obp|floatformat:3|kill_leading_zero }}</td>
+                <td>{{ row.stats.slg|floatformat:3|kill_leading_zero }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<h2 class="mb-2 text-lg font-bold">Pitching</h2>
+{% if not pitchers %}
+<p>No pitching lines for {{ year }}.</p>
+{% else %}
+<div class="overflow-x-auto">
+    <table class="sheet">
+        <thead>
+            <tr>
+                <th>Player</th><th>W</th><th>L</th><th>SV</th><th>G</th><th>GS</th><th>IP</th><th>H</th><th>ER</th><th>BB</th><th>K</th><th>ERA</th><th>WHIP</th><th>K/9</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in pitchers %}
+            <tr>
+                <td><a href="/players/{{ row.player.mlb_id }}/">{{ row.player.name }}</a></td>
+                <td>{{ row.stats.w }}</td>
+                <td>{{ row.stats.l }}</td>
+                <td>{{ row.stats.sv }}</td>
+                <td>{{ row.stats.g }}</td>
+                <td>{{ row.stats.gs }}</td>
+                <td>{{ row.stats.ip_display }}</td>
+                <td>{{ row.stats.h }}</td>
+                <td>{{ row.stats.er }}</td>
+                <td>{{ row.stats.bb }}</td>
+                <td>{{ row.stats.k }}</td>
+                <td>{{ row.stats.era|floatformat:2 }}</td>
+                <td>{{ row.stats.whip|floatformat:2 }}</td>
+                <td>{{ row.stats.k_9|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+{% endblock %}

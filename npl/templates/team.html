@@ -45,8 +45,10 @@
         <p class="mt-2 text-xs text-gray-600">Grey rows are in a proposal that has not been processed. They stay on the club until Monday.</p>
         {% endif %}
         <p class="mt-2 text-xs">
-            <a class="underline" href="{% url 'schedule' %}">Schedule</a>
+            <a class="underline" href="{% url 'schedule' %}">League schedule</a>
             {% if team.short_name %}
+            · <a class="underline" href="{% url 'team_schedule' team.short_name|lower %}">Schedule</a>
+            · <a class="underline" href="{% url 'team_stats' team.short_name|lower %}">Stats</a>
             · <a class="underline" href="{% url 'team_cards' team.short_name|lower %}">Week cards</a>
             {% if viewer_owns %}· <a class="underline" href="{% url 'team_lineup' team.short_name|lower %}">This week's card</a>{% endif %}
             {% endif %}

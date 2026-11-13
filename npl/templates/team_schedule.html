@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}{{ team.abbreviation }} {{ year }} schedule — The NPL{% endblock %}
+
+{% block content %}
+<h1 class="mb-2 text-2xl font-bold">
+    {% if team.short_name %}<a href="/teams/{{ team.short_name|lower }}/">{{ team.name }}</a>{% else %}{{ team.name }}{% endif %}
+</h1>
+<p class="mb-4 text-xs">
+    {{ year }} schedule
+    {% if record %} · {{ record.wins }}–{{ record.losses }}{% endif %}
+    · <a href="{% url 'team_stats_year' team.short_name|lower year %}">Stats</a>
+    · <a href="{% url 'schedule_year' year %}">League schedule</a>
+</p>
+{% if not rows %}
+<p>No series are drawn for {{ team.abbreviation }} in {{ year }}.</p>
+{% else %}
+<table class="sheet">
+    <thead><tr><th>Week</th><th></th><th>Opponent</th><th>Series</th><th>Games</th></tr></thead>
+    <tbody>
+        {% for row in rows %}
+        <tr>
+            <td><a href="{% url 'schedule_year' year %}#week-{{ row.week.number }}">{{ row.week.number }}</a></td>
+            <td>{% if row.home %}Home{% else %}Road{% endif %}</td>
+            <td>
+                {% if row.opponent.short_name %}
+                <a href="{% url 'team_schedule_year' row.opponent.short_name|lower year %}">{{ row.opponent.abbreviation }}</a>
+                {% else %}{{ row.opponent.abbreviation }}{% endif %}
+            </td>
+            <td><a href="{% url 'series_detail' row.series.pk %}">{{ row.wins }}–{{ row.losses }}</a></td>
+            <td>
+                {% for game in row.games %}
+                {% if game.played %}
+                <a href="{% url 'week_game' game.game.pk %}">{{ game.ours }}–{{ game.theirs }}</a>
+                {% else %}
+                <a href="{% url 'week_game' game.game.pk %}">G{{ game.game.number }}</a>
+                {% endif %}{% if not forloop.last %} {% endif %}
+                {% endfor %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+{% endblock %}

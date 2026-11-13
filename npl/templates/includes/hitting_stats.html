@@ -7,6 +7,7 @@
             <thead>
                 <tr>
                     <th scope="col">Year</th>
+                    <th scope="col">Club</th>
                     <th scope="col">Level</th>
                     <th scope="col">PA</th>
                     <th scope="col">wRC+</th>
@@ -27,6 +28,7 @@
                 {% for stat in p.hit_stats reversed %}
                 <tr{% if stat.level|upper == "MLB" %} class="majors"{% endif %}>
                     <td>{{ stat.year }}</td>
+                    <td>{% if stat.team_short %}<a href="{% url 'team_stats_year' stat.team_short stat.year %}">{{ stat.team }}</a>{% else %}—{% endif %}</td>
                     <td>{{ stat.level|upper }}</td>
                     <td>{{ stat.plate_appearances }}</td>
                     <td>{{ stat.wrc_plus|floatformat:0 }}</td>

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}{{ year }} leaders — The NPL{% endblock %}
+
+{% block content %}
+<h1 class="mb-2 text-2xl font-bold">{{ year }} leaders</h1>
+<p class="mb-4 text-xs">
+    Counting and rate leaders from the simulated season.
+    <a href="{% url 'schedule_year' year %}">Schedule</a>
+</p>
+
+<h2 class="mb-2 text-lg font-bold">Hitting</h2>
+{% include "includes/leader_boards.html" with boards=hitting empty="No hitting lines for this season." %}
+
+<h2 class="mb-2 mt-6 text-lg font-bold">Pitching</h2>
+{% include "includes/leader_boards.html" with boards=pitching empty="No pitching lines for this season." %}
+{% endblock %}

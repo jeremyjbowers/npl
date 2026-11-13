@@ -1,0 +1,33 @@
+{% if not boards %}
+<p class="mb-4 text-xs">{{ empty }}</p>
+{% endif %}
+<div class="mb-4 grid gap-4 md:grid-cols-2">
+    {% for board in boards %}
+    <section>
+        <h3 class="font-bold">{{ board.title }}</h3>
+        {% if board.qualified %}<p class="mb-1 text-xs">{{ board.minimum }}</p>{% endif %}
+        {% if not board.rows %}
+        <p class="mb-2 text-xs">Nobody qualifies yet.</p>
+        {% else %}
+        <table class="sheet mb-2">
+            <thead><tr><th></th><th>Player</th><th>Club</th><th></th><th></th></tr></thead>
+            <tbody>
+                {% for row in board.rows %}
+                <tr>
+                    <td>{{ row.rank }}</td>
+                    <td><a href="/players/{{ row.player.mlb_id }}/">{{ row.player.name }}</a></td>
+                    <td>
+                        {% if row.team and row.team.short_name %}
+                        <a href="{% url 'team_stats_year' row.team.short_name|lower year %}">{{ row.team.abbreviation }}</a>
+                        {% else %}—{% endif %}
+                    </td>
+                    <td>{{ row.value }}</td>
+                    <td>{{ row.sample }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </section>
+    {% endfor %}
+</div>

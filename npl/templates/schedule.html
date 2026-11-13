@@ -1,27 +1,75 @@
 {% extends "base.html" %}
 
-{% block title %}Schedule — The NPL{% endblock %}
+{% block title %}{{ year }} schedule — The NPL{% endblock %}
 
 {% block content %}
-<h1 class="mb-2 text-2xl font-bold">Schedule{% if year %} {{ year }}{% endif %}</h1>
+<h1 class="mb-2 text-2xl font-bold">{{ year }} schedule</h1>
 <p class="mb-4 text-xs">Each week is one series of six games. Instructions are due Monday. The games are simulated together Sunday, and the box score is the record.</p>
 {% if not weeks %}
-<p>No schedule has been drawn{% if year %} for {{ year }}{% endif %}.</p>
+<p>No schedule has been drawn for {{ year }}.</p>
 {% else %}
+<p class="mb-4 text-xs">
+    {% for group in weeks %}
+    <a href="#week-{{ group.week.number }}">{{ group.week.number }}</a>{% if not forloop.last %} · {% endif %}
+    {% endfor %}
+</p>
+
+{% if divisions %}
+<h2 class="mb-2 text-lg font-bold">Standings</h2>
+<div class="mb-6 grid gap-4 md:grid-cols-2">
+    {% for division in divisions %}
+    <section>
+        <h3 class="mb-1 font-bold">{{ division.name }}</h3>
+        <table class="sheet">
+            <thead>
+                <tr><th>Club</th><th>W</th><th>L</th><th>GB</th><th>RS</th><th>RA</th><th>Diff</th></tr>
+            </thead>
+            <tbody>
+                {% for row in division.rows %}
+                <tr{% if row.team.id == owner_team_id %} class="font-bold"{% endif %}>
+                    <td>
+                        {% if row.team.short_name %}
+                        <a href="{% url 'team_schedule_year' row.team.short_name|lower year %}">{{ row.team.abbreviation }}</a>
+                        {% else %}{{ row.team.abbreviation }}{% endif %}
+                    </td>
+                    <td>{{ row.wins }}</td>
+                    <td>{{ row.losses }}</td>
+                    <td>{{ row.behind }}</td>
+                    <td>{{ row.runs_scored }}</td>
+                    <td>{{ row.runs_allowed }}</td>
+                    <td>{{ row.diff }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+    {% endfor %}
+</div>
+{% endif %}
+
 {% for group in weeks %}
 <section class="mb-6" id="week-{{ group.week.number }}">
     <h2 class="mb-1 text-lg font-bold">
         Week {{ group.week.number }} · {{ group.week.get_kind_display }}
+        {% if today >= group.week.lineup_due and today <= group.week.simulated_on %}· this week{% endif %}
     </h2>
     <p class="mb-2 text-xs">Due {{ group.week.lineup_due|date:"l, N j" }} · simulated {{ group.week.simulated_on|date:"l, N j" }}</p>
     <table class="sheet">
-        <thead><tr><th>Road</th><th>Home</th><th></th></tr></thead>
+        <thead><tr><th>Road</th><th>Home</th><th>Series</th></tr></thead>
         <tbody>
             {% for series in group.series %}
             <tr>
-                <td {% if series.road_team_id == owner_team_id %}class="font-bold"{% endif %}>{{ series.road_team.abbreviation }}</td>
-                <td {% if series.home_team_id == owner_team_id %}class="font-bold"{% endif %}>{{ series.home_team.abbreviation }}</td>
-                <td><a href="{% url 'series_detail' series.pk %}">Series</a></td>
+                <td {% if series.road_team_id == owner_team_id %}class="font-bold"{% endif %}>
+                    {% if series.road_team.short_name %}<a href="{% url 'team_schedule_year' series.road_team.short_name|lower year %}">{{ series.road_team.abbreviation }}</a>{% else %}{{ series.road_team.abbreviation }}{% endif %}
+                </td>
+                <td {% if series.home_team_id == owner_team_id %}class="font-bold"{% endif %}>
+                    {% if series.home_team.short_name %}<a href="{% url 'team_schedule_year' series.home_team.short_name|lower year %}">{{ series.home_team.abbreviation }}</a>{% else %}{{ series.home_team.abbreviation }}{% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'series_detail' series.pk %}">
+                        {% if series.played %}{{ series.road_team.abbreviation }} {{ series.road_wins }}, {{ series.home_team.abbreviation }} {{ series.home_wins }}{% else %}Series{% endif %}
+                    </a>
+                </td>
             </tr>
             {% endfor %}
         </tbody>
