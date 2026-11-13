@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Game {{ game.number }} — The NPL{% endblock %}
+
+{% block content %}
+<p class="mb-2 text-xs"><a href="{% url 'series_detail' series.pk %}">Week {{ series.week.number }}</a></p>
+<h1 class="mb-2 text-2xl font-bold">{{ series.road_team.name }} at {{ series.home_team.name }}</h1>
+<p class="mb-4 text-xs">Game {{ game.number }} of 6 · simulated {{ series.week.simulated_on|date:"l, N j" }}</p>
+
+{% if game.is_played %}
+<p class="mb-4 text-lg font-bold">{{ series.road_team.abbreviation }} {{ game.road_score }}, {{ series.home_team.abbreviation }} {{ game.home_score }}</p>
+{% if box.line %}
+<table class="sheet mb-4">
+    <thead>
+        <tr>
+            <th></th>
+            {% for runs in box.line.away %}<th>{{ forloop.counter }}</th>{% endfor %}
+            <th>R</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>{{ series.road_team.abbreviation }}</td>
+            {% for runs in box.line.away %}<td>{{ runs }}</td>{% endfor %}
+            <td>{{ game.road_score }}</td>
+        </tr>
+        <tr>
+            <td>{{ series.home_team.abbreviation }}</td>
+            {% for runs in box.line.home %}<td>{{ runs }}</td>{% endfor %}
+            <td>{{ game.home_score }}</td>
+        </tr>
+    </tbody>
+</table>
+{% endif %}
+{% if box.win or box.loss or box.save %}
+<p class="mb-4 text-xs">
+    {% if box.win %}W {{ box.win }}{% endif %}
+    {% if box.loss %} · L {{ box.loss }}{% endif %}
+    {% if box.save %} · S {{ box.save }}{% endif %}
+</p>
+{% endif %}
+<div class="plan-columns two">
+    {% include "includes/box_side.html" with club=series.road_team side=box.away %}
+    {% include "includes/box_side.html" with club=series.home_team side=box.home %}
+</div>
+{% else %}
+<p class="note">This game is not played one plate appearance at a time. Sunday's batch simulates the week, and the box score lands here.</p>
+{% endif %}
+{% endblock %}

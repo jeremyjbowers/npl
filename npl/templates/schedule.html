@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Schedule — The NPL{% endblock %}
+
+{% block content %}
+<h1 class="mb-2 text-2xl font-bold">Schedule{% if year %} {{ year }}{% endif %}</h1>
+<p class="mb-4 text-xs">Each week is one series of six games. Instructions are due Monday. The games are simulated together Sunday, and the box score is the record.</p>
+{% if not weeks %}
+<p>No schedule has been drawn{% if year %} for {{ year }}{% endif %}.</p>
+{% else %}
+{% for group in weeks %}
+<section class="mb-6" id="week-{{ group.week.number }}">
+    <h2 class="mb-1 text-lg font-bold">
+        Week {{ group.week.number }} · {{ group.week.get_kind_display }}
+    </h2>
+    <p class="mb-2 text-xs">Due {{ group.week.lineup_due|date:"l, N j" }} · simulated {{ group.week.simulated_on|date:"l, N j" }}</p>
+    <table class="sheet">
+        <thead><tr><th>Road</th><th>Home</th><th></th></tr></thead>
+        <tbody>
+            {% for series in group.series %}
+            <tr>
+                <td {% if series.road_team_id == owner_team_id %}class="font-bold"{% endif %}>{{ series.road_team.abbreviation }}</td>
+                <td {% if series.home_team_id == owner_team_id %}class="font-bold"{% endif %}>{{ series.home_team.abbreviation }}</td>
+                <td><a href="{% url 'series_detail' series.pk %}">Series</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+{% endfor %}
+{% endif %}
+{% endblock %}

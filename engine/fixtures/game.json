@@ -1,0 +1,876 @@
+{
+  "postseason": false,
+  "parks": [
+    {
+      "id": "visitors-park",
+      "run_factor": 1.0
+    },
+    {
+      "id": "home-park",
+      "run_factor": 1.0
+    }
+  ],
+  "weather": null,
+  "away": {
+    "id": "visitors",
+    "name": "Visitors",
+    "home_park_id": "visitors-park",
+    "lineup": [
+      {
+        "id": "a1",
+        "name": "Wes Calderon",
+        "position": "CF",
+        "defense": {
+          "rating": 3,
+          "measured_at": "CF"
+        },
+        "wrc_plus": 102,
+        "rates": {
+          "k": 0.2,
+          "bb": 0.07,
+          "hbp": 0.008,
+          "single": 0.16,
+          "double": 0.045,
+          "triple": 0.006,
+          "hr": 0.02,
+          "bip_out": 0.491
+        }
+      },
+      {
+        "id": "a2",
+        "name": "Nia Okonkwo",
+        "position": "2B",
+        "defense": {
+          "rating": 1,
+          "measured_at": "2B"
+        },
+        "wrc_plus": 98,
+        "rates": {
+          "k": 0.17,
+          "bb": 0.09,
+          "hbp": 0.01,
+          "single": 0.155,
+          "double": 0.04,
+          "triple": 0.008,
+          "hr": 0.012,
+          "bip_out": 0.515
+        }
+      },
+      {
+        "id": "a3",
+        "name": "Ruthie Pell",
+        "position": "DH",
+        "defense": {
+          "rating": 0,
+          "measured_at": "DH"
+        },
+        "wrc_plus": 140,
+        "rates": {
+          "k": 0.18,
+          "bb": 0.11,
+          "hbp": 0.012,
+          "single": 0.14,
+          "double": 0.055,
+          "triple": 0.005,
+          "hr": 0.048,
+          "bip_out": 0.45
+        }
+      },
+      {
+        "id": "a4",
+        "name": "Samir Shah",
+        "position": "1B",
+        "defense": {
+          "rating": -2,
+          "measured_at": "1B"
+        },
+        "wrc_plus": 125,
+        "rates": {
+          "k": 0.22,
+          "bb": 0.08,
+          "hbp": 0.009,
+          "single": 0.145,
+          "double": 0.048,
+          "triple": 0.004,
+          "hr": 0.032,
+          "bip_out": 0.462
+        }
+      },
+      {
+        "id": "a5",
+        "name": "Ivo Brennan",
+        "position": "RF",
+        "defense": {
+          "rating": 0,
+          "measured_at": "RF"
+        },
+        "wrc_plus": 118,
+        "rates": {
+          "k": 0.21,
+          "bb": 0.075,
+          "hbp": 0.011,
+          "single": 0.15,
+          "double": 0.042,
+          "triple": 0.007,
+          "hr": 0.028,
+          "bip_out": 0.477
+        }
+      },
+      {
+        "id": "a6",
+        "name": "Cora Nguyen",
+        "position": "LF",
+        "defense": {
+          "rating": 2,
+          "measured_at": "LF"
+        },
+        "wrc_plus": 105,
+        "rates": {
+          "k": 0.19,
+          "bb": 0.065,
+          "hbp": 0.007,
+          "single": 0.158,
+          "double": 0.038,
+          "triple": 0.004,
+          "hr": 0.018,
+          "bip_out": 0.52
+        }
+      },
+      {
+        "id": "a7",
+        "name": "Benito Ruiz",
+        "position": "3B",
+        "defense": {
+          "rating": -1,
+          "measured_at": "3B"
+        },
+        "wrc_plus": 90,
+        "rates": {
+          "k": 0.23,
+          "bb": 0.06,
+          "hbp": 0.006,
+          "single": 0.148,
+          "double": 0.036,
+          "triple": 0.003,
+          "hr": 0.015,
+          "bip_out": 0.502
+        }
+      },
+      {
+        "id": "a8",
+        "name": "Halima Farah",
+        "position": "C",
+        "defense": {
+          "rating": 4,
+          "measured_at": "C"
+        },
+        "wrc_plus": 78,
+        "rates": {
+          "k": 0.16,
+          "bb": 0.055,
+          "hbp": 0.005,
+          "single": 0.14,
+          "double": 0.028,
+          "triple": 0.002,
+          "hr": 0.008,
+          "bip_out": 0.602
+        }
+      },
+      {
+        "id": "a9",
+        "name": "Pete Quill",
+        "position": "SS",
+        "defense": {
+          "rating": 5,
+          "measured_at": "SS"
+        },
+        "wrc_plus": 95,
+        "rates": {
+          "k": 0.205,
+          "bb": 0.072,
+          "hbp": 0.008,
+          "single": 0.152,
+          "double": 0.04,
+          "triple": 0.006,
+          "hr": 0.016,
+          "bip_out": 0.501
+        }
+      }
+    ],
+    "pitchers": [
+      {
+        "id": "a-mercer",
+        "name": "Ada Mercer",
+        "defense": {
+          "rating": 0,
+          "measured_at": "P"
+        },
+        "rates": {
+          "k": 0.23,
+          "bb": 0.07,
+          "hbp": 0.008,
+          "hr": 0.028,
+          "h": 0.175
+        },
+        "fatigue": {
+          "role": "starter",
+          "age": 28,
+          "season_pitches_per_appearance": 102,
+          "career_pitches_per_appearance": 102,
+          "season_appearances": 32
+        }
+      },
+      {
+        "id": "a-voss",
+        "name": "Jon Voss",
+        "defense": {
+          "rating": 0,
+          "measured_at": "P"
+        },
+        "rates": {
+          "k": 0.21,
+          "bb": 0.08,
+          "hbp": 0.009,
+          "hr": 0.025,
+          "h": 0.18
+        },
+        "fatigue": {
+          "role": "reliever",
+          "age": 30,
+          "season_pitches_per_appearance": 42,
+          "career_pitches_per_appearance": 42,
+          "season_appearances": 40
+        }
+      },
+      {
+        "id": "a-klein",
+        "name": "Bea Klein",
+        "defense": {
+          "rating": -1,
+          "measured_at": "P"
+        },
+        "rates": {
+          "k": 0.25,
+          "bb": 0.085,
+          "hbp": 0.01,
+          "hr": 0.022,
+          "h": 0.16
+        },
+        "fatigue": {
+          "role": "reliever",
+          "age": 27,
+          "season_pitches_per_appearance": 40,
+          "career_pitches_per_appearance": 40,
+          "season_appearances": 36
+        }
+      },
+      {
+        "id": "a-said",
+        "name": "Omar Said",
+        "defense": {
+          "rating": 0,
+          "measured_at": "P"
+        },
+        "rates": {
+          "k": 0.24,
+          "bb": 0.075,
+          "hbp": 0.008,
+          "hr": 0.024,
+          "h": 0.165
+        },
+        "fatigue": {
+          "role": "reliever",
+          "age": 33,
+          "season_pitches_per_appearance": 38,
+          "career_pitches_per_appearance": 38,
+          "season_appearances": 28
+        }
+      },
+      {
+        "id": "a-irwin",
+        "name": "Tess Irwin",
+        "defense": {
+          "rating": 1,
+          "measured_at": "P"
+        },
+        "rates": {
+          "k": 0.28,
+          "bb": 0.09,
+          "hbp": 0.01,
+          "hr": 0.02,
+          "h": 0.15
+        },
+        "fatigue": {
+          "role": "reliever",
+          "age": 26,
+          "season_pitches_per_appearance": 24,
+          "career_pitches_per_appearance": 24,
+          "season_appearances": 30
+        }
+      },
+      {
+        "id": "a-cho",
+        "name": "Min Cho",
+        "defense": {
+          "rating": 0,
+          "measured_at": "P"
+        },
+        "rates": {
+          "k": 0.3,
+          "bb": 0.1,
+          "hbp": 0.012,
+          "hr": 0.018,
+          "h": 0.145
+        },
+        "fatigue": {
+          "role": "reliever",
+          "age": 24,
+          "season_pitches_per_appearance": 22,
+          "career_pitches_per_appearance": 22,
+          "season_appearances": 22
+        }
+      },
+      {
+        "id": "a-dale",
+        "name": "Rex Dale",
+        "defense": {
+          "rating": -2,
+          "measured_at": "P"
+        },
+        "rates": {
+          "k": 0.26,
+          "bb": 0.07,
+          "hbp": 0.007,
+          "hr": 0.026,
+          "h": 0.155
+        },
+        "fatigue": {
+          "role": "reliever",
+          "age": 36,
+          "season_pitches_per_appearance": 22,
+          "career_pitches_per_appearance": 22,
+          "season_appearances": 45
+        }
+      },
+      {
+        "id": "a-moss",
+        "name": "Ida Moss",
+        "defense": {
+          "rating": 0,
+          "measured_at": "P"
+        },
+        "rates": {
+          "k": 0.27,
+          "bb": 0.095,
+          "hbp": 0.011,
+          "hr": 0.019,
+          "h": 0.148
+        },
+        "fatigue": {
+          "role": "reliever",
+          "age": 29,
+          "season_pitches_per_appearance": 20,
+          "career_pitches_per_appearance": 20,
+          "season_appearances": 18
+        }
+      },
+      {
+        "id": "a-abad",
+        "name": "Nico Abad",
+        "defense": {
+          "rating": 0,
+          "measured_at": "P"
+        },
+        "rates": {
+          "k": 0.29,
+          "bb": 0.088,
+          "hbp": 0.009,
+          "hr": 0.021,
+          "h": 0.14
+        },
+        "fatigue": {
+          "role": "reliever",
+          "age": 31,
+          "season_pitches_per_appearance": 20,
+          "career_pitches_per_appearance": 20,
+          "season_appearances": 25
+        }
+      },
+      {
+        "id": "a-quin",
+        "name": "Paul Quin",
+        "defense": {
+          "rating": 0,
+          "measured_at": "P"
+        },
+        "rates": {
+          "k": 0.31,
+          "bb": 0.11,
+          "hbp": 0.013,
+          "hr": 0.017,
+          "h": 0.135
+        },
+        "fatigue": {
+          "role": "reliever",
+          "age": 25,
+          "season_pitches_per_appearance": 18,
+          "career_pitches_per_appearance": 18,
+          "season_appearances": 15
+        }
+      },
+      {
+        "id": "a-shaw",
+        "name": "Ruth Shaw",
+        "defense": {
+          "rating": -1,
+          "measured_at": "P"
+        },
+        "rates": {
+          "k": 0.255,
+          "bb": 0.082,
+          "hbp": 0.008,
+          "hr": 0.023,
+          "h": 0.158
+        },
+        "fatigue": {
+          "role": "reliever",
+          "age": 38,
+          "season_pitches_per_appearance": 18,
+          "career_pitches_per_appearance": 18,
+          "season_appearances": 50
+        }
+      }
+    ]
+  },
+  "home": {
+    "id": "home",
+    "name": "Home",
+    "home_park_id": "home-park",
+    "lineup": [
+      {
+        "id": "h1",
+        "name": "Leah Ortiz",
+        "position": "CF",
+        "defense": {
+          "rating": 2,
+          "measured_at": "CF"
+        },
+        "wrc_plus": 108,
+        "rates": {
+          "k": 0.185,
+          "bb": 0.085,
+          "hbp": 0.01,
+          "single": 0.162,
+          "double": 0.044,
+          "triple": 0.007,
+          "hr": 0.018,
+          "bip_out": 0.489
+        }
+      },
+      {
+        "id": "h2",
+        "name": "Marcus Bell",
+        "position": "SS",
+        "defense": {
+          "rating": 4,
+          "measured_at": "SS"
+        },
+        "wrc_plus": 122,
+        "rates": {
+          "k": 0.24,
+          "bb": 0.095,
+          "hbp": 0.009,
+          "single": 0.13,
+          "double": 0.042,
+          "triple": 0.004,
+          "hr": 0.038,
+          "bip_out": 0.442
+        }
+      },
+      {
+        "id": "h3",
+        "name": "June Abebe",
+        "position": "DH",
+        "defense": {
+          "rating": 1,
+          "measured_at": "DH"
+        },
+        "wrc_plus": 110,
+        "rates": {
+          "k": 0.175,
+          "bb": 0.078,
+          "hbp": 0.011,
+          "single": 0.168,
+          "double": 0.046,
+          "triple": 0.005,
+          "hr": 0.022,
+          "bip_out": 0.495
+        }
+      },
+      {
+        "id": "h4",
+        "name": "Theo Marlow",
+        "position": "1B",
+        "defense": {
+          "rating": -1,
+          "measured_at": "1B"
+        },
+        "wrc_plus": 135,
+        "rates": {
+          "k": 0.155,
+          "bb": 0.12,
+          "hbp": 0.014,
+          "single": 0.135,
+          "double": 0.05,
+          "triple": 0.006,
+          "hr": 0.042,
+          "bip_out": 0.478
+        }
+      },
+      {
+        "id": "h5",
+        "name": "Rosa Ibarra",
+        "position": "RF",
+        "defense": {
+          "rating": 0,
+          "measured_at": "RF"
+        },
+        "wrc_plus": 104,
+        "rates": {
+          "k": 0.2,
+          "bb": 0.068,
+          "hbp": 0.008,
+          "single": 0.15,
+          "double": 0.04,
+          "triple": 0.005,
+          "hr": 0.025,
+          "bip_out": 0.504
+        }
+      },
+      {
+        "id": "h6",
+        "name": "Chris Daley",
+        "position": "LF",
+        "defense": {
+          "rating": -3,
+          "measured_at": "LF"
+        },
+        "wrc_plus": 88,
+        "rates": {
+          "k": 0.215,
+          "bb": 0.062,
+          "hbp": 0.006,
+          "single": 0.146,
+          "double": 0.034,
+          "triple": 0.003,
+          "hr": 0.014,
+          "bip_out": 0.52
+        }
+      },
+      {
+        "id": "h7",
+        "name": "Amir Haddad",
+        "position": "3B",
+        "defense": {
+          "rating": 1,
+          "measured_at": "3B"
+        },
+        "wrc_plus": 100,
+        "rates": {
+          "k": 0.19,
+          "bb": 0.07,
+          "hbp": 0.009,
+          "single": 0.155,
+          "double": 0.039,
+          "triple": 0.004,
+          "hr": 0.02,
+          "bip_out": 0.513
+        }
+      },
+      {
+        "id": "h8",
+        "name": "Nell Park",
+        "position": "C",
+        "defense": {
+          "rating": 6,
+          "measured_at": "C"
+        },
+        "wrc_plus": 72,
+        "rates": {
+          "k": 0.25,
+          "bb": 0.05,
+          "hbp": 0.004,
+          "single": 0.125,
+          "double": 0.03,
+          "triple": 0.002,
+          "hr": 0.012,
+          "bip_out": 0.527
+        }
+      },
+      {
+        "id": "h9",
+        "name": "Owen Blake",
+        "position": "2B",
+        "defense": {
+          "rating": 2,
+          "measured_at": "2B"
+        },
+        "wrc_plus": 101,
+        "rates": {
+          "k": 0.18,
+          "bb": 0.082,
+          "hbp": 0.01,
+          "single": 0.158,
+          "double": 0.043,
+          "triple": 0.008,
+          "hr": 0.019,
+          "bip_out": 0.5
+        }
+      }
+    ],
+    "pitchers": [
+      {
+        "id": "h-okada",
+        "name": "Ren Okada",
+        "defense": {
+          "rating": 1,
+          "measured_at": "P"
+        },
+        "rates": {
+          "k": 0.225,
+          "bb": 0.065,
+          "hbp": 0.007,
+          "hr": 0.03,
+          "h": 0.17
+        },
+        "fatigue": {
+          "role": "starter",
+          "age": 34,
+          "season_pitches_per_appearance": 100,
+          "career_pitches_per_appearance": 100,
+          "season_appearances": 28
+        }
+      },
+      {
+        "id": "h-berg",
+        "name": "Lila Berg",
+        "defense": {
+          "rating": 0,
+          "measured_at": "P"
+        },
+        "rates": {
+          "k": 0.215,
+          "bb": 0.078,
+          "hbp": 0.009,
+          "hr": 0.024,
+          "h": 0.172
+        },
+        "fatigue": {
+          "role": "reliever",
+          "age": 29,
+          "season_pitches_per_appearance": 44,
+          "career_pitches_per_appearance": 44,
+          "season_appearances": 42
+        }
+      },
+      {
+        "id": "h-santos",
+        "name": "Cruz Santos",
+        "defense": {
+          "rating": 0,
+          "measured_at": "P"
+        },
+        "rates": {
+          "k": 0.245,
+          "bb": 0.082,
+          "hbp": 0.01,
+          "hr": 0.023,
+          "h": 0.162
+        },
+        "fatigue": {
+          "role": "reliever",
+          "age": 32,
+          "season_pitches_per_appearance": 40,
+          "career_pitches_per_appearance": 40,
+          "season_appearances": 33
+        }
+      },
+      {
+        "id": "h-ng",
+        "name": "Willa Ng",
+        "defense": {
+          "rating": 2,
+          "measured_at": "P"
+        },
+        "rates": {
+          "k": 0.235,
+          "bb": 0.07,
+          "hbp": 0.008,
+          "hr": 0.027,
+          "h": 0.168
+        },
+        "fatigue": {
+          "role": "reliever",
+          "age": 26,
+          "season_pitches_per_appearance": 36,
+          "career_pitches_per_appearance": 36,
+          "season_appearances": 20
+        }
+      },
+      {
+        "id": "h-park",
+        "name": "Eli Park",
+        "defense": {
+          "rating": 0,
+          "measured_at": "P"
+        },
+        "rates": {
+          "k": 0.275,
+          "bb": 0.092,
+          "hbp": 0.011,
+          "hr": 0.019,
+          "h": 0.152
+        },
+        "fatigue": {
+          "role": "reliever",
+          "age": 23,
+          "season_pitches_per_appearance": 24,
+          "career_pitches_per_appearance": 24,
+          "season_appearances": 12
+        }
+      },
+      {
+        "id": "h-moss",
+        "name": "June Moss",
+        "defense": {
+          "rating": -1,
+          "measured_at": "P"
+        },
+        "rates": {
+          "k": 0.265,
+          "bb": 0.074,
+          "hbp": 0.008,
+          "hr": 0.025,
+          "h": 0.156
+        },
+        "fatigue": {
+          "role": "reliever",
+          "age": 37,
+          "season_pitches_per_appearance": 22,
+          "career_pitches_per_appearance": 22,
+          "season_appearances": 48
+        }
+      },
+      {
+        "id": "h-haddad",
+        "name": "Noor Haddad",
+        "defense": {
+          "rating": 0,
+          "measured_at": "P"
+        },
+        "rates": {
+          "k": 0.295,
+          "bb": 0.098,
+          "hbp": 0.012,
+          "hr": 0.018,
+          "h": 0.142
+        },
+        "fatigue": {
+          "role": "reliever",
+          "age": 28,
+          "season_pitches_per_appearance": 22,
+          "career_pitches_per_appearance": 22,
+          "season_appearances": 26
+        }
+      },
+      {
+        "id": "h-cole",
+        "name": "Ben Cole",
+        "defense": {
+          "rating": 0,
+          "measured_at": "P"
+        },
+        "rates": {
+          "k": 0.285,
+          "bb": 0.086,
+          "hbp": 0.009,
+          "hr": 0.022,
+          "h": 0.15
+        },
+        "fatigue": {
+          "role": "reliever",
+          "age": 30,
+          "season_pitches_per_appearance": 20,
+          "career_pitches_per_appearance": 20,
+          "season_appearances": 19
+        }
+      },
+      {
+        "id": "h-vega",
+        "name": "Sol Vega",
+        "defense": {
+          "rating": 0,
+          "measured_at": "P"
+        },
+        "rates": {
+          "k": 0.305,
+          "bb": 0.105,
+          "hbp": 0.014,
+          "hr": 0.016,
+          "h": 0.138
+        },
+        "fatigue": {
+          "role": "reliever",
+          "age": 22,
+          "season_pitches_per_appearance": 20,
+          "career_pitches_per_appearance": 20,
+          "season_appearances": 8
+        }
+      },
+      {
+        "id": "h-ortiz",
+        "name": "Cam Ortiz",
+        "defense": {
+          "rating": -2,
+          "measured_at": "P"
+        },
+        "rates": {
+          "k": 0.25,
+          "bb": 0.08,
+          "hbp": 0.008,
+          "hr": 0.028,
+          "h": 0.16
+        },
+        "fatigue": {
+          "role": "reliever",
+          "age": 35,
+          "season_pitches_per_appearance": 18,
+          "career_pitches_per_appearance": 18,
+          "season_appearances": 40
+        }
+      },
+      {
+        "id": "h-finn",
+        "name": "Ash Finn",
+        "defense": {
+          "rating": 0,
+          "measured_at": "P"
+        },
+        "rates": {
+          "k": 0.315,
+          "bb": 0.09,
+          "hbp": 0.01,
+          "hr": 0.015,
+          "h": 0.13
+        },
+        "fatigue": {
+          "role": "reliever",
+          "age": 27,
+          "season_pitches_per_appearance": 18,
+          "career_pitches_per_appearance": 18,
+          "season_appearances": 16
+        }
+      }
+    ]
+  }
+}

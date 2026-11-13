@@ -42,6 +42,11 @@ from npl.models import (
     MinorLeagueOptOut,
     Rule4Slot,
     Rule5Selection,
+    ScheduleWeek,
+    WeekSeries,
+    WeekGame,
+    WeeklyPlan,
+    PlayerWeekCard,
 )
 
 admin.site.site_title = "The NPL"
@@ -674,3 +679,35 @@ class PlayerNominationAdmin(admin.ModelAdmin):
             return obj.reason[:100] + '...' if len(obj.reason) > 100 else obj.reason
         return '-'
     reason_short.short_description = 'Reason'
+
+
+@admin.register(ScheduleWeek)
+class ScheduleWeekAdmin(admin.ModelAdmin):
+    list_display = ["season", "number", "kind", "lineup_due", "simulated_on"]
+    list_filter = ["season", "kind"]
+
+
+@admin.register(WeekSeries)
+class WeekSeriesAdmin(admin.ModelAdmin):
+    list_display = ["week", "road_team", "home_team"]
+    list_select_related = ["week", "road_team", "home_team"]
+
+
+@admin.register(WeekGame)
+class WeekGameAdmin(admin.ModelAdmin):
+    list_display = ["series", "number", "road_score", "home_score"]
+    raw_id_fields = ["series"]
+
+
+@admin.register(WeeklyPlan)
+class WeeklyPlanAdmin(admin.ModelAdmin):
+    list_display = ["team", "series", "usage", "hook", "lineup_saved", "rotation_saved", "bullpen_saved", "bench_saved"]
+    list_filter = ["usage", "hook"]
+    raw_id_fields = ["team", "series"]
+
+
+@admin.register(PlayerWeekCard)
+class PlayerWeekCardAdmin(admin.ModelAdmin):
+    list_display = ["player", "season", "week", "prior_weight"]
+    list_filter = ["season", "week"]
+    raw_id_fields = ["player"]

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}{{ team.name }} cards — The NPL{% endblock %}
+
+{% block content %}
+<h1 class="mb-2 text-2xl font-bold"><a href="/teams/{{ team.short_name|lower }}/">{{ team.name }}</a></h1>
+<p class="mb-2">Week {{ week_number }} cards{% if season %} · {{ season.year }}{% endif %}</p>
+<p class="mb-4 text-xs">True talent starts as last year's line with the luck taken out of batting average and home runs. Each week adds the playing time since the previous card, and last year's share steps down from the whole card to 15 percent. Strikeouts and walks are left alone.</p>
+{% if season %}
+<p class="mb-4 text-xs">
+    {% for number in weeks %}
+    {% if number == week_number %}<strong>{{ number }}</strong>{% else %}<a href="{% url 'team_cards_week' team.short_name|lower season.year number %}">{{ number }}</a>{% endif %}
+    {% endfor %}
+</p>
+{% endif %}
+{% if not rows %}
+<p>No active players, or the cards for this week have not been built.</p>
+{% else %}
+<table class="sheet">
+    <thead>
+        <tr><th>Player</th><th>This week</th><th>True talent</th></tr>
+    </thead>
+    <tbody>
+        {% for row in rows %}
+        <tr>
+            <td><a href="{% url 'player_cards' row.player.mlb_id %}">{{ row.player.name }}</a></td>
+            <td>
+                {% if row.lines.hitting %}{{ row.lines.hitting.usage }}{% endif %}
+                {% if row.lines.pitching %}<br>{{ row.lines.pitching.usage }}{% endif %}
+                {% if not row.lines %}Not built{% endif %}
+            </td>
+            <td>
+                {% if row.lines.hitting %}{{ row.lines.hitting.measure }}{% endif %}
+                {% if row.lines.pitching %}<br>{{ row.lines.pitching.measure }}{% endif %}
+                {% if row.lines %}<br><span class="text-xs">{{ row.lines.summary }}</span>{% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+{% endblock %}

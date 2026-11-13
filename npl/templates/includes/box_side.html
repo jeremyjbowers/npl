@@ -1,0 +1,27 @@
+<section class="mb-6">
+    <h2 class="mb-2 font-bold">{{ club.abbreviation }}</h2>
+    {% if side.batting %}
+    <table class="sheet mb-3">
+        <thead><tr><th>Batter</th><th>AB</th><th>R</th><th>H</th><th>RBI</th><th>BB</th><th>K</th></tr></thead>
+        <tbody>
+            {% for row in side.batting %}
+            <tr>
+                <td>{{ row.name }}</td><td>{{ row.ab }}</td><td>{{ row.r }}</td><td>{{ row.h }}</td><td>{{ row.rbi }}</td><td>{{ row.bb }}</td><td>{{ row.k }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+    {% if side.pitching %}
+    <table class="sheet">
+        <thead><tr><th>Pitcher</th><th>IP</th><th>H</th><th>R</th><th>ER</th><th>BB</th><th>K</th></tr></thead>
+        <tbody>
+            {% for row in side.pitching %}
+            <tr>
+                <td>{{ row.name }}</td><td>{{ row.ip }}</td><td>{{ row.h }}</td><td>{{ row.r }}</td><td>{{ row.er }}</td><td>{{ row.bb }}</td><td>{{ row.k }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+</section>

@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+
+{% block title %}{{ team.name }} — The NPL{% endblock %}
+
+{% block content %}
+<h1 class="mb-2 text-2xl font-bold">{{ team.name }}</h1>
+<p>The weekly schedule has not been drawn{% if year %} for {{ year }}{% endif %}.</p>
+{% endblock %}

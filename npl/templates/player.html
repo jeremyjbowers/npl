@@ -17,6 +17,7 @@
             {% endif %}
             {% if p.age %} · {{ p.age }} years old{% endif %}
             {% if p.bats or p.throws %} · {{ p.bats|default:"—" }}/{{ p.throws|default:"—" }}{% endif %}
+            · <a href="{% url 'player_cards' p.mlb_id %}">Weekly cards</a>
         </p>
         <p class="mt-1 text-xs text-gray-700">
             {{ p.get_roster_status|default:"" }}

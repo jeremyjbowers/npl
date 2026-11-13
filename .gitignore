@@ -27,3 +27,5 @@ app.yaml
 node_modules/
 public/*
 !public/.gitkeep
+
+engine/target/

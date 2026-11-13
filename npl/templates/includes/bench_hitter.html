@@ -1,0 +1,14 @@
+<div class="mb-3 grid grid-cols-2 gap-2">
+    <select name="{{ prefix }}_{{ row_number }}" aria-label="Pinch hitter {{ row_number }}">
+        <option value="">Hitter —</option>
+        {% for id, label in hitters %}<option value="{{ id }}" {% if id == row.player_id %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+    <select name="{{ prefix }}_for_{{ row_number }}" aria-label="Hit for {{ row_number }}">
+        <option value="">For anyone</option>
+        {% for id, label in hitters %}<option value="{{ id }}" {% if id == row.for_id %}selected{% endif %}>For {{ label }}</option>{% endfor %}
+    </select>
+    <input name="{{ prefix }}_inning_{{ row_number }}" value="{{ row.inning }}" inputmode="numeric" aria-label="Pinch hit inning {{ row_number }}">
+    <select name="{{ prefix }}_when_{{ row_number }}" aria-label="When to pinch hit {{ row_number }}">
+        {% for value, label in situations %}<option value="{{ value }}" {% if value == row.situation %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+</div>

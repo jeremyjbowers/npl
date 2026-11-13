@@ -44,6 +44,7 @@
                 </div>
             </div>
 
+            <a href="{% url 'schedule' %}" class="underline">Schedule</a>
             <a href="https://docs.google.com/spreadsheets/d/1On6uRXLRQ3pzl2FHYRgWKCedsCdl6UNbNaSF6pwlGiw/" class="underline">Rosters</a>
             <a href="https://npldash.onrender.com/" class="underline">Season Stats</a>
             <a href="/players/search/" class="underline">Players</a>
@@ -75,6 +76,8 @@
             <div class="nav-dropdown-panel">
                 {% if owner_team %}
                 <a href="/teams/{{ owner_team.short_name|lower }}/" class="block py-0.5 text-sm font-bold underline">My Team</a>
+                <a href="{% url 'team_lineup' owner_team.short_name|lower %}" class="block py-0.5 text-sm underline">This week's card</a>
+                <a href="{% url 'team_cards' owner_team.short_name|lower %}" class="block py-0.5 text-sm underline">Week cards</a>
                 {% endif %}
                 <a href="/transactions/list/" class="block py-0.5 text-sm underline">My submissions</a>
                 <a href="{% url 'my_api_keys' %}" class="block py-0.5 text-sm underline">API keys</a>
@@ -99,6 +102,7 @@
         <a href="/transactions/trades/" class="block underline">Trades</a>
         <a href="/transactions/other/" class="block underline">Other transactions</a>
         <a href="/transactions/roundup/" class="block underline">Roster check</a>
+        <a href="{% url 'schedule' %}" class="block underline">Schedule</a>
         <a href="/players/search/" class="block underline">Players</a>
         {% if user.is_authenticated %}
         <a href="/transactions/form/" class="block underline">Submit a transaction</a>
@@ -106,6 +110,8 @@
             <p class="mb-1 font-bold">Account</p>
             {% if owner_team %}
             <a href="/teams/{{ owner_team.short_name|lower }}/" class="block py-0.5 font-bold underline">My Team</a>
+            <a href="{% url 'team_lineup' owner_team.short_name|lower %}" class="block py-0.5 underline">This week's card</a>
+            <a href="{% url 'team_cards' owner_team.short_name|lower %}" class="block py-0.5 underline">Week cards</a>
             {% endif %}
             <a href="/transactions/list/" class="block py-0.5 underline">My submissions</a>
             <a href="{% url 'my_api_keys' %}" class="block py-0.5 underline">API keys</a>

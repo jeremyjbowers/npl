@@ -1857,3 +1857,16 @@ from npl.transaction_models import (  # noqa: E402,F401
     Waiver,
     WaiverClaim,
 )
+from npl.game_models import (  # noqa: E402,F401
+    BullpenSlot,
+    DefenseSub,
+    LineupSlot,
+    PinchHitRule,
+    PinchRunRule,
+    PlayerWeekCard,
+    RotationSlot,
+    ScheduleWeek,
+    WeekGame,
+    WeekSeries,
+    WeeklyPlan,
+)

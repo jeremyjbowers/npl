@@ -4,6 +4,7 @@ from django.shortcuts import redirect
 
 from npl import views
 from npl import auth
+from npl import game_views
 from npl.transactions import api as transaction_api
 from npl.mcp_app import views as mcp_views
 from npl.token_views import api_tokens
@@ -76,7 +77,22 @@ urlpatterns = [
     path("account/tokens/", api_tokens, name="api_tokens"),
     
     path("players/search/", views.search),
+    path("players/<str:playerid>/cards/", game_views.player_cards, name="player_cards"),
     path("players/<str:playerid>/", views.player_detail),
+    path("schedule/", game_views.schedule, name="schedule"),
+    path("schedule/<int:year>/", game_views.schedule, name="schedule_year"),
+    path("series/<int:series_id>/", game_views.series_detail, name="series_detail"),
+    path("games/<int:game_id>/", game_views.week_game, name="week_game"),
+    path("teams/<str:short_name>/lineup/", game_views.lineup, name="team_lineup"),
+    path("teams/<str:short_name>/lineup/<int:year>/<int:week>/", game_views.lineup, name="team_lineup_week"),
+    path("teams/<str:short_name>/rotation/", game_views.rotation, name="team_rotation"),
+    path("teams/<str:short_name>/rotation/<int:year>/<int:week>/", game_views.rotation, name="team_rotation_week"),
+    path("teams/<str:short_name>/bullpen/", game_views.bullpen, name="team_bullpen"),
+    path("teams/<str:short_name>/bullpen/<int:year>/<int:week>/", game_views.bullpen, name="team_bullpen_week"),
+    path("teams/<str:short_name>/bench/", game_views.bench, name="team_bench"),
+    path("teams/<str:short_name>/bench/<int:year>/<int:week>/", game_views.bench, name="team_bench_week"),
+    path("teams/<str:short_name>/cards/", game_views.team_cards, name="team_cards"),
+    path("teams/<str:short_name>/cards/<int:year>/<int:week>/", game_views.team_cards, name="team_cards_week"),
     path("teams/<str:short_name>/", views.team_detail),
     path("teams/my/wishlist/", views.my_wishlist),
     path("robots.txt", views.robots_txt),
