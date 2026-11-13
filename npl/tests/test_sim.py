@@ -303,10 +303,12 @@ class RecordTests(TestCase):
         hitting = PlayerStatSeason.objects.get(player=self.hitter, classification="npl")
         self.assertEqual(hitting.hit_stats["k_pct"], 25.0)
         self.assertEqual(hitting.hit_stats["hr"], 2)
+        self.assertEqual(hitting.team_id, self.road.id)
+        self.assertEqual(hitting.hit_stats["team"], "ROV")
         self.assertEqual(majors_line(self.hitter, 2026, "hit")["plate_appearances"], 600)
         self.assertEqual(
             sorted(line["type"] for line in self.hitter.hit_stats()),
-            ["majors", "minors"],
+            ["majors", "npl"],
         )
 
         road = SimTeamSeason.objects.get(team=self.road)
@@ -315,6 +317,42 @@ class RecordTests(TestCase):
         self.assertEqual((home.wins, home.losses, home.division_place), (0, 2, 2))
         self.assertEqual(TeamSeason.objects.get(team=self.road).cash, 5)
         self.assertEqual(TeamSeason.objects.get(team=self.road).wins, 99)
+
+    def test_a_player_keeps_a_separate_line_for_each_club(self):
+        self._game(self.week, 1, 0, self._box(3))
+        traded = {
+            "away": {"batting": [], "pitching": []},
+            "home": {
+                "batting": [{
+                    "player_id": self.hitter.mlb_id, "pa": 2, "ab": 2, "r": 0, "h": 1,
+                    "hr": 0, "rbi": 0, "bb": 0, "k": 0, "hbp": 0, "sf": 0,
+                }],
+                "pitching": [],
+            },
+            "win_id": None,
+            "loss_id": None,
+            "save_id": None,
+        }
+        self._game(self.later, 0, 1, traded)
+        rebuild_sim_season(self.season)
+        PlayerStatSeason.objects.create(
+            player=self.hitter,
+            season=2026,
+            classification="2-milb",
+            level="AA",
+            hit_stats={"pa": 80, "plate_appearances": 80, "hr": 4},
+        )
+        clubs = list(
+            PlayerStatSeason.objects.filter(player=self.hitter, classification="npl")
+            .order_by("team__abbreviation")
+            .values_list("team__abbreviation", flat=True)
+        )
+        self.assertEqual(clubs, ["HOM", "ROV"])
+        lines = self.hitter.hit_stats()
+        shown = {line["team"]: line["hr"] for line in lines if line["type"] == "npl"}
+        self.assertEqual(shown["ROV"], 1)
+        self.assertEqual(shown["HOM"], 0)
+        self.assertEqual({line["type"] for line in lines if line["year"] == 2026}, {"majors", "minors", "npl"})
 
     def test_purge_clears_the_sim_and_keeps_the_franchise_sheet(self):
         self._game(self.week, 1, 0, self._box(3))

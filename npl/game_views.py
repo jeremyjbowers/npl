@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 
-from npl import models, utils
+from npl import league, models, utils
 from npl.computer_manager import (
     BULLPEN_CHOICES,
     BUNT_CHOICES,
@@ -52,25 +52,36 @@ from npl.weekly_plan import (
 
 def schedule(request, year=None):
     context = utils.build_context(request)
-    season = _season(year)
-    context["season"] = season
-    context["year"] = season.year if season else year
-    weeks = []
-    if season is not None:
-        series = (
-            models.WeekSeries.objects.filter(week__season=season)
-            .select_related("week", "home_team", "road_team")
-            .order_by("week__number", "home_team__abbreviation")
-        )
-        grouped = {}
-        for item in series:
-            grouped.setdefault(item.week_id, {"week": item.week, "series": []})
-            grouped[item.week_id]["series"].append(item)
-        weeks = [grouped[key] for key in sorted(grouped, key=lambda week_id: grouped[week_id]["week"].number)]
-    context["weeks"] = weeks
+    year = league.calendar_year() if year is None else year
+    context.update(league.schedule_page(year))
     context["today"] = timezone.localdate()
     context["owner_team_id"] = context["owner_team"].id if context.get("owner_team") else None
     return render(request, "schedule.html", context)
+
+
+def leaders(request, year=None):
+    context = utils.build_context(request)
+    year = league.calendar_year() if year is None else year
+    context.update(league.leaders(year))
+    return render(request, "leaders.html", context)
+
+
+def team_schedule(request, short_name, year=None):
+    context = utils.build_context(request)
+    team = _team(short_name)
+    year = league.calendar_year() if year is None else year
+    context["team"] = team
+    context.update(league.team_schedule(team, year))
+    return render(request, "team_schedule.html", context)
+
+
+def team_stats(request, short_name, year=None):
+    context = utils.build_context(request)
+    team = _team(short_name)
+    year = league.calendar_year() if year is None else year
+    context["team"] = team
+    context.update(league.team_stats(team, year))
+    return render(request, "team_stats.html", context)
 
 
 def series_detail(request, series_id):

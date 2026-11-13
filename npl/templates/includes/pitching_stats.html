@@ -6,7 +6,11 @@
             <thead>
                 <tr>
                     <th scope="col">Year</th>
+                    <th scope="col">Club</th>
                     <th scope="col">Level</th>
+                    <th scope="col">W</th>
+                    <th scope="col">L</th>
+                    <th scope="col">SV</th>
                     <th scope="col">G</th>
                     <th scope="col">GS</th>
                     <th scope="col">IP</th>
@@ -26,7 +30,11 @@
                 {% for stat in p.pit_stats reversed %}
                 <tr{% if stat.level|upper == "MLB" %} class="majors"{% endif %}>
                     <td>{{ stat.year }}</td>
+                    <td>{% if stat.team_short %}<a href="{% url 'team_stats_year' stat.team_short stat.year %}">{{ stat.team }}</a>{% else %}—{% endif %}</td>
                     <td>{{ stat.level|upper }}</td>
+                    <td>{% if stat.type == "npl" %}{{ stat.w }}{% else %}—{% endif %}</td>
+                    <td>{% if stat.type == "npl" %}{{ stat.l }}{% else %}—{% endif %}</td>
+                    <td>{% if stat.type == "npl" %}{{ stat.sv }}{% else %}—{% endif %}</td>
                     <td>{{ stat.g }}</td>
                     <td>{{ stat.gs }}</td>
                     <td>{{ stat.ip }}</td>

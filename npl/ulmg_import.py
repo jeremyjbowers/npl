@@ -103,6 +103,28 @@ def as_percent(value):
     return round(number, 3)
 
 
+def _line_identity(row, blob, side):
+    """Year, level, and slug for one stored line. NPL lines keep the club in the slug."""
+    year = int(row.get("season"))
+    if (row.get("classification") or "").lower() == "npl":
+        team_key = pick(blob, "team_id") or pick(blob, "team") or "club"
+        return {
+            "year": year,
+            "type": "npl",
+            "level": "NPL",
+            "slug": f"{year}_npl_{team_key}_{side}",
+            "team": pick(blob, "team"),
+            "team_short": pick(blob, "team_short"),
+        }
+    kind = stat_type(row.get("classification"))
+    return {
+        "year": year,
+        "type": kind,
+        "level": level_label(row.get("classification"), row.get("level"), blob),
+        "slug": f"{year}_{kind}_{side}",
+    }
+
+
 def stat_type(classification):
     text = (classification or "").lower()
     if text.startswith("1-") or text in {"mlb", "majors"}:
@@ -175,13 +197,10 @@ def hitting_line(row):
     year = row.get("season")
     if not year:
         return None
-    kind = stat_type(row.get("classification"))
+    identity = _line_identity(row, blob, "hit")
     return _keep({
-        "year": int(year),
-        "type": kind,
-        "level": level_label(row.get("classification"), row.get("level"), blob),
+        **identity,
         "side": "hit",
-        "slug": f"{int(year)}_{kind}_hit",
         "plate_appearances": plate_appearances,
         "ab": _whole(pick(blob, "ab", "AB")),
         "hits": _whole(pick(blob, "h", "H")),
@@ -217,15 +236,15 @@ def pitching_line(row):
     year = row.get("season")
     if not year:
         return None
-    kind = stat_type(row.get("classification"))
+    identity = _line_identity(row, blob, "pitch")
     return _keep({
-        "year": int(year),
-        "type": kind,
-        "level": level_label(row.get("classification"), row.get("level"), blob),
+        **identity,
         "side": "pitch",
-        "slug": f"{int(year)}_{kind}_pitch",
         "g": games,
         "gs": _whole(pick(blob, "gs", "GS")),
+        "w": _optional_count(pick(blob, "w", "W")),
+        "l": _optional_count(pick(blob, "l", "L")),
+        "sv": _optional_count(pick(blob, "sv", "SV")),
         "k": _whole(pick(blob, "so", "SO", "k")),
         "bb": _whole(pick(blob, "bb", "BB")),
         "ha": _whole(pick(blob, "h", "H")),
@@ -463,7 +482,7 @@ def import_rows(rows, dry_run=False):
             season = season_from_row(player, row)
             if season is None:
                 continue
-            seasons[(season.player_id, season.season, season.classification, season.is_career)] = season
+            seasons[(season.player_id, season.season, season.classification, season.is_career, season.team_id)] = season
         changed = apply_player(player, group, fg_ids_in_use)
         if not changed:
             continue
@@ -477,7 +496,7 @@ def import_rows(rows, dry_run=False):
     if player_ids:
         existing = set(
             models.PlayerStatSeason.objects.filter(player_id__in=player_ids).values_list(
-                "player_id", "season", "classification", "is_career"
+                "player_id", "season", "classification", "is_career", "team_id"
             )
         )
     summary["seasons_created"] = sum(1 for key in seasons if key not in existing)
@@ -489,7 +508,7 @@ def import_rows(rows, dry_run=False):
                 list(seasons.values()),
                 batch_size=500,
                 update_conflicts=True,
-                unique_fields=["player", "season", "classification", "is_career"],
+                unique_fields=["player", "season", "classification", "is_career", "team"],
                 update_fields=list(SEASON_UPDATE_FIELDS),
             )
         if pending:

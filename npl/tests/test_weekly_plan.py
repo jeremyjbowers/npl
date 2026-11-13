@@ -167,7 +167,7 @@ class WeeklyCardTests(TestCase):
         self.assertTrue(PlayerWeekCard.objects.filter(player=self.hitters[0], week=1).exists())
 
         self.client.force_login(self.owner_user)
-        schedule = self.client.get(reverse("schedule"))
+        schedule = self.client.get(reverse("schedule_year", args=[2026]))
         self.assertContains(schedule, "ROV")
         self.assertContains(schedule, "HOM")
         cards = self.client.get(self.url("team_cards_week"))
