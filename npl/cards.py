@@ -229,6 +229,7 @@ def pitcher_rates(counts):
         "k_9": round(9.0 * counts["k"] / innings, 2),
         "bb_9": round(9.0 * counts["bb"] / innings, 2),
         "hr_9": round(9.0 * counts["hr"] / innings, 2),
+        "h_9": round(9.0 * counts["h"] / innings, 2),
         "fip": round(fip, 2),
     }
 

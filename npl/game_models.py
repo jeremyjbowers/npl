@@ -237,3 +237,33 @@ class PlayerWeekCard(BaseModel):
 
     def __str__(self):
         return f"{self.player} {self.season.year} week {self.week}"
+
+
+NPL_SIM = "npl"
+
+
+class SimTeamSeason(BaseModel):
+    """
+    One club's simulated season, summed from the week's box scores.
+
+    This is the standings line. ``TeamSeason`` stays the franchise sheet
+    (payroll, cap, cash). A purge deletes these rows and the player lines
+    whose classification is ``npl``, and leaves the sheet and the MLB lines.
+    """
+
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="sim_seasons")
+    season = models.ForeignKey(Season, on_delete=models.CASCADE, related_name="sim_team_seasons")
+    wins = models.PositiveSmallIntegerField(default=0)
+    losses = models.PositiveSmallIntegerField(default=0)
+    runs_scored = models.PositiveIntegerField(default=0)
+    runs_allowed = models.PositiveIntegerField(default=0)
+    division_place = models.PositiveSmallIntegerField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["season", "team__abbreviation"]
+        constraints = [
+            models.UniqueConstraint(fields=["team", "season"], name="npl_sim_team_season"),
+        ]
+
+    def __str__(self):
+        return f"{self.team.abbreviation} {self.season.year}: {self.wins}-{self.losses}"

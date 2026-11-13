@@ -47,6 +47,7 @@ from npl.models import (
     WeekGame,
     WeeklyPlan,
     PlayerWeekCard,
+    SimTeamSeason,
 )
 
 admin.site.site_title = "The NPL"
@@ -711,3 +712,10 @@ class PlayerWeekCardAdmin(admin.ModelAdmin):
     list_display = ["player", "season", "week", "prior_weight"]
     list_filter = ["season", "week"]
     raw_id_fields = ["player"]
+
+
+@admin.register(SimTeamSeason)
+class SimTeamSeasonAdmin(admin.ModelAdmin):
+    list_display = ["team", "season", "wins", "losses", "runs_scored", "runs_allowed", "division_place"]
+    list_filter = ["season"]
+    raw_id_fields = ["team"]
