@@ -1,0 +1,33 @@
+<header class="mb-4 border-b border-gray-300 pb-3">
+    <h1 class="text-2xl font-bold"><a href="/teams/{{ team.short_name|lower }}/">{{ team.name }}</a></h1>
+    <p class="mt-1">
+        Week {{ week.number }} of 27 · {{ week.get_kind_display }}
+        · {% if at_home %}vs{% else %}at{% endif %} {{ opponent.name }}
+    </p>
+    <p class="mt-1 text-xs">
+        Lineups and instructions are due {{ week.lineup_due|date:"l, N j" }}.
+        The six games are simulated together {{ week.simulated_on|date:"l, N j" }}.
+        What you get back is the box score.
+    </p>
+    {% if carried_over %}
+    <p class="note mt-2">This is the previous week, shown so you can file it. It is not saved for this week until you do.</p>
+    {% endif %}
+    {% if played %}
+    <p class="note mt-2">This week has a result, so the card is closed.</p>
+    {% elif not can_edit and can_view %}
+    <p class="note mt-2">The Monday deadline has passed. The computer will use this card.</p>
+    {% endif %}
+    <nav class="plan-tabs" aria-label="Weekly card">
+        <a href="{% url 'team_lineup_week' team.short_name|lower year week.number %}" {% if section == "lineup" %}aria-current="page"{% endif %}>Lineup</a>
+        <a href="{% url 'team_rotation_week' team.short_name|lower year week.number %}" {% if section == "rotation" %}aria-current="page"{% endif %}>Rotation</a>
+        <a href="{% url 'team_bullpen_week' team.short_name|lower year week.number %}" {% if section == "bullpen" %}aria-current="page"{% endif %}>Bullpen</a>
+        <a href="{% url 'team_bench_week' team.short_name|lower year week.number %}" {% if section == "bench" %}aria-current="page"{% endif %}>Bench</a>
+        <a href="{% url 'team_cards_week' team.short_name|lower year week.number %}">Cards</a>
+        <a href="{% url 'series_detail' series.pk %}">Series</a>
+    </nav>
+</header>
+{% if errors %}
+<ul class="note mb-4">
+    {% for error in errors %}<li>{{ error }}</li>{% endfor %}
+</ul>
+{% endif %}

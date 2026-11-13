@@ -44,9 +44,14 @@
         {% if pending_player_count %}
         <p class="mt-2 text-xs text-gray-600">Grey rows are in a proposal that has not been processed. They stay on the club until Monday.</p>
         {% endif %}
-        {% if viewer_owns %}
-        <p class="mt-2 text-xs"><a class="underline" href="/transactions/form/">File a transaction</a></p>
-        {% endif %}
+        <p class="mt-2 text-xs">
+            <a class="underline" href="{% url 'schedule' %}">Schedule</a>
+            {% if team.short_name %}
+            · <a class="underline" href="{% url 'team_cards' team.short_name|lower %}">Week cards</a>
+            {% if viewer_owns %}· <a class="underline" href="{% url 'team_lineup' team.short_name|lower %}">This week's card</a>{% endif %}
+            {% endif %}
+            {% if viewer_owns %}· <a class="underline" href="/transactions/form/">File a transaction</a>{% endif %}
+        </p>
         <p class="salary-key mt-3 text-xs">
             <span class="salary-club_option">Club option</span>
             · <span class="salary-vesting_option">Vesting option</span>

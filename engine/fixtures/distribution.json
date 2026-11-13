@@ -1,0 +1,30 @@
+{
+  "id": "stub-300",
+  "wrc_plus": 100,
+  "rates": {
+    "k": 0.18,
+    "bb": 0.08,
+    "hbp": 0.01,
+    "single": 0.182,
+    "double": 0.05,
+    "triple": 0.006,
+    "hr": 0.035,
+    "bip_out": 0.457
+  },
+  "pitcher": {
+    "k": 0.226,
+    "bb": 0.084,
+    "hbp": 0.011,
+    "hr": 0.031,
+    "h": 0.192
+  },
+  "defense": {
+    "rating": 0.0,
+    "measured_at": "CF"
+  },
+  "park": {
+    "id": "neutral",
+    "run_factor": 1.0
+  },
+  "weather": null
+}

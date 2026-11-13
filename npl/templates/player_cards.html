@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}{{ player.name }} cards — The NPL{% endblock %}
+
+{% block content %}
+<h1 class="mb-2 text-2xl font-bold"><a href="/players/{{ player.mlb_id }}/">{{ player.name }}</a></h1>
+<p class="mb-4 text-xs">Each row is the card after that week's usage was folded into true talent.</p>
+{% if not cards %}
+<p>No weekly cards have been built for {{ player.name }}.</p>
+{% else %}
+{% for item in cards %}
+<section class="mb-4 border-b border-gray-300 pb-3">
+    <h2 class="font-bold">{{ item.card.season.year }} week {{ item.card.week }}</h2>
+    <p class="text-xs">{{ item.lines.summary }}</p>
+    {% if item.lines.hitting %}
+    <p class="mt-1">Hitting: {{ item.lines.hitting.measure }}</p>
+    <p class="text-xs">{{ item.lines.hitting.usage }}</p>
+    {% endif %}
+    {% if item.lines.pitching %}
+    <p class="mt-1">Pitching: {{ item.lines.pitching.measure }}</p>
+    <p class="text-xs">{{ item.lines.pitching.usage }}</p>
+    {% endif %}
+</section>
+{% endfor %}
+{% endif %}
+{% endblock %}

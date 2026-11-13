@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}{{ team.name }} bullpen — The NPL{% endblock %}
+
+{% block content %}
+{% include "includes/week_nav.html" %}
+
+{% if not can_view %}
+<p class="note">This bullpen stays with the club until Monday night.</p>
+{% elif not pitchers %}
+<p class="note">Nobody on the active roster pitches.</p>
+{% else %}
+<p class="mb-4 text-xs">You do not get to call for the pen during the game. The computer walks these lists. A specialist who matches the batter is tried before the setup man or the closer. Mop-up arms enter when the club is down 4 or ahead by 5, so the good arms stay in the pen. A starter is skipped on the day he starts.</p>
+{% if can_edit %}
+<form method="post" class="space-y-4">
+    {% csrf_token %}
+    <div>
+        <label class="mb-1 block text-xs font-bold" for="usage">Usage</label>
+        <select name="usage" id="usage">
+            {% for value, label, note in usages %}
+            <option value="{{ value }}" {% if value == usage %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        {% for value, label, note in usages %}
+        {% if value == usage %}<p class="mt-2 text-xs">{{ note }}</p>{% endif %}
+        {% endfor %}
+    </div>
+    <div>
+        <label class="mb-1 block text-xs font-bold" for="hook">Starter hook</label>
+        <select name="hook" id="hook">
+            {% for value, label in hooks %}
+            <option value="{{ value }}" {% if value == hook %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <p class="mt-2 text-xs">Quick pulls him at 4 runs or 85% of his pitch line. Normal is 5 runs or 95%. Slow is 6 runs. The fatigue line still ends his day.</p>
+    </div>
+    {% include "includes/bullpen_group.html" with title="Closer" field="closer" slots=groups.closer %}
+    {% include "includes/bullpen_group.html" with title="Setup" field="sirp" slots=groups.sirp %}
+    {% include "includes/bullpen_group.html" with title="Long relief" field="mirp" slots=groups.mirp %}
+    {% include "includes/bullpen_group.html" with title="Mop-up" field="mopup" slots=groups.mopup %}
+    {% include "includes/bullpen_group.html" with title="Lefty specialists" field="lefty" slots=groups.lefty %}
+    {% include "includes/bullpen_group.html" with title="Righty specialists" field="righty" slots=groups.righty %}
+    <p><button type="submit" class="btn">Save bullpen</button></p>
+</form>
+{% else %}
+<p class="mb-3 text-xs">{{ usage }} · {{ hook }} hook</p>
+{% include "includes/bullpen_group.html" with title="Closer" field="closer" slots=groups.closer %}
+{% include "includes/bullpen_group.html" with title="Setup" field="sirp" slots=groups.sirp %}
+{% include "includes/bullpen_group.html" with title="Long relief" field="mirp" slots=groups.mirp %}
+{% include "includes/bullpen_group.html" with title="Mop-up" field="mopup" slots=groups.mopup %}
+{% include "includes/bullpen_group.html" with title="Lefty specialists" field="lefty" slots=groups.lefty %}
+{% include "includes/bullpen_group.html" with title="Righty specialists" field="righty" slots=groups.righty %}
+{% endif %}
+{% endif %}
+{% endblock %}

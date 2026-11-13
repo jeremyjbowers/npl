@@ -1,0 +1,39 @@
+<section>
+    <h2 class="mb-2 text-lg font-bold">{{ title }}</h2>
+    <table class="sheet plan">
+        <thead>
+            <tr><th>Order</th><th>Batter</th><th>Position</th></tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+            <tr>
+                <td>{{ row.order }}</td>
+                <td>
+                    {% if can_edit %}
+                    <select name="{{ prefix }}_player_{{ row.order }}">
+                        <option value="">—</option>
+                        {% for id, label in hitters %}
+                        <option value="{{ id }}" {% if id == row.player_id %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                    {% else %}
+                    {% for id, label in hitters %}{% if id == row.player_id %}{{ label }}{% endif %}{% endfor %}
+                    {% endif %}
+                </td>
+                <td>
+                    {% if can_edit %}
+                    <select name="{{ prefix }}_pos_{{ row.order }}">
+                        <option value="">—</option>
+                        {% for position in positions %}
+                        <option value="{{ position }}" {% if position == row.position %}selected{% endif %}>{{ position }}</option>
+                        {% endfor %}
+                    </select>
+                    {% else %}
+                    {{ row.position }}
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>

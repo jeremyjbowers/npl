@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}{{ team.name }} rotation — The NPL{% endblock %}
+
+{% block content %}
+{% include "includes/week_nav.html" %}
+
+{% if not can_view %}
+<p class="note">This rotation stays with the club until Monday night.</p>
+{% elif not pitchers %}
+<p class="note">Nobody on the active roster pitches.</p>
+{% else %}
+<p class="mb-4 text-xs">Six games, in this order, all simulated Sunday. The same arm can start twice. On a day he starts, the computer will not also bring him out of the pen.</p>
+{% if can_edit %}
+<form method="post">
+    {% csrf_token %}
+    <table class="sheet plan">
+        <thead><tr><th>Game</th><th>Starter</th></tr></thead>
+        <tbody>
+            {% for starter in starters %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>
+                    <select name="starter_{{ forloop.counter }}">
+                        <option value="">—</option>
+                        {% for id, label in pitchers %}
+                        <option value="{{ id }}" {% if id == starter %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <p class="mt-4"><button type="submit" class="btn">Save rotation</button></p>
+</form>
+{% else %}
+<table class="sheet plan">
+    <thead><tr><th>Game</th><th>Starter</th></tr></thead>
+    <tbody>
+        {% for starter in starters %}
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{% for id, label in pitchers %}{% if id == starter %}{{ label }}{% endif %}{% endfor %}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+{% endif %}
+{% endblock %}

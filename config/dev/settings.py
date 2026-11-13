@@ -278,3 +278,7 @@ LEVELS = [
 ## LEAGUE STUFF
 LEAGUE_YEAR = 2026
 LEAGUE_SEASON = "offseason"
+
+# The vendored engine in engine/ plays one game from a state and a seed.
+# The Sunday batch calls it. Leave this empty until that process is running.
+ENGINE_URL = os.environ.get("ENGINE_URL", "")

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}{{ series.road_team.abbreviation }} at {{ series.home_team.abbreviation }} — The NPL{% endblock %}
+
+{% block content %}
+<h1 class="mb-2 text-2xl font-bold">{{ series.road_team.name }} at {{ series.home_team.name }}</h1>
+<p class="mb-4 text-xs">
+    Week {{ series.week.number }} · {{ series.week.get_kind_display }}
+    · due {{ series.week.lineup_due|date:"l, N j" }}
+    · simulated {{ series.week.simulated_on|date:"l, N j" }}
+</p>
+<table class="sheet mb-6">
+    <thead><tr><th>Game</th><th>Score</th></tr></thead>
+    <tbody>
+        {% for game in games %}
+        <tr>
+            <td><a href="{% url 'week_game' game.pk %}">Game {{ game.number }}</a></td>
+            <td>
+                {% if game.is_played %}
+                {{ series.road_team.abbreviation }} {{ game.road_score }}, {{ series.home_team.abbreviation }} {{ game.home_score }}
+                {% else %}
+                Not played
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<div class="plan-columns two">
+    {% for side in sides %}
+    <section>
+        <h2 class="mb-2 font-bold">{{ side.team.name }}</h2>
+        {% if not side.visible %}
+        <p class="text-xs">Filed with the club. Visible after Monday.</p>
+        {% elif not side.filed %}
+        <p class="text-xs">No lineup filed.</p>
+        {% else %}
+        <p class="text-xs">{{ side.plan.get_usage_display }} · {{ side.plan.get_hook_display }}</p>
+        <h3 class="mt-2 font-bold">Rotation</h3>
+        <ol>
+            {% for slot in side.plan.rotation_slots.all %}
+            <li>Game {{ slot.game_number }}: {{ slot.player.name }}</li>
+            {% empty %}<li>No rotation filed.</li>{% endfor %}
+        </ol>
+        <h3 class="mt-2 font-bold">Against right-handers</h3>
+        <ol>
+            {% for slot in side.plan.lineup_slots.all %}{% if slot.hand == "R" %}
+            <li>{{ slot.order }}. {{ slot.player.name }}, {{ slot.position }}</li>
+            {% endif %}{% endfor %}
+        </ol>
+        {% endif %}
+        {% if side.visible %}
+        <p class="mt-2 text-xs"><a href="{% url 'team_lineup_week' side.team.short_name|lower series.week.season.year series.week.number %}">Card</a></p>
+        {% endif %}
+    </section>
+    {% endfor %}
+</div>
+{% endblock %}

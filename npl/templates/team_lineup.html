@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}{{ team.name }} lineup — The NPL{% endblock %}
+
+{% block content %}
+{% include "includes/week_nav.html" %}
+
+{% if not can_view %}
+<p class="note">This lineup stays with the club until Monday night.</p>
+{% elif not hitters %}
+<p class="note">Nobody on the active roster can hit. The active list is the 40-man, not counting the injured list or the minors.</p>
+{% else %}
+<p class="mb-4 text-xs">Two cards, one for each pitching hand. The computer uses the card that matches the starter it is facing. Catcher has to be a catcher. Pitchers do not hit.</p>
+{% if can_edit %}
+<form method="post">
+    {% csrf_token %}
+    <p class="mb-3"><button type="button" class="btn-line" id="copy-lineup">Copy the right-handed card onto the left-handed card</button></p>
+    <div class="plan-columns two">
+        {% include "includes/lineup_card.html" with title="Against right-handers" prefix="r" rows=right_rows %}
+        {% include "includes/lineup_card.html" with title="Against left-handers" prefix="l" rows=left_rows %}
+    </div>
+    <p class="mt-4"><button type="submit" class="btn">Save lineup</button></p>
+</form>
+{% else %}
+<div class="plan-columns two">
+    {% include "includes/lineup_card.html" with title="Against right-handers" prefix="r" rows=right_rows %}
+    {% include "includes/lineup_card.html" with title="Against left-handers" prefix="l" rows=left_rows %}
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}
+
+{% block extrascript %}
+{% if can_edit %}
+<script>
+document.getElementById("copy-lineup").addEventListener("click", function () {
+    for (var order = 1; order <= 9; order++) {
+        var player = document.querySelector("[name='r_player_" + order + "']");
+        var position = document.querySelector("[name='r_pos_" + order + "']");
+        document.querySelector("[name='l_player_" + order + "']").value = player.value;
+        document.querySelector("[name='l_pos_" + order + "']").value = position.value;
+    }
+});
+</script>
+{% endif %}
+{% endblock %}

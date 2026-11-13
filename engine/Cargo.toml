@@ -1,0 +1,23 @@
+# Vendored from jeremyjbowers/ulmg engine/, which tracks the bAIseball engine.
+# It plays one game when Django sends it a state and a seed. NPL does not sit
+# a manager in the game. The weekly card tells the computer manager what to do,
+# and the result that gets kept is the box score.
+
+[package]
+name = "baseball_engine"
+version = "0.1.0"
+edition = "2021"
+description = "One-game baseball engine: state machine, at-bat simulator, and a minimal computer manager."
+license = "MIT"
+
+[dependencies]
+axum = "0.7.9"
+# 0.1.21 needs Rust 1.85. This crate stays on the 1.83 toolchain.
+hyper-util = "=0.1.20"
+http-body-util = "0.1"
+rand = "0.8.5"
+serde = { version = "1", features = ["derive"] }
+# float_roundtrip: a state sent back must parse to the same numbers it was written from.
+serde_json = { version = "1", features = ["float_roundtrip"] }
+tokio = { version = "1", features = ["macros", "net", "rt-multi-thread"] }
+tower = { version = "0.5", features = ["util"] }

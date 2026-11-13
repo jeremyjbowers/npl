@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}{{ team.name }} bench — The NPL{% endblock %}
+
+{% block content %}
+{% include "includes/week_nav.html" %}
+
+{% if not can_view %}
+<p class="note">These instructions stay with the club until Monday night.</p>
+{% elif not hitters %}
+<p class="note">Nobody on the active roster can come off the bench.</p>
+{% else %}
+<p class="mb-4 text-xs">The computer makes every pinch hit, defensive change, and pinch run. Leave a row blank to skip it. A rule is used only from its inning on, and only in the score you name. "Hit for" limits a pinch hitter to one batter. Leave that blank and he is the next option for anyone.</p>
+{% if can_edit %}
+<form method="post" class="space-y-4">
+    {% csrf_token %}
+    <div class="plan-columns two">
+        <div>
+            <label class="mb-1 block text-xs font-bold" for="steal">Steals</label>
+            <select name="steal" id="steal">{% for value, label in steals %}<option value="{{ value }}" {% if value == steal %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+        </div>
+        <div>
+            <label class="mb-1 block text-xs font-bold" for="bunt">Bunts</label>
+            <select name="bunt" id="bunt">{% for value, label in bunts %}<option value="{{ value }}" {% if value == bunt %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+        </div>
+        <div>
+            <label class="mb-1 block text-xs font-bold" for="hit-and-run">Hit and run</label>
+            <select name="hit_and_run" id="hit-and-run">{% for value, label in hit_and_runs %}<option value="{{ value }}" {% if value == hit_and_run %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+        </div>
+    </div>
+
+    <h2 class="text-lg font-bold">Pinch hitters against right-handers</h2>
+    {% for row in ph_r %}
+    {% include "includes/bench_hitter.html" with prefix="ph_r" row_number=forloop.counter row=row situations=ph_situations %}
+    {% endfor %}
+
+    <h2 class="text-lg font-bold">Pinch hitters against left-handers</h2>
+    {% for row in ph_l %}
+    {% include "includes/bench_hitter.html" with prefix="ph_l" row_number=forloop.counter row=row situations=ph_situations %}
+    {% endfor %}
+
+    <h2 class="text-lg font-bold">Defensive replacements</h2>
+    {% for row in defense %}
+    <div class="mb-3 grid grid-cols-2 gap-2">
+        <select name="def_out_{{ forloop.counter }}" aria-label="Player leaving {{ forloop.counter }}">
+            <option value="">Leaving —</option>
+            {% for id, label in hitters %}<option value="{{ id }}" {% if id == row.out_id %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+        <select name="def_in_{{ forloop.counter }}" aria-label="Player entering {{ forloop.counter }}">
+            <option value="">Entering —</option>
+            {% for id, label in hitters %}<option value="{{ id }}" {% if id == row.in_id %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+        <input name="def_inning_{{ forloop.counter }}" value="{{ row.inning }}" inputmode="numeric" aria-label="Earliest inning {{ forloop.counter }}">
+        <select name="def_when_{{ forloop.counter }}" aria-label="When to replace {{ forloop.counter }}">
+            {% for value, label in defense_situations %}<option value="{{ value }}" {% if value == row.situation %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+    </div>
+    {% endfor %}
+
+    <h2 class="text-lg font-bold">Pinch runners</h2>
+    {% for row in runs %}
+    <div class="mb-3 grid grid-cols-2 gap-2">
+        <select name="pr_{{ forloop.counter }}" aria-label="Pinch runner {{ forloop.counter }}">
+            <option value="">Runner —</option>
+            {% for id, label in hitters %}<option value="{{ id }}" {% if id == row.player_id %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+        <select name="pr_for_{{ forloop.counter }}" aria-label="Run for {{ forloop.counter }}">
+            <option value="">For anyone</option>
+            {% for id, label in hitters %}<option value="{{ id }}" {% if id == row.for_id %}selected{% endif %}>For {{ label }}</option>{% endfor %}
+        </select>
+        <input name="pr_inning_{{ forloop.counter }}" value="{{ row.inning }}" inputmode="numeric" aria-label="Pinch run inning {{ forloop.counter }}">
+        <select name="pr_when_{{ forloop.counter }}" aria-label="When to pinch run {{ forloop.counter }}">
+            {% for value, label in run_situations %}<option value="{{ value }}" {% if value == row.situation %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+    </div>
+    {% endfor %}
+
+    <p><button type="submit" class="btn">Save bench</button></p>
+</form>
+{% else %}
+<p class="text-xs">Steals {{ steal }} · bunts {{ bunt }} · hit and run {{ hit_and_run }}</p>
+{% endif %}
+{% endif %}
+{% endblock %}
