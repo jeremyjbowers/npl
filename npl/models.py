@@ -1869,4 +1869,5 @@ from npl.game_models import (  # noqa: E402,F401
     WeekGame,
     WeekSeries,
     WeeklyPlan,
+    SimTeamSeason,
 )

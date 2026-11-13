@@ -228,13 +228,18 @@ class Script:
     lineup: list = field(default_factory=list)
 
 
+def _ident(player):
+    """The id the card uses. Real players key on mlb_id. Stubs key on id."""
+    return player.mlb_id if getattr(player, "mlb_id", None) else player.id
+
+
 def _first_legal(candidates, problem):
     choice = Choice()
     seen = set()
     for player in candidates:
-        if player is None or player.id in seen:
+        if player is None or _ident(player) in seen:
             continue
-        seen.add(player.id)
+        seen.add(_ident(player))
         reason = problem(player)
         if reason is None:
             choice.player = player
@@ -325,8 +330,8 @@ def _first_in_groups(order, groups, problem):
     choice = Choice()
     seen = set()
     for group in order:
-        players = [player for player in groups.get(group, []) if player is not None and player.id not in seen]
-        seen |= {player.id for player in players}
+        players = [player for player in groups.get(group, []) if player is not None and _ident(player) not in seen]
+        seen |= {_ident(player) for player in players}
         found = _first_legal(players, problem)
         choice.skipped += found.skipped
         if found.player is not None:
@@ -424,13 +429,13 @@ def defensive_replacements(rules, *, inning, fielding_lead, lineup_ids, problem)
             continue
         if rule.out_player_id not in lineup_ids or rule.out_player_id in used_out:
             continue
-        if rule.player is None or rule.player.id in used_in:
+        if rule.player is None or _ident(rule.player) in used_in:
             continue
         reason = problem(rule.player)
         if reason:
             continue
         used_out.add(rule.out_player_id)
-        used_in.add(rule.player.id)
+        used_in.add(_ident(rule.player))
         moves.append((rule.out_player_id, rule.player))
     return moves
 
