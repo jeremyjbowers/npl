@@ -420,7 +420,17 @@ class TransactionApiTests(TestCase):
         names = {tool["name"] for tool in tools.json()["tools"]}
         self.assertIn("create_transaction_proposal", names)
         self.assertIn("claim_waiver", names)
-        self.assertIn("submit_draft_pick", names)
+        self.assertIn("list_open_waivers", names)
+        self.assertNotIn("submit_draft_pick", names)
+        self.assertNotIn("list_drafts", names)
+        create = next(tool for tool in tools.json()["tools"] if tool["name"] == "create_transaction_proposal")
+        codes = set(create["input_schema"]["properties"]["code"]["enum"])
+        self.assertIn("non_tender", codes)
+        self.assertIn("trade", codes)
+        self.assertIn("option_minors", codes)
+        self.assertIn("recall_option", codes)
+        self.assertNotIn("rule4_draft", codes)
+        self.assertNotIn("auction_result", codes)
         self.assertEqual(tools.json()["auth"]["type"], "bearer")
 
 

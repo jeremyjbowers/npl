@@ -1,6 +1,7 @@
-"""API keys, the read-only MCP JSON API, and the Streamable HTTP server."""
+"""API keys, the MCP JSON API, club filings, and the Streamable HTTP server."""
 
 import datetime
+import json
 from io import StringIO
 
 from django.contrib.auth import get_user_model
@@ -11,6 +12,8 @@ from httpx import ASGITransport, AsyncClient
 
 from npl import models
 from npl.api_tokens import generate_token
+from npl.mcp_app import filings
+from npl.mcp_app.context import reset_current_token, set_current_token
 from npl.mcp_app.http_app import create_mcp_http_app, create_site_asgi_application
 
 User = get_user_model()
@@ -545,6 +548,14 @@ class MCPHttpTests(TestCase):
             name="HTTP Owner", email="http@example.com", user=self.user
         )
         _token, self.raw = generate_token(self.user, "http", "read")
+        _write, self.write_raw = generate_token(self.user, "http-write", "read_write")
+        self.team = models.Team.objects.create(
+            full_name="HTTP Club", short_name="HTTP", abbreviation="HTP"
+        )
+        self.team.owners.add(self.owner)
+        self.player = models.Player.objects.create(
+            mlb_id="900001", name="HTTP Player", team=self.team
+        )
         self.app = create_mcp_http_app()
         self.site = create_site_asgi_application(_site_login_redirect)
 
@@ -592,3 +603,283 @@ class MCPHttpTests(TestCase):
                 self.assertIn("list_free_agents", names)
                 self.assertIn("list_pick_inventory", names)
                 self.assertIn("get_player", names)
+                self.assertIn("create_transaction_proposal", names)
+                create = next(
+                    tool
+                    for tool in listed.json()["result"]["tools"]
+                    if tool["name"] == "create_transaction_proposal"
+                )
+                self.assertIn("does not move", create["description"])
+                self.assertIn("agree_transaction", names)
+                self.assertIn("claim_waiver", names)
+                self.assertIn("list_open_waivers", names)
+                self.assertNotIn("submit_draft_pick", names)
+                self.assertNotIn("list_drafts", names)
+
+    async def test_a_read_key_cannot_file_and_a_write_key_can(self):
+        transport = ASGITransport(app=self.site)
+        async with self.site.router.lifespan_context(self.site):
+            async with AsyncClient(transport=transport, base_url="http://test") as client:
+                read_headers = {**_MCP_HEADERS, "Authorization": f"Bearer {self.raw}"}
+                ready = await client.post("/mcp", headers=read_headers, json=_INITIALIZE)
+                self.assertEqual(ready.status_code, 200, ready.text)
+                denied = await client.post(
+                    "/mcp",
+                    headers=read_headers,
+                    json={
+                        "jsonrpc": "2.0",
+                        "id": 3,
+                        "method": "tools/call",
+                        "params": {
+                            "name": "create_transaction_proposal",
+                            "arguments": {"code": "release", "player": self.player.mlb_id},
+                        },
+                    },
+                )
+                self.assertEqual(denied.status_code, 200, denied.text)
+                self.assertIn("read-only", denied.text)
+
+                write_headers = {**_MCP_HEADERS, "Authorization": f"Bearer {self.write_raw}"}
+                ready = await client.post("/mcp", headers=write_headers, json=_INITIALIZE)
+                self.assertEqual(ready.status_code, 200, ready.text)
+                filed = await client.post(
+                    "/mcp",
+                    headers=write_headers,
+                    json={
+                        "jsonrpc": "2.0",
+                        "id": 4,
+                        "method": "tools/call",
+                        "params": {
+                            "name": "create_transaction_proposal",
+                            "arguments": {"code": "release", "player": self.player.mlb_id},
+                        },
+                    },
+                )
+                self.assertEqual(filed.status_code, 200, filed.text)
+                self.assertIn("proposed", filed.text)
+                self.assertIn("release", filed.text)
+
+                blocked = await client.post(
+                    "/mcp",
+                    headers=write_headers,
+                    json={
+                        "jsonrpc": "2.0",
+                        "id": 5,
+                        "method": "tools/call",
+                        "params": {
+                            "name": "create_transaction_proposal",
+                            "arguments": {"code": "rule4_draft", "player": self.player.mlb_id},
+                        },
+                    },
+                )
+                self.assertEqual(blocked.status_code, 200, blocked.text)
+                self.assertIn("Draft", blocked.text)
+
+        def still_on_the_club():
+            self.player.refresh_from_db()
+            return self.player.team_id
+
+        from asgiref.sync import sync_to_async
+
+        self.assertEqual(await sync_to_async(still_on_the_club)(), self.team.id)
+
+
+class McpFilingTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(email="file@example.com", password="secret")
+        self.owner = models.Owner.objects.create(name="Filer", user=self.user)
+        self.team = models.Team.objects.create(
+            full_name="Nose Pickers", short_name="Pickers", abbreviation="MCP"
+        )
+        self.team.owners.add(self.owner)
+        self.player = models.Player.objects.create(
+            mlb_id="424242",
+            name="Filing Player",
+            team=self.team,
+            roster_40man=True,
+            options=2,
+        )
+        self.read_token, self.read_raw = generate_token(self.user, "read", "read")
+        self.write_token, self.write_raw = generate_token(self.user, "write", "read_write")
+        self.client = Client()
+
+    def _call(self, token, fn, *args, **kwargs):
+        reset = set_current_token(token)
+        try:
+            return fn(*args, **kwargs)
+        finally:
+            reset_current_token(reset)
+
+    def test_kinds_leave_out_drafts_and_bids(self):
+        codes = {kind["code"] for kind in filings.list_transaction_kinds()["kinds"]}
+        self.assertIn("non_tender", codes)
+        self.assertIn("trade", codes)
+        self.assertIn("option_minors", codes)
+        self.assertIn("recall_option", codes)
+        self.assertNotIn("rule4_draft", codes)
+        self.assertNotIn("rule5_draft", codes)
+        self.assertNotIn("auction_result", codes)
+
+    def test_a_read_key_cannot_file(self):
+        result = self._call(
+            self.read_token,
+            filings.create_transaction_proposal,
+            code="release",
+            player=self.player.mlb_id,
+        )
+        self.assertIn("read-only", result["error"])
+        self.assertFalse(models.TransactionProposal.objects.exists())
+
+    def test_nontender_can_be_filed_and_withdrawn(self):
+        models.Season.objects.create(year=2026, phase=models.Season.OFFSEASON, is_current=True)
+        filed = self._call(
+            self.write_token,
+            filings.create_transaction_proposal,
+            code="non_tender",
+            player=self.player.mlb_id,
+        )
+        self.assertEqual(filed["kind"], "non_tender", filed)
+        self.assertEqual(filed["status"], "proposed")
+        self.assertEqual(filed["source"], "api")
+        withdrawn = self._call(self.write_token, filings.withdraw_transaction, filed["id"])
+        self.assertEqual(withdrawn["status"], "withdrawn", withdrawn)
+        self.player.refresh_from_db()
+        self.assertEqual(self.player.team_id, self.team.id)
+
+    def test_a_trade_can_be_agreed_without_moving_the_player(self):
+        other_user = User.objects.create_user(email="other-file@example.com", password="secret")
+        other_owner = models.Owner.objects.create(name="Other", user=other_user)
+        other = models.Team.objects.create(
+            full_name="Other Club", short_name="Other", abbreviation="OTH"
+        )
+        other.owners.add(other_owner)
+        other_token, _raw = generate_token(other_user, "other", "read_write")
+
+        filed = self._call(
+            self.write_token,
+            filings.create_transaction_proposal,
+            code="trade",
+            player=self.player.mlb_id,
+            counterparty="oth",
+        )
+        self.assertEqual(filed["status"], "awaiting_agreement", filed)
+        agreed = self._call(other_token, filings.agree_transaction, filed["id"])
+        self.assertEqual(agreed["status"], "agreed", agreed)
+        self.player.refresh_from_db()
+        self.assertEqual(self.player.team_id, self.team.id)
+
+    def test_option_and_recall(self):
+        models.Season.objects.create(year=2026, phase=models.Season.REGULAR, is_current=True)
+        called = models.Player.objects.create(
+            mlb_id="424243",
+            name="Called Player",
+            team=self.team,
+            roster_40man=True,
+            roster_tripleA_option=True,
+        )
+        optioned = self._call(
+            self.write_token,
+            filings.create_transaction_proposal,
+            code="option_minors",
+            team="mcp",
+            player=self.player.mlb_id,
+        )
+        self.assertEqual(optioned["kind"], "option_minors", optioned)
+        recalled = self._call(
+            self.write_token,
+            filings.create_transaction_proposal,
+            code="recall_option",
+            player=called.mlb_id,
+        )
+        self.assertEqual(recalled["kind"], "recall_option", recalled)
+        self.player.refresh_from_db()
+        called.refresh_from_db()
+        self.assertEqual(self.player.team_id, self.team.id)
+        self.assertTrue(called.roster_tripleA_option)
+
+    def test_drafts_and_auction_bids_are_refused(self):
+        for code in ("rule4_draft", "rule5_draft", "auction_result", "waiver_cleared_outright"):
+            result = self._call(
+                self.write_token,
+                filings.create_transaction_proposal,
+                code=code,
+                player=self.player.mlb_id,
+            )
+            self.assertIn("error", result, code)
+            self.assertIn("cannot file", result["error"])
+        self.assertFalse(models.TransactionProposal.objects.exists())
+
+    def test_two_clubs_have_to_be_named(self):
+        second = models.Team.objects.create(
+            full_name="Second", short_name="Second", abbreviation="TWO"
+        )
+        second.owners.add(self.owner)
+        result = self._call(
+            self.write_token,
+            filings.create_transaction_proposal,
+            code="release",
+            player=self.player.mlb_id,
+        )
+        self.assertIn("TWO", result["error"])
+        self.assertIn("MCP", result["error"])
+
+    def test_a_waiver_can_be_claimed_by_the_other_club(self):
+        filed = self._call(
+            self.write_token,
+            filings.create_transaction_proposal,
+            code="waiver_request_outright",
+            player=self.player.mlb_id,
+        )
+        self.assertEqual(filed["kind"], "waiver_request_outright", filed)
+        listed = self._call(self.read_token, filings.list_open_waivers)
+        self.assertEqual(len(listed["waivers"]), 1)
+        self.assertEqual(listed["waivers"][0]["player"], self.player.mlb_id)
+
+        other_user = User.objects.create_user(email="claim@example.com", password="secret")
+        other_owner = models.Owner.objects.create(name="Claim", user=other_user)
+        other = models.Team.objects.create(
+            full_name="Claim Club", short_name="Claim", abbreviation="CLM"
+        )
+        other.owners.add(other_owner)
+        other_token, _raw = generate_token(other_user, "claim", "read_write")
+        claimed = self._call(other_token, filings.claim_waiver, listed["waivers"][0]["id"])
+        self.assertEqual(claimed["team"], "CLM", claimed)
+        own = self._call(self.write_token, filings.claim_waiver, listed["waivers"][0]["id"])
+        self.assertIn("error", own)
+        self.player.refresh_from_db()
+        self.assertEqual(self.player.team_id, self.team.id)
+
+    def test_json_api_accepts_an_abbreviation_and_refuses_a_bid(self):
+        filed = self.client.post(
+            "/api/v1/transactions/proposals/",
+            data=json.dumps({"team": "mcp", "code": "release", "player": self.player.mlb_id}),
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {self.write_raw}",
+        )
+        self.assertEqual(filed.status_code, 201, filed.content)
+        self.assertEqual(filed.json()["kind"], "release")
+
+        blocked = self.client.post(
+            "/api/v1/transactions/proposals/",
+            data=json.dumps({"code": "auction_result", "player": self.player.mlb_id}),
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {self.write_raw}",
+        )
+        self.assertEqual(blocked.status_code, 400)
+        self.assertIn("auction", blocked.json()["error"].lower())
+
+        kinds = self.client.get(
+            "/api/v1/transactions/kinds/?fileable=1",
+            HTTP_AUTHORIZATION=f"Bearer {self.read_raw}",
+        )
+        codes = {item["code"] for item in kinds.json()["kinds"]}
+        self.assertIn("non_tender", codes)
+        self.assertNotIn("rule4_draft", codes)
+        self.assertNotIn("auction_result", codes)
+
+        waivers = self.client.get(
+            "/api/v1/waivers/",
+            HTTP_AUTHORIZATION=f"Bearer {self.read_raw}",
+        )
+        self.assertEqual(waivers.status_code, 200)
+        self.assertEqual(waivers.json()["waivers"], [])

@@ -24,3 +24,18 @@ def require_current_owner():
     if owner is None:
         raise RuntimeError("MCP call is not authenticated to an owner")
     return owner
+
+
+_current_token: ContextVar = ContextVar("npl_mcp_token", default=None)
+
+
+def set_current_token(token):
+    return _current_token.set(token)
+
+
+def reset_current_token(reset_token):
+    _current_token.reset(reset_token)
+
+
+def get_current_token():
+    return _current_token.get()

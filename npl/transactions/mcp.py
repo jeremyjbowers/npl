@@ -1,14 +1,14 @@
 """Tool manifest for the transaction API.
 
 The league MCP server itself lives in npl.mcp_app and is served at /mcp.
-These transaction tools are the write side. Callers authenticate with
-Authorization: Bearer and a key from /my/api-keys/. Read keys can list.
-Read-write keys can submit. This module does not depend on an MCP library.
+These names match that server. Callers authenticate with Authorization: Bearer
+and a key from /my/api-keys/. Read keys can list. Read-write keys can file
+a club move. Draft selections and auction bids are not tools here.
 """
 
-from npl.transactions.catalog import ASSET_TYPES, KINDS
+from npl.transactions.catalog import ASSET_TYPES, fileable_kinds
 
-_KIND_CODES = sorted(KINDS)
+_FILEABLE_CODES = sorted(kind["code"] for kind in fileable_kinds())
 
 
 def tool_manifest():
@@ -20,8 +20,8 @@ def tool_manifest():
             "raw_label": {"type": "string"},
             "mlb_id": {"type": "string"},
             "scoresheet_id": {"type": "string"},
-            "from_team": {"type": "integer"},
-            "to_team": {"type": "integer"},
+            "from_team": {"type": "string", "description": "Club id or abbreviation"},
+            "to_team": {"type": "string", "description": "Club id or abbreviation"},
             "amount": {"type": "integer", "description": "Dollars"},
             "draft_pick": {"type": "integer"},
             "contract_terms": {"type": "object"},
@@ -31,38 +31,58 @@ def tool_manifest():
     return [
         {
             "name": "list_transaction_kinds",
-            "description": "List canonical NPL transaction kinds, including which ones need another team's agreement or contract terms.",
+            "description": (
+                "Codes a club can file, including a nontender, a trade, "
+                "option_minors (send down), and recall_option (call up). "
+                "Draft selections and auction bids are not listed."
+            ),
             "method": "GET",
-            "path": "/api/v1/transactions/kinds/",
+            "path": "/api/v1/transactions/kinds/?fileable=1",
             "input_schema": {"type": "object", "properties": {}},
         },
         {
             "name": "list_transaction_proposals",
-            "description": "List transaction proposals that involve one of the signed-in manager's teams.",
+            "description": "Proposals your clubs have filed or been asked to agree to. This is not the posted ledger.",
             "method": "GET",
             "path": "/api/v1/transactions/proposals/",
             "input_schema": {"type": "object", "properties": {}},
         },
         {
             "name": "create_transaction_proposal",
-            "description": "Propose a trade, signing, waiver, roster move, or other transaction. A trade is a pool of pieces. Set from_team and to_team on each asset. Any number of clubs can be in the deal, and every club other than the filer has to agree.",
+            "description": (
+                "File a move for your club. player is the mlb_id for a one-player move. "
+                "Omit team when the account owns one club. A trade needs counterparty_team. "
+                "Draft selections and auction bids are refused. The filing is a proposal "
+                "and does not move the player until the league office posts it."
+            ),
             "method": "POST",
             "path": "/api/v1/transactions/proposals/",
             "input_schema": {
                 "type": "object",
-                "required": ["team", "code"],
+                "required": ["code"],
                 "properties": {
-                    "team": {"type": "integer"},
-                    "code": {"type": "string", "enum": _KIND_CODES},
-                    "counterparty_team": {"type": "integer"},
+                    "team": {
+                        "type": "string",
+                        "description": "Club id or abbreviation. Omit when the account owns one club.",
+                    },
+                    "code": {"type": "string", "enum": _FILEABLE_CODES},
+                    "player": {
+                        "type": "string",
+                        "description": "mlb_id for a one-player move such as a nontender, option, recall, or release.",
+                    },
+                    "counterparty_team": {
+                        "type": "string",
+                        "description": "The other club's id or abbreviation.",
+                    },
                     "counterparty_teams": {
                         "type": "array",
-                        "items": {"type": "integer"},
-                        "description": "Optional. Clubs are also taken from each asset's from_team and to_team. There is no limit on how many clubs are in a trade.",
+                        "items": {"type": "string"},
+                        "description": "Other clubs in a trade. Clubs are also taken from each asset.",
                     },
                     "notes": {"type": "string"},
                     "effective_date": {"type": "string", "format": "date"},
                     "contract_terms": {"type": "object"},
+                    "amount": {"type": "integer", "description": "Dollars, for a signing."},
                     "assets": {"type": "array", "items": asset_schema},
                     "veteran_disposition": {
                         "type": "string",
@@ -73,7 +93,7 @@ def tool_manifest():
         },
         {
             "name": "get_transaction_proposal",
-            "description": "Fetch one proposal, including parties, assets, and waiver id.",
+            "description": "Fetch one proposal your club is party to, including assets and who still has to agree.",
             "method": "GET",
             "path": "/api/v1/transactions/proposals/{id}/",
             "input_schema": {
@@ -84,7 +104,7 @@ def tool_manifest():
         },
         {
             "name": "agree_transaction",
-            "description": "Agree to a trade on behalf of one club in the deal. The trade stays open until every other club has agreed.",
+            "description": "Agree to a proposal waiting on your club. The player stays put until the league office posts the move.",
             "method": "POST",
             "path": "/api/v1/transactions/proposals/{id}/agree/",
             "input_schema": {
@@ -95,7 +115,7 @@ def tool_manifest():
         },
         {
             "name": "decline_transaction",
-            "description": "Decline a trade proposal.",
+            "description": "Decline a proposal waiting on your club.",
             "method": "POST",
             "path": "/api/v1/transactions/proposals/{id}/decline/",
             "input_schema": {
@@ -106,7 +126,7 @@ def tool_manifest():
         },
         {
             "name": "withdraw_transaction",
-            "description": "Withdraw a proposal your team submitted.",
+            "description": "Withdraw a proposal your club filed.",
             "method": "POST",
             "path": "/api/v1/transactions/proposals/{id}/withdraw/",
             "input_schema": {
@@ -116,8 +136,15 @@ def tool_manifest():
             },
         },
         {
+            "name": "list_open_waivers",
+            "description": "Open waivers a club can claim. This is not an auction.",
+            "method": "GET",
+            "path": "/api/v1/waivers/",
+            "input_schema": {"type": "object", "properties": {}},
+        },
+        {
             "name": "claim_waiver",
-            "description": "Claim a player on an open outright, trade, or Rule 5 waiver.",
+            "description": "Claim a player on an open waiver. This is not an auction bid. The league office still posts the move.",
             "method": "POST",
             "path": "/api/v1/waivers/{id}/claim/",
             "input_schema": {
@@ -125,28 +152,8 @@ def tool_manifest():
                 "required": ["id"],
                 "properties": {
                     "id": {"type": "integer"},
+                    "team": {"type": "string", "description": "Club id or abbreviation. Omit when the account owns one other club."},
                     "notes": {"type": "string"},
-                },
-            },
-        },
-        {
-            "name": "list_drafts",
-            "description": "List Rule 4, Rule 5, and in-season draft sessions.",
-            "method": "GET",
-            "path": "/api/v1/drafts/",
-            "input_schema": {"type": "object", "properties": {}},
-        },
-        {
-            "name": "submit_draft_pick",
-            "description": "Submit the player for the pick currently on the clock. The selection is stored as a proposal and does not move the player until directors post it.",
-            "method": "POST",
-            "path": "/api/v1/drafts/{id}/pick/",
-            "input_schema": {
-                "type": "object",
-                "required": ["id", "player"],
-                "properties": {
-                    "id": {"type": "integer"},
-                    "player": {"type": "string", "description": "Player mlb_id"},
                 },
             },
         },

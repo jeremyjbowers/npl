@@ -14,7 +14,12 @@ from starlette.routing import Mount, Route
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from npl.mcp_app.auth import load_token
-from npl.mcp_app.context import reset_current_owner, set_current_owner
+from npl.mcp_app.context import (
+    reset_current_owner,
+    reset_current_token,
+    set_current_owner,
+    set_current_token,
+)
 from npl.mcp_app.tools import build_mcp
 
 
@@ -57,12 +62,14 @@ class OwnerBearerMiddleware:
             await send({"type": "http.response.body", "body": body})
             return
 
-        _token, owner, _team = loaded
-        ctx_token = set_current_owner(owner)
+        token, owner, _team = loaded
+        owner_token = set_current_owner(owner)
+        api_token = set_current_token(token)
         try:
             await self.app(scope, receive, send)
         finally:
-            reset_current_owner(ctx_token)
+            reset_current_token(api_token)
+            reset_current_owner(owner_token)
 
 
 class SlashlessMcpMiddleware:

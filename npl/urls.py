@@ -27,6 +27,7 @@ urlpatterns = [
     path('api/v1/transactions/proposals/<int:proposal_id>/agree/', transaction_api.proposal_agree),
     path('api/v1/transactions/proposals/<int:proposal_id>/decline/', transaction_api.proposal_decline),
     path('api/v1/transactions/proposals/<int:proposal_id>/withdraw/', transaction_api.proposal_withdraw),
+    path('api/v1/waivers/', transaction_api.waivers),
     path('api/v1/waivers/<int:waiver_id>/claim/', transaction_api.waiver_claim),
     path('api/v1/drafts/', transaction_api.drafts),
     path('api/v1/drafts/<int:session_id>/pick/', transaction_api.draft_pick),
