@@ -7,6 +7,7 @@ those messages names the section.
 
 import datetime
 import re
+from decimal import Decimal, InvalidOperation
 
 from django.conf import settings
 from django.utils import timezone
@@ -473,11 +474,16 @@ def _published_rules(team, code, assets, players, on_date, contract_terms=None, 
 
 
 def _nontender_contract(team, players):
-    """Arbitration and pre-arbitration only. A guaranteed deal stays on the books.
+    """Arbitration and pre-arbitration only. A later guaranteed year stays.
 
-    NPL Rules 8.4.2, 5.1, and 5.3. Missing contract years are left for directors.
+    NPL Rules 8.4.2, 5.1, 5.3, and 7.1. The league-year column is the season
+    that just ended. A one-year guarantee for that season, including an
+    in-season free-agent deal, does not cover the contract being tendered.
+    A guaranteed year after it is an extension. Missing contract years are
+    left for directors.
     """
     problems = []
+    season_year = int(settings.LEAGUE_YEAR)
     for player in players:
         if not (player.roster_40man or player.roster_outrighted):
             problems.append(
@@ -489,10 +495,20 @@ def _nontender_contract(team, players):
             models.ContractYear.objects.filter(
                 contract__player=player,
                 contract__team_id=team.id,
-                year__gte=settings.LEAGUE_YEAR,
+                year__gte=season_year,
             ).order_by("year")
         )
         if not years:
+            continue
+        if any(year.salary_class == GUARANTEED and year.year > season_year for year in years):
+            problems.append(
+                f"{player.name} has a guaranteed contract and cannot be nontendered. "
+                "An extension is guaranteed salary. NPL Rules 8.4.2."
+            )
+            continue
+        # Nothing is written for a later year. He is still under club control
+        # for a tender, so the finished year's guarantee does not block it.
+        if not any(year.year > season_year for year in years) and _under_tender_control(player):
             continue
         if any(year.salary_class == GUARANTEED for year in years):
             problems.append(
@@ -508,6 +524,26 @@ def _nontender_contract(team, players):
                 "NPL Rules 8.4.2."
             )
     return problems
+
+
+def _under_tender_control(player):
+    """Arbitration or pre-arbitration. Six years of service is free agency."""
+    service = _service_years(player)
+    if service is None:
+        return False
+    return service < 6
+
+
+def _service_years(player):
+    if player.service_time is not None:
+        return Decimal(player.service_time)
+    text = (player.mls_time or "").strip()
+    if not text:
+        return None
+    try:
+        return Decimal(text)
+    except InvalidOperation:
+        return None
 
 
 def _calendar_rules(code, players, on_date):

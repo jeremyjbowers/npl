@@ -119,7 +119,8 @@ KINDS = {
 
 KINDS["contract_amnesty"]["effect"] = "Dropped without penalty. The contract is voided."
 KINDS["non_tender"]["effect"] = (
-    "Offseason only. Arbitration or pre-arbitration, not a guaranteed contract. "
+    "Offseason only. Arbitration or pre-arbitration. A guaranteed year after this season "
+    "is an extension and cannot be nontendered. A one-year deal for the season that just ended can. "
     "The club is absolved of the salary. There is no cap or cash cost."
 )
 

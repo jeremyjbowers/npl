@@ -678,6 +678,86 @@ class ProposalRulesAndHintsTests(TestCase):
         self.assertIn("guaranteed", str(extended.exception))
         self.assertIn("8.4.2", str(extended.exception))
 
+        # A one-year guarantee for the season that just ended is not an
+        # extension. In-season free agency is one year (rule 7.1). He can
+        # be nontendered while he still has under six years of service.
+        from decimal import Decimal
+
+        finished = Player.objects.create(
+            mlb_id="200013",
+            name="Casey Legumina",
+            first_name="Casey",
+            last_name="Legumina",
+            team=self.team,
+            roster_40man=True,
+            service_time=Decimal("0.014"),
+        )
+        contract(finished, 2026, GUARANTEED, 1_000_000)
+        kept_finished = create_proposal(
+            user=self.user,
+            team=self.team,
+            code="non_tender",
+            assets=[{"asset_type": "player", "player": finished}],
+        )
+        self.assertEqual(kept_finished.kind, "non_tender")
+
+        whole_year = Player.objects.create(
+            mlb_id="200014",
+            name="Whole Year",
+            first_name="Whole",
+            last_name="Year",
+            team=self.team,
+            roster_40man=True,
+            mls_time="2",
+        )
+        contract(whole_year, 2026, GUARANTEED, 760_000)
+        kept_whole = create_proposal(
+            user=self.user,
+            team=self.team,
+            code="non_tender",
+            assets=[{"asset_type": "player", "player": whole_year}],
+        )
+        self.assertEqual(kept_whole.kind, "non_tender")
+
+        veteran = Player.objects.create(
+            mlb_id="200015",
+            name="Free Agent",
+            first_name="Free",
+            last_name="Agent",
+            team=self.team,
+            roster_40man=True,
+            service_time=Decimal("6.124"),
+        )
+        contract(veteran, 2026, GUARANTEED, 4_000_000)
+        with self.assertRaises(TransactionError) as free_agent:
+            create_proposal(
+                user=self.user,
+                team=self.team,
+                code="non_tender",
+                assets=[{"asset_type": "player", "player": veteran}],
+            )
+        self.assertIn("guaranteed", str(free_agent.exception))
+
+        still_extended = Player.objects.create(
+            mlb_id="200016",
+            name="Still Extended",
+            first_name="Still",
+            last_name="Extended",
+            team=self.team,
+            roster_40man=True,
+            service_time=Decimal("0.014"),
+        )
+        contract(still_extended, 2026, GUARANTEED, 1_000_000)
+        contract(still_extended, 2027, GUARANTEED, 2_000_000)
+        with self.assertRaises(TransactionError) as later:
+            create_proposal(
+                user=self.user,
+                team=self.team,
+                code="non_tender",
+                assets=[{"asset_type": "player", "player": still_extended}],
+            )
+        self.assertIn("extension", str(later.exception).lower())
+
         minor = Player.objects.create(
             mlb_id="200011",
             name="Farm Player",
