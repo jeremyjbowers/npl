@@ -47,7 +47,7 @@ TRANSACTION_MENU = (
             {
                 "code": "non_tender",
                 "label": "Non-Tender",
-                "hint": "Offseason only. Decline to tender an arbitration or pre-arbitration contract. A guaranteed contract cannot be nontendered, and there is no cap or cash cost.",
+                "hint": "Offseason only. Arbitration or pre-arbitration. A guaranteed year after this season cannot be nontendered. A one-year deal for the season that just ended can. No cap or cash cost.",
             },
         ),
     },
@@ -484,17 +484,19 @@ class ReleasePlayerForm(BaseTransactionForm):
 
 
 class NonTenderForm(BaseTransactionForm):
-    """Offseason nontender of an arbitration or pre-arbitration contract.
+    """Offseason nontender of an arbitration or pre-arbitration player.
 
-    NPL Rules 8.4.2, 5.1, and 5.3. A guaranteed contract, including an
-    extension, cannot be nontendered. There is no cap or cash cost.
+    NPL Rules 8.4.2, 5.1, 5.3, and 7.1. A guaranteed year after this season
+    is an extension and cannot be nontendered. A one-year deal for the
+    season that just ended can, while he has under six years of service.
+    There is no cap or cash cost.
     """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setup_player_field(
             label="Player",
-            help_text="Arbitration or pre-arbitration player on the 40-man or assigned outright. A guaranteed contract cannot be nontendered.",
+            help_text="Arbitration or pre-arbitration player on the 40-man or assigned outright. A guaranteed year after this season cannot be nontendered.",
         )
 
     def get_player_queryset(self):
