@@ -93,6 +93,10 @@ def players_search(request):
             level=params.get("level"),
             roster_40man=params.get("roster_40man"),
             roster_30man=params.get("roster_30man"),
+            pool=params.get("pool"),
+            season=params.get("season"),
+            sort=params.get("sort"),
+            offset=params.get("offset", 0),
             limit=params.get("limit", 100),
         )
     except models.Team.DoesNotExist:
@@ -111,6 +115,7 @@ def draft_picks(request):
             season=params.get("season"),
             draft_type=params.get("draft_type"),
             original_team=params.get("original_team"),
+            held=params.get("held"),
             limit=params.get("limit", 500),
         )
     except models.Team.DoesNotExist:
@@ -146,6 +151,50 @@ def transactions_list(request):
     except models.Team.DoesNotExist:
         return JsonResponse({"error": "No team found"}, status=404)
     return JsonResponse(payload)
+
+
+@require_GET
+@require_api_token
+def free_agents(request):
+    params = request.GET
+    return JsonResponse(
+        services.list_free_agents(
+            name=params.get("name"),
+            position=params.get("position"),
+            level=params.get("level"),
+            pool=params.get("pool"),
+            season=params.get("season"),
+            sort=params.get("sort"),
+            offset=params.get("offset", 0),
+            limit=params.get("limit", 200),
+        )
+    )
+
+
+@require_GET
+@require_api_token
+def pick_inventory(request):
+    params = request.GET
+    try:
+        payload = services.list_pick_inventory(
+            team=params.get("team"),
+            year=params.get("year"),
+            season=params.get("season"),
+            draft_type=params.get("draft_type"),
+            limit=params.get("limit", 1000),
+        )
+    except models.Team.DoesNotExist:
+        return JsonResponse({"error": "No team found"}, status=404)
+    return JsonResponse(payload)
+
+
+@require_GET
+@require_api_token
+def player_detail(request, mlb_id):
+    try:
+        return JsonResponse(services.get_player(mlb_id))
+    except models.Player.DoesNotExist:
+        return JsonResponse({"error": "No player found"}, status=404)
 
 
 @require_GET

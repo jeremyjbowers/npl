@@ -72,20 +72,42 @@ def parties_for(rows, trade=None):
     return join_parties(sorted(names, key=str.lower))
 
 
+def _side_key(team, team_id, raw):
+    """One club, whether the sheet used the current name or an older one."""
+    from npl.transactions.clubs import franchise_number
+
+    if team is not None:
+        number = (
+            franchise_number(getattr(team, "tab_id", None))
+            or franchise_number(getattr(team, "short_name", None))
+            or franchise_number(getattr(team, "full_name", None))
+        )
+        if number is not None:
+            return ("franchise", number)
+    if team_id:
+        return ("id", team_id)
+    number = franchise_number(raw)
+    if number is not None:
+        return ("franchise", number)
+    text = (raw or "").strip().lower()
+    if text and text not in {"-", "—"}:
+        return ("raw", text)
+    return None
+
+
 def _pair(row):
     sides = []
-    if getattr(row, "team_id", None):
-        sides.append(("id", row.team_id))
-    else:
-        raw = (getattr(row, "raw_team", None) or "").strip().lower()
-        if raw:
-            sides.append(("raw", raw))
-    if getattr(row, "acquiring_team_id", None):
-        sides.append(("id", row.acquiring_team_id))
-    else:
-        raw = (getattr(row, "raw_acquiring_team", None) or "").strip().lower()
-        if raw and raw != "-":
-            sides.append(("raw", raw))
+    for team, team_id, raw in (
+        (getattr(row, "team", None), getattr(row, "team_id", None), getattr(row, "raw_team", None)),
+        (
+            getattr(row, "acquiring_team", None),
+            getattr(row, "acquiring_team_id", None),
+            getattr(row, "raw_acquiring_team", None),
+        ),
+    ):
+        key = _side_key(team, team_id, raw)
+        if key:
+            sides.append(key)
     if len(sides) < 2:
         return None
     return tuple(sorted(sides))

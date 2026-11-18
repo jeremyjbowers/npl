@@ -95,13 +95,18 @@ Use this only when a client cannot do remote HTTPS MCP. It calls the same JSON A
 | `list_teams` | Clubs, division, payroll, cap space, cash, IFA |
 | `get_team_roster` | Roster sections used on the team page. Omit the abbreviation for your club |
 | `get_roster_compliance` | 40-man and 85-man counts against the limits |
-| `search_players` | Name, position, owned, club, level, 30-man and 40-man flags |
-| `list_draft_picks` | Picks by year, season, type, or club |
-| `list_trades` | Trades, with players and picks on each side |
-| `list_transactions` | Posted ledger rows |
+| `search_players` | Name, position, owned, club, level, 30-man and 40-man flags. `sort=war` ranks by full-season MLB WAR. `offset` pages past the limit |
+| `list_free_agents` | Unowned players, best full-season MLB WAR first. `offset` reads the next page |
+| `get_player` | One player: contract, WAR, club-split sim lines, and the NPL clubs he has been on |
+| `list_draft_picks` | Picks by year, season, type, or club. `held=true` is picks not yet used |
+| `list_pick_inventory` | Unused draft picks grouped by the club that holds them |
+| `list_trades` | Trades, with the players, draft picks, and cash each club received |
+| `list_transactions` | Posted ledger rows, with club names, draft-pick text, and cash |
 | `get_my_wishlist` | Your ranks, tiers, notes, and tags |
 | `list_auctions` | Open auctions. Other clubs' bids stay hidden |
-| `list_team_ledger` | Payroll, cash, and IFA lines |
+| `list_team_ledger` | Contract payroll lines, plus cash and IFA adjustments |
+
+WAR on a player is his full MLB season. It is not the portion he played for one NPL club. `npl_lines` are the simulated counting stats already split by NPL club. `get_player` lists the clubs and the dates. The service does not prorate MLB WAR across those stints.
 
 `forty_man` counts a player on the 40-man who is not on the end-of-season IL or the foreign list. `reserve` is the 85-man count: everyone except the end-of-season IL, the foreign list, and retired players.
 
