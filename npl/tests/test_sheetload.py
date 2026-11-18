@@ -54,6 +54,9 @@ class MoneyAndColorsTests(unittest.TestCase):
         self.assertEqual(salary_class((217, 234, 211)), PRE_ARB_0)
         self.assertEqual(salary_class((147, 196, 125)), PRE_ARB_2)
         self.assertEqual(salary_class((164, 194, 244)), ARBITRATION)
+        # Team-tab conditional format, not the Key swatch. Missing this
+        # blue stores an arbitration salary as guaranteed.
+        self.assertEqual(salary_class((207, 226, 243)), ARBITRATION)
 
     def test_league_minimums_follow_the_cba_table(self):
         self.assertEqual(league_minimum(2026), 760000)

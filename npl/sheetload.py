@@ -57,6 +57,10 @@ def buyout_cell_class(contract):
     return ""
 
 # Key tab swatches, sampled from the live roster workbook.
+# Team tabs do not paint arbitration with the Key swatch. A conditional
+# format on the current-year salary column colors service time under 6
+# (and at least the super-two line) with #cfe2f3. That is the blue the
+# sheet API returns for an arbitration salary.
 SALARY_COLORS = (
     ((255, 255, 0), CLUB_OPTION),
     ((255, 0, 0), VESTING_OPTION),
@@ -65,6 +69,7 @@ SALARY_COLORS = (
     ((182, 215, 168), PRE_ARB_1),
     ((147, 196, 125), PRE_ARB_2),
     ((164, 194, 244), ARBITRATION),
+    ((207, 226, 243), ARBITRATION),
     ((244, 199, 195), RECALL_HOLD),
     ((153, 0, 255), PENDING_FA),
     ((183, 183, 183), PENDING_TERMS),
