@@ -337,6 +337,205 @@ class McpReadApiTests(TestCase):
         self.assertTrue(compliance.json()["limits"]["forty_man_ok"])
         self.assertTrue(compliance.json()["limits"]["reserve_ok"])
 
+    def test_trades_include_players_picks_cash_and_club_names(self):
+        trade = models.Trade.objects.create(date=datetime.date(2026, 7, 4))
+        trade.teams.add(self.team, self.other_team)
+        models.Transaction.objects.create(
+            date=datetime.date(2026, 7, 4),
+            team=self.team,
+            acquiring_team=self.other_team,
+            player=self.player,
+            raw_player="Ada Player",
+            raw_transaction_type="Trade",
+            trade=trade,
+        )
+        models.Transaction.objects.create(
+            date=datetime.date(2026, 7, 4),
+            team=self.other_team,
+            acquiring_team=self.team,
+            raw_player="Draft Pick",
+            raw_draft_pick="2027 open round 1",
+            cash_considerations=250000,
+            raw_transaction_type="Trade",
+            trade=trade,
+        )
+        body = self._get("/api/mcp/v1/trades/?team=MCP", self.raw).json()
+        deal = next(item for item in body["trades"] if item["date"] == "2026-07-04")
+        received = {side["team_name"]: side for side in deal["sides"]}
+        self.assertEqual(received["Oth"]["players"][0]["name"], "Ada Player")
+        self.assertEqual(received["Mcp"]["picks"][0]["description"], "2027 open round 1")
+        self.assertEqual(received["Mcp"]["cash"], [250000])
+        self.assertEqual({club["name"] for club in deal["clubs"]}, {"Mcp", "Oth"})
+        self.assertIn("Ada Player", deal["summary"])
+
+    def test_unlinked_ledger_lines_still_form_a_trade(self):
+        models.Team.objects.create(
+            full_name="Cheesequake Cheddar",
+            short_name="Cheddar",
+            abbreviation="CHED",
+            tab_id="Cheddar #1",
+        )
+        models.Team.objects.create(
+            full_name="Honolulu Hitmen",
+            short_name="Hitmen",
+            abbreviation="HIT",
+            tab_id="Hitmen #14",
+        )
+        models.Transaction.objects.create(
+            date=datetime.date(2024, 6, 2),
+            raw_team="Nose Pickers",
+            raw_acquiring_team="Hitmen",
+            raw_player="Ada Player",
+            player=self.player,
+            raw_transaction_type="Trade",
+        )
+        models.Transaction.objects.create(
+            date=datetime.date(2024, 6, 2),
+            raw_team="Honolulu Hitmen",
+            raw_acquiring_team="Cheesequake Cheddar",
+            raw_player="Draft Pick",
+            raw_draft_pick="2026 OP3",
+            raw_transaction_type="Trade",
+        )
+        models.Transaction.objects.filter(date=datetime.date(2024, 6, 2)).update(
+            team=None, acquiring_team=None
+        )
+        body = self._get("/api/mcp/v1/trades/?team=CHED&season=2024", self.raw).json()
+        self.assertEqual(body["count"], 1)
+        deal = body["trades"][0]
+        self.assertIsNone(deal["id"])
+        received = {side["team_name"]: side for side in deal["sides"]}
+        self.assertEqual(received["Hitmen"]["players"][0]["name"], "Ada Player")
+        self.assertEqual(received["Cheddar"]["picks"][0]["description"], "2026 OP3")
+
+    def test_transaction_names_resolve_older_club_labels(self):
+        models.Team.objects.create(
+            full_name="Cheesequake Cheddar",
+            short_name="Cheddar",
+            abbreviation="CHED",
+            tab_id="Cheddar #1",
+        )
+        models.Transaction.objects.create(
+            date=datetime.date(2024, 5, 1),
+            raw_team="Nose Pickers",
+            raw_player="Ada Player",
+            player=self.player,
+            raw_transaction_type="Release",
+            cash_considerations=750000,
+        )
+        models.Transaction.objects.filter(date=datetime.date(2024, 5, 1)).update(team=None)
+        body = self._get("/api/mcp/v1/transactions/?team=CHED&year=2024", self.raw).json()
+        row = body["transactions"][0]
+        self.assertEqual(row["team"], "CHED")
+        self.assertEqual(row["team_name"], "Cheddar")
+        self.assertEqual(row["cash"], 750000)
+        self.assertEqual(body["total"], 1)
+
+    def test_pick_inventory_is_the_unused_picks(self):
+        models.DraftPick.objects.create(
+            draft_type="open",
+            year="2026",
+            season="offseason",
+            draft_round=1,
+            pick_number=9,
+            team=self.team,
+            player=self.player,
+        )
+        body = self._get("/api/mcp/v1/pick-inventory/?team=MCP&year=2026", self.raw).json()
+        numbers = [pick["pick_number"] for pick in body["picks"]]
+        self.assertEqual(numbers, [4])
+        self.assertEqual(body["clubs"][0]["team_name"], "Mcp")
+        self.assertTrue(body["picks"][0]["held"])
+
+    def test_ledger_includes_contract_payroll_lines(self):
+        contract = models.Contract.objects.create(
+            team=self.team, player=self.player, total_years=1, total_amount=4000000
+        )
+        models.ContractYear.objects.create(contract=contract, year=2026, amount=4000000)
+        body = self._get("/api/mcp/v1/ledger/?year=2026", self.raw).json()
+        self.assertEqual(body["entries"][0]["amount"], 125000)
+        line = body["payroll_lines"][0]
+        self.assertEqual(line["player"], "Ada Player")
+        self.assertEqual(line["amount"], 4000000)
+        self.assertEqual(line["year"], 2026)
+
+    def test_free_agents_are_ranked_by_full_season_war(self):
+        ace = models.Player.objects.create(
+            mlb_id="200010",
+            name="Zoe Ace",
+            first_name="Zoe",
+            last_name="Ace",
+            is_owned=False,
+            simple_position="P",
+        )
+        models.Player.objects.create(
+            mlb_id="200011",
+            name="Amy Zee",
+            first_name="Amy",
+            last_name="Zee",
+            is_owned=False,
+            simple_position="OF",
+        )
+        models.PlayerStatSeason.objects.create(
+            player=ace,
+            season=2026,
+            classification="1-MLB",
+            level="MLB",
+            is_mlb=True,
+            hit_stats={"WAR": 6.5, "pa": 400},
+        )
+        models.PlayerStatSeason.objects.create(
+            player=ace,
+            season=2026,
+            classification="npl",
+            level="NPL",
+            team=self.team,
+            hit_stats={"hr": 2, "pa": 20},
+        )
+        models.PlayerStatSeason.objects.create(
+            player_id="200011",
+            season=2026,
+            classification="1-MLB",
+            level="MLB",
+            is_mlb=True,
+            hit_stats={"WAR": 0.2, "pa": 50},
+        )
+        body = self._get("/api/mcp/v1/free-agents/?limit=10", self.raw).json()
+        names = [player["name"] for player in body["players"]]
+        self.assertEqual(names[0], "Zoe Ace")
+        self.assertLess(names.index("Zoe Ace"), names.index("Amy Zee"))
+        self.assertLess(names.index("Amy Zee"), names.index("Bea Free"))
+        self.assertEqual(body["players"][0]["war"], 6.5)
+        self.assertEqual(body["players"][0]["war_scope"], "mlb_season")
+        self.assertIn("not split by NPL club", body["players"][0]["war_note"])
+        self.assertEqual(body["players"][0]["npl_lines"][0]["team"], "MCP")
+        self.assertIsNone(body["players"][0]["npl_lines"][0]["war"])
+        self.assertEqual(body["total"], 3)
+        page = self._get("/api/mcp/v1/free-agents/?limit=1&offset=1", self.raw).json()
+        self.assertEqual(page["players"][0]["name"], "Amy Zee")
+        self.assertEqual(page["total"], 3)
+
+    def test_player_detail_lists_club_stints_without_splitting_war(self):
+        self.player.team = self.other_team
+        self.player.save(update_fields=["team"])
+        models.Transaction.objects.create(
+            date=datetime.date(2026, 6, 15),
+            team=self.team,
+            acquiring_team=self.other_team,
+            player=self.player,
+            raw_player="Ada Player",
+            raw_transaction_type="Trade",
+        )
+        body = self._get("/api/mcp/v1/players/200001/", self.raw).json()
+        self.assertEqual(body["stints"][0]["team_name"], "Mcp")
+        self.assertEqual(body["stints"][0]["end"], "2026-06-15")
+        self.assertEqual(body["stints"][1]["team_name"], "Oth")
+        self.assertTrue(body["stints"][1]["current"])
+        self.assertIsNone(body["stints"][1]["end"])
+        self.assertIn("not divided", body["stint_note"])
+        missing = self._get("/api/mcp/v1/players/missing/", self.raw)
+        self.assertEqual(missing.status_code, 404)
+
 
 @override_settings(ALLOWED_HOSTS=["*"])
 class MCPHttpTests(TestCase):
@@ -390,3 +589,6 @@ class MCPHttpTests(TestCase):
                 self.assertIn("get_season_context", names)
                 self.assertIn("list_auctions", names)
                 self.assertIn("get_my_wishlist", names)
+                self.assertIn("list_free_agents", names)
+                self.assertIn("list_pick_inventory", names)
+                self.assertIn("get_player", names)

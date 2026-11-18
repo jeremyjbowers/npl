@@ -71,6 +71,37 @@ class GroupingTests(SimpleTestCase):
         groups = archive_trade_groups(rows)
         self.assertEqual([[row.id for row in group] for group in groups], [[1, 2], [4]])
 
+    def test_older_names_for_the_same_franchise_stay_one_trade(self):
+        cheddar = SimpleNamespace(
+            id=1, tab_id="Cheddar #1", short_name="Cheddar", full_name="Cheesequake Cheddar"
+        )
+        hitmen = SimpleNamespace(
+            id=14, tab_id="Hitmen #14", short_name="Hitmen", full_name="Honolulu Hitmen"
+        )
+        rows = [
+            _row(
+                id=1,
+                team=cheddar,
+                team_id=1,
+                raw_team="Nose Pickers",
+                acquiring_team=hitmen,
+                acquiring_team_id=14,
+                raw_acquiring_team="Honolulu Hitmen",
+            ),
+            _row(
+                id=2,
+                team=None,
+                team_id=None,
+                raw_team="Hitmen",
+                acquiring_team=None,
+                acquiring_team_id=None,
+                raw_acquiring_team="Cheesequake Cheddar",
+            ),
+        ]
+        blocks = group_log(rows)
+        self.assertEqual([block["kind"] for block in blocks], ["trade"])
+        self.assertEqual([row.id for row in blocks[0]["rows"]], [1, 2])
+
 
 class PostedTradeTests(TestCase):
     def setUp(self):

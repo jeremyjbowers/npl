@@ -16,11 +16,18 @@ from npl.mcp_app.context import get_current_owner, require_current_owner
 
 INSTRUCTIONS = (
     "Read-only National Pastime League tools for rosters, cap and cash, "
-    "auctions, drafts, trades, and wishlists. forty_man is the 40-man count "
-    "(roster_40man, excluding the end-of-season IL and the foreign list). "
-    "reserve is the 85-man count (everyone except end-of-season IL, foreign, "
-    "and retired). This server does not file transactions. Write actions use "
-    "the same bearer token on /api/v1/transactions/."
+    "auctions, drafts, trades, and wishlists. list_trades returns the players, "
+    "draft picks, and cash each club received, with club names. "
+    "list_transactions includes team_name, acquiring_team_name, draft_pick, and cash. "
+    "list_pick_inventory is the unused draft picks. list_team_ledger includes "
+    "contract payroll_lines plus cash and IFA adjustments. list_free_agents ranks "
+    "unowned players by full-season MLB WAR and pages with offset. That WAR is the "
+    "whole MLB season, not the portion with one NPL club. npl_lines are the "
+    "club-split sim stats. get_player lists the NPL clubs he has been on. "
+    "forty_man is the 40-man count (roster_40man, excluding the end-of-season IL "
+    "and the foreign list). reserve is the 85-man count (everyone except "
+    "end-of-season IL, foreign, and retired). This server does not file "
+    "transactions. Write actions use the same bearer token on /api/v1/transactions/."
 )
 
 
@@ -72,7 +79,7 @@ def _register_local_tools(mcp: FastMCP) -> None:
 
     @mcp.tool()
     async def get_team_roster(abbreviation: str | None = None) -> str:
-        """Roster sections for one club. Omit abbreviation to use your club."""
+        """Roster sections for one club. Omit abbreviation to use your club. WAR is the full MLB season. npl_lines are the club-split sim stats."""
         owner = get_current_owner()
         data = await sync_to_async(services.get_team_roster)(abbreviation=abbreviation, owner=owner)
         return _dump(data)
@@ -95,9 +102,11 @@ def _register_local_tools(mcp: FastMCP) -> None:
         level: str | None = None,
         roster_40man: str | None = None,
         roster_30man: str | None = None,
+        sort: str | None = None,
+        offset: int = 0,
         limit: int = 100,
     ) -> str:
-        """Search players by name, position (or h/p), owned, club, level, and roster flags."""
+        """Search players. sort is name or war. war ranks by full-season MLB WAR. offset pages past the limit. total is the full match count."""
         data = await sync_to_async(services.search_players)(
             name=name,
             position=position,
@@ -106,8 +115,40 @@ def _register_local_tools(mcp: FastMCP) -> None:
             level=level,
             roster_40man=roster_40man,
             roster_30man=roster_30man,
+            sort=sort,
+            offset=offset,
             limit=limit,
         )
+        return _dump(data)
+
+    @mcp.tool()
+    async def list_free_agents(
+        name: str | None = None,
+        position: str | None = None,
+        level: str | None = None,
+        pool: str | None = None,
+        season: int | None = None,
+        sort: str | None = None,
+        offset: int = 0,
+        limit: int = 200,
+    ) -> str:
+        """Unowned players ranked by full-season MLB WAR. That WAR is not split by NPL club. Pass offset for the next page. pool is mlb_current, milb_current, mlb_prior, or milb_prior."""
+        data = await sync_to_async(services.list_free_agents)(
+            name=name,
+            position=position,
+            level=level,
+            pool=pool,
+            season=season,
+            sort=sort,
+            offset=offset,
+            limit=limit,
+        )
+        return _dump(data)
+
+    @mcp.tool()
+    async def get_player(mlb_id: str) -> str:
+        """One player: contract, full-season MLB WAR, club-split sim lines, and the NPL clubs he has been on."""
+        data = await sync_to_async(services.get_player)(mlb_id)
         return _dump(data)
 
     @mcp.tool()
@@ -117,15 +158,35 @@ def _register_local_tools(mcp: FastMCP) -> None:
         season: str | None = None,
         draft_type: str | None = None,
         original_team: str | None = None,
+        held: str | None = None,
         limit: int = 500,
     ) -> str:
-        """List draft picks. season is offseason or midseason. draft_type is open, aa, or balance."""
+        """List draft picks. season is offseason or midseason. draft_type is open, aa, or balance. held=true is picks no player has been taken with."""
         data = await sync_to_async(services.list_draft_picks)(
             team=team,
             year=year,
             season=season,
             draft_type=draft_type,
             original_team=original_team,
+            held=held,
+            limit=limit,
+        )
+        return _dump(data)
+
+    @mcp.tool()
+    async def list_pick_inventory(
+        team: str | None = None,
+        year: str | None = None,
+        season: str | None = None,
+        draft_type: str | None = None,
+        limit: int = 1000,
+    ) -> str:
+        """Unused draft picks still held by clubs, grouped by club name."""
+        data = await sync_to_async(services.list_pick_inventory)(
+            team=team,
+            year=year,
+            season=season,
+            draft_type=draft_type,
             limit=limit,
         )
         return _dump(data)
@@ -136,7 +197,7 @@ def _register_local_tools(mcp: FastMCP) -> None:
         season: int | None = None,
         limit: int = 200,
     ) -> str:
-        """List trades, including the players and picks on each side."""
+        """List trades. Each deal includes the players, draft picks, and cash each club received, plus club names."""
         data = await sync_to_async(services.list_trades)(team=team, season=season, limit=limit)
         return _dump(data)
 
@@ -146,7 +207,7 @@ def _register_local_tools(mcp: FastMCP) -> None:
         year: int | None = None,
         limit: int = 200,
     ) -> str:
-        """List posted ledger transactions for a club or a calendar year."""
+        """List posted ledger rows, including club names, draft-pick text, and cash."""
         data = await sync_to_async(services.list_transactions)(team=team, year=year, limit=limit)
         return _dump(data)
 
@@ -170,7 +231,7 @@ def _register_local_tools(mcp: FastMCP) -> None:
         year: int | None = None,
         book: str | None = None,
     ) -> str:
-        """Payroll, cash, and IFA ledger lines. book is payroll, cash, or ifa. Omit abbreviation for your club."""
+        """Cash and IFA adjustments plus payroll_lines, the contract salary of each player. book is payroll, cash, or ifa. Omit abbreviation for your club."""
         owner = get_current_owner()
         data = await sync_to_async(services.list_team_ledger)(
             abbreviation=abbreviation, owner=owner, year=year, book=book
@@ -191,7 +252,7 @@ def _register_remote_tools(mcp: FastMCP) -> None:
 
     @mcp.tool()
     def get_team_roster(abbreviation: str | None = None) -> str:
-        """Roster sections for one club. Omit abbreviation to use your club."""
+        """Roster sections for one club. Omit abbreviation to use your club. WAR is the full MLB season. npl_lines are the club-split sim stats."""
         if abbreviation:
             return _dump(_http_get(f"/api/mcp/v1/teams/{abbreviation}/roster/"))
         return _dump(_http_get("/api/mcp/v1/roster/"))
@@ -212,9 +273,11 @@ def _register_remote_tools(mcp: FastMCP) -> None:
         level: str | None = None,
         roster_40man: str | None = None,
         roster_30man: str | None = None,
+        sort: str | None = None,
+        offset: int = 0,
         limit: int = 100,
     ) -> str:
-        """Search players by name, position, owned, club, level, and roster flags."""
+        """Search players. sort is name or war. offset pages past the limit."""
         params = _params(
             {
                 "name": name,
@@ -224,10 +287,43 @@ def _register_remote_tools(mcp: FastMCP) -> None:
                 "level": level,
                 "roster_40man": roster_40man,
                 "roster_30man": roster_30man,
+                "sort": sort,
+                "offset": offset,
                 "limit": limit,
             }
         )
         return _dump(_http_get("/api/mcp/v1/players/search/", params=params))
+
+    @mcp.tool()
+    def list_free_agents(
+        name: str | None = None,
+        position: str | None = None,
+        level: str | None = None,
+        pool: str | None = None,
+        season: int | None = None,
+        sort: str | None = None,
+        offset: int = 0,
+        limit: int = 200,
+    ) -> str:
+        """Unowned players ranked by full-season MLB WAR. Pass offset for the next page."""
+        params = _params(
+            {
+                "name": name,
+                "position": position,
+                "level": level,
+                "pool": pool,
+                "season": season,
+                "sort": sort,
+                "offset": offset,
+                "limit": limit,
+            }
+        )
+        return _dump(_http_get("/api/mcp/v1/free-agents/", params=params))
+
+    @mcp.tool()
+    def get_player(mlb_id: str) -> str:
+        """One player: contract, full-season MLB WAR, club-split sim lines, and NPL club stints."""
+        return _dump(_http_get(f"/api/mcp/v1/players/{mlb_id}/"))
 
     @mcp.tool()
     def list_draft_picks(
@@ -236,9 +332,10 @@ def _register_remote_tools(mcp: FastMCP) -> None:
         season: str | None = None,
         draft_type: str | None = None,
         original_team: str | None = None,
+        held: str | None = None,
         limit: int = 500,
     ) -> str:
-        """List draft picks."""
+        """List draft picks. held=true is picks no player has been taken with."""
         params = _params(
             {
                 "team": team,
@@ -246,20 +343,41 @@ def _register_remote_tools(mcp: FastMCP) -> None:
                 "season": season,
                 "draft_type": draft_type,
                 "original_team": original_team,
+                "held": held,
                 "limit": limit,
             }
         )
         return _dump(_http_get("/api/mcp/v1/draft-picks/", params=params))
 
     @mcp.tool()
+    def list_pick_inventory(
+        team: str | None = None,
+        year: str | None = None,
+        season: str | None = None,
+        draft_type: str | None = None,
+        limit: int = 1000,
+    ) -> str:
+        """Unused draft picks still held by clubs, grouped by club name."""
+        params = _params(
+            {
+                "team": team,
+                "year": year,
+                "season": season,
+                "draft_type": draft_type,
+                "limit": limit,
+            }
+        )
+        return _dump(_http_get("/api/mcp/v1/pick-inventory/", params=params))
+
+    @mcp.tool()
     def list_trades(team: str | None = None, season: int | None = None, limit: int = 200) -> str:
-        """List trades, including the players and picks on each side."""
+        """List trades. Each deal includes the players, draft picks, and cash each club received, plus club names."""
         params = _params({"team": team, "season": season, "limit": limit})
         return _dump(_http_get("/api/mcp/v1/trades/", params=params))
 
     @mcp.tool()
     def list_transactions(team: str | None = None, year: int | None = None, limit: int = 200) -> str:
-        """List posted ledger transactions."""
+        """List posted ledger rows, including club names, draft-pick text, and cash."""
         params = _params({"team": team, "year": year, "limit": limit})
         return _dump(_http_get("/api/mcp/v1/transactions/", params=params))
 
@@ -279,7 +397,7 @@ def _register_remote_tools(mcp: FastMCP) -> None:
         year: int | None = None,
         book: str | None = None,
     ) -> str:
-        """Payroll, cash, and IFA ledger lines for a club."""
+        """Cash and IFA adjustments plus payroll_lines, the contract salary of each player."""
         params = _params({"year": year, "book": book})
         if abbreviation:
             return _dump(_http_get(f"/api/mcp/v1/teams/{abbreviation}/ledger/", params=params))
