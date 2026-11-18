@@ -1,8 +1,8 @@
 # NPL MCP
 
-Agents can look up rosters, roster limits, players, draft picks, trades, the transaction ledger, open auctions, club finances, and your wishlist.
+Agents can look up rosters, roster limits, players, draft picks, trades, the transaction ledger, open auctions, club finances, and your wishlist. A read-write key can also file a club move on this same server.
 
-Filing a transaction is separate. A read-write key uses the same bearer token on `/api/v1/transactions/`. The MCP server itself is read-only.
+A filing is a proposal. The player stays where he is until the league office posts the move. Draft selections and auction bids are not tools. A read-only key can look up the kinds, the proposals, and the open waivers, and it cannot file.
 
 Works with Claude, Codex, GitHub Copilot, Cursor, and any other client that speaks MCP.
 
@@ -18,7 +18,7 @@ The same key works on the JSON API under `/api/mcp/v1/…` if you want to curl t
 
 Sign in and open **API keys** (`/my/api-keys/`).
 
-- **Generate key** creates a read key or a read-write key. The secret stays on that page, so you can copy it later. Only you can see your keys.
+- **Generate key** creates a read key or a read-write key. A read-write key is the one an agent uses to file a move. The secret stays on that page, so you can copy it later. Only you can see your keys.
 - **Revoke** turns a key off. A revoked key cannot call the API. The row stays so you can tell which agent you turned off.
 
 A commissioner can also mint one from the shell:
@@ -105,6 +105,17 @@ Use this only when a client cannot do remote HTTPS MCP. It calls the same JSON A
 | `get_my_wishlist` | Your ranks, tiers, notes, and tags |
 | `list_auctions` | Open auctions. Other clubs' bids stay hidden |
 | `list_team_ledger` | Contract payroll lines, plus cash and IFA adjustments |
+| `list_transaction_kinds` | Moves a club can file. Drafts and auction bids are omitted |
+| `list_transaction_proposals` | Proposals your club filed or still has to answer. Not the posted ledger |
+| `get_transaction_proposal` | One proposal, including the pieces and who has agreed |
+| `create_transaction_proposal` | File a nontender, trade, send-down, call-up, release, injured-list move, signing, or waiver request |
+| `agree_transaction` | Agree to a proposal waiting on your club |
+| `decline_transaction` | Decline a proposal waiting on your club |
+| `withdraw_transaction` | Take back a proposal your club filed |
+| `list_open_waivers` | Open waivers. This is not an auction |
+| `claim_waiver` | Claim a player on an open waiver |
+
+`create_transaction_proposal` acts as the owner of the key. `option_minors` sends a player down. `recall_option` calls him up. `non_tender` nontenders him. Omit `team` when the account owns one club, and pass an abbreviation when it owns more than one. `player` is the mlb_id for a one-player move. A trade passes `counterparty` as the other club's abbreviation. A deal with several pieces passes `assets`, and each piece's `from_team` and `to_team` is an abbreviation or an id. `list_transactions` is the posted ledger. `list_transaction_proposals` is what has been filed and not yet posted.
 
 WAR on a player is his full MLB season. It is not the portion he played for one NPL club. `npl_lines` are the simulated counting stats already split by NPL club. `get_player` lists the clubs and the dates. The service does not prorate MLB WAR across those stints.
 

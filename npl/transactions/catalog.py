@@ -314,6 +314,24 @@ def manager_kinds():
     return [kind for kind in KINDS.values() if kind["manager_can_initiate"]]
 
 
+def club_can_file(kind):
+    """True for a move a club files. Drafts and auction bids are left out."""
+    if not isinstance(kind, dict):
+        kind = get_kind(kind)
+    return bool(kind["manager_can_initiate"]) and kind["category"] not in {"draft", "auction"}
+
+
+def fileable_kinds():
+    return [kind for kind in KINDS.values() if club_can_file(kind)]
+
+
+CLUB_FILING_REFUSAL = (
+    "A club cannot file that move here. Draft selections, auction bids, "
+    "and league-office posts are left out. list_transaction_kinds lists the "
+    "moves a club can file, including a nontender, a trade, an option, and a recall."
+)
+
+
 def kinds_by_category():
     grouped = {}
     for kind in KINDS.values():

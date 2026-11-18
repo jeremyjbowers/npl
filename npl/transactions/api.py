@@ -9,6 +9,7 @@ from django.views.decorators.csrf import csrf_exempt
 from npl import models
 from npl.api_tokens import authenticate, mark_used
 from npl.transactions import service
+from npl.transactions.catalog import CLUB_FILING_REFUSAL, club_can_file
 from npl.transactions.mcp import tool_manifest
 
 _READ_METHODS = {"GET", "HEAD", "OPTIONS"}
@@ -60,7 +61,10 @@ def kinds(request):
     denied = _auth(request)
     if denied:
         return denied
-    return JsonResponse({"kinds": service.list_kinds()})
+    rows = service.list_kinds()
+    if request.GET.get("fileable") in {"1", "true", "yes"}:
+        rows = [row for row in rows if club_can_file(row)]
+    return JsonResponse({"kinds": rows})
 
 
 @csrf_exempt
@@ -74,6 +78,17 @@ def proposals(request):
     if request.method != "POST":
         return JsonResponse({"error": "Use GET or POST."}, status=405)
     data = _body(request)
+    try:
+        allowed = club_can_file(data.get("code"))
+    except KeyError as exc:
+        return JsonResponse({"error": str(exc)}, status=400)
+    if not allowed:
+        return JsonResponse({"error": CLUB_FILING_REFUSAL}, status=400)
+    if not data.get("assets") and data.get("player") not in (None, ""):
+        asset = {"asset_type": "player", "player": data.get("player")}
+        if data.get("amount") not in (None, ""):
+            asset["amount"] = data.get("amount")
+        data["assets"] = [asset]
     source = data.get("source") or models.TransactionProposal.API
     if source not in {choice for choice, _label in models.TransactionProposal.SOURCE_CHOICES}:
         source = models.TransactionProposal.API
@@ -141,6 +156,16 @@ def proposal_withdraw(request, proposal_id):
 
 
 @csrf_exempt
+def waivers(request):
+    denied = _auth(request)
+    if denied:
+        return denied
+    if request.method != "GET":
+        return JsonResponse({"error": "Use GET."}, status=405)
+    return JsonResponse({"waivers": service.open_waivers()})
+
+
+@csrf_exempt
 def waiver_claim(request, waiver_id):
     denied = _auth(request)
     if denied:
@@ -152,7 +177,12 @@ def waiver_claim(request, waiver_id):
         return JsonResponse({"error": "Waiver not found."}, status=404)
     data = _body(request)
     try:
-        claim = service.claim_waiver(request.user, waiver, notes=data.get("notes") or "")
+        claim = service.claim_waiver(
+            request.user,
+            waiver,
+            notes=data.get("notes") or "",
+            team=data.get("team") or None,
+        )
     except service.TransactionError as exc:
         return JsonResponse({"error": str(exc)}, status=400)
     return JsonResponse(

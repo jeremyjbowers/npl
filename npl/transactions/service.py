@@ -60,11 +60,35 @@ def _require_team(user, team):
 
 
 def _resolve_team(value):
+    """A club pk, abbreviation, or short name. Agents know abbreviations, not ids."""
     if value is None or value == "":
         return None
     if isinstance(value, models.Team):
         return value
-    return models.Team.objects.get(pk=int(value))
+    text = str(value).strip()
+    if text.isdigit():
+        found = models.Team.objects.filter(pk=int(text)).first()
+        if found is not None:
+            return found
+    found = models.Team.objects.filter(abbreviation__iexact=text).first()
+    if found is None:
+        found = models.Team.objects.filter(short_name__iexact=text).first()
+    if found is None:
+        raise models.Team.DoesNotExist(f"No club matches {text}.")
+    return found
+
+
+def _default_team(user, team):
+    """Use the account's only club when the filing does not name one."""
+    if team not in (None, ""):
+        return team
+    clubs = list(teams_for_user(user))
+    if len(clubs) == 1:
+        return clubs[0]
+    if not clubs:
+        raise TransactionError("This account does not own a club.")
+    labels = ", ".join(club.abbreviation or club.short_name or str(club.pk) for club in clubs)
+    raise TransactionError(f"Name the club. This account owns {labels}.")
 
 
 def _resolve_player(value):
@@ -205,7 +229,7 @@ def create_proposal(
     limbo_reason="",
 ):
     kind = get_kind(code)
-    team = _require_team(user, _resolve_team(team))
+    team = _require_team(user, _resolve_team(_default_team(user, team)))
     explicit = _explicit_clubs(counterparty_team, counterparty_teams)
     if any(club.pk == team.pk for club in explicit):
         raise TransactionError("The other clubs have to be different from yours.")
@@ -682,6 +706,30 @@ def _iso(value):
 
 def list_kinds():
     return list(KINDS.values())
+
+
+def waiver_to_dict(waiver):
+    player = waiver.player
+    placing = waiver.placing_team
+    return {
+        "id": waiver.id,
+        "waiver_type": waiver.waiver_type,
+        "status": waiver.status,
+        "player": player.mlb_id if player else None,
+        "player_name": player.name if player else None,
+        "placing_team": placing.abbreviation if placing else None,
+        "placing_team_name": placing.short_name if placing else None,
+        "salary": waiver.salary,
+        "clears_on": waiver.clears_on.isoformat() if waiver.clears_on else None,
+        "closes": waiver.closes.isoformat() if waiver.closes else None,
+    }
+
+
+def open_waivers():
+    rows = models.Waiver.objects.filter(status=models.Waiver.OPEN).select_related(
+        "player", "placing_team"
+    )
+    return [waiver_to_dict(row) for row in rows]
 
 
 def visible_proposals(user):

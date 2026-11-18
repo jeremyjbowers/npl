@@ -10,7 +10,7 @@ import httpx
 from asgiref.sync import sync_to_async
 from mcp.server.fastmcp import FastMCP
 
-from npl.mcp_app import services
+from npl.mcp_app import filings, services
 from npl.mcp_app.context import get_current_owner, require_current_owner
 
 
@@ -26,8 +26,18 @@ INSTRUCTIONS = (
     "club-split sim stats. get_player lists the NPL clubs he has been on. "
     "forty_man is the 40-man count (roster_40man, excluding the end-of-season IL "
     "and the foreign list). reserve is the 85-man count (everyone except "
-    "end-of-season IL, foreign, and retired). This server does not file "
-    "transactions. Write actions use the same bearer token on /api/v1/transactions/."
+    "end-of-season IL, foreign, and retired). A read-write key files club "
+    "moves with create_transaction_proposal: a nontender (non_tender), a trade, "
+    "sending a player down (option_minors), calling a player up (recall_option), "
+    "a release, an injured-list move, a signing, or a waiver claim. Pass player "
+    "as the mlb_id. Omit team when the account owns one club. A trade needs "
+    "counterparty, the other club's abbreviation. Draft selections and auction "
+    "bids are not on this server. A filing is a proposal. The player stays put "
+    "until the league office posts it. agree_transaction, decline_transaction, "
+    "and withdraw_transaction answer a proposal. claim_waiver claims an open "
+    "waiver and is not an auction bid. A read-only key can look these up and "
+    "cannot file. list_transaction_proposals is what has been filed. "
+    "list_transactions is the posted ledger."
 )
 
 
@@ -47,6 +57,40 @@ def _http_get(path: str, params: dict | None = None) -> Any:
             raise RuntimeError("NPL API token rejected (401)")
         response.raise_for_status()
         return response.json()
+
+
+def _http_send(method: str, path: str, body: dict | None = None) -> Any:
+    base = (os.environ.get("NPL_API_URL") or "").rstrip("/")
+    token = os.environ.get("NPL_API_TOKEN") or ""
+    if not base or not token:
+        raise RuntimeError("Stdio mode requires NPL_API_URL and NPL_API_TOKEN")
+    headers = {"Authorization": f"Bearer {token}", "Accept": "application/json"}
+    kwargs: dict[str, Any] = {"headers": headers}
+    if body is not None:
+        headers["Content-Type"] = "application/json"
+        kwargs["content"] = json.dumps(body).encode()
+    with httpx.Client(timeout=60.0) as client:
+        response = client.request(method, f"{base}{path}", **kwargs)
+    if response.status_code == 401:
+        raise RuntimeError("NPL API token rejected (401)")
+    if response.status_code >= 400:
+        detail = ""
+        try:
+            payload = response.json()
+            detail = payload.get("error") or payload.get("detail") or ""
+        except ValueError:
+            detail = response.text
+        raise RuntimeError(detail or f"NPL API {response.status_code}")
+    if not response.content:
+        return {"ok": True}
+    return response.json()
+
+
+def _remote_result(fn) -> str:
+    try:
+        return _dump(fn())
+    except Exception as exc:
+        return _dump({"error": str(exc)})
 
 
 def _params(values: dict) -> dict:
@@ -238,6 +282,8 @@ def _register_local_tools(mcp: FastMCP) -> None:
         )
         return _dump(data)
 
+    _register_filing_tools(mcp, remote=False)
+
 
 def _register_remote_tools(mcp: FastMCP) -> None:
     @mcp.tool()
@@ -402,3 +448,194 @@ def _register_remote_tools(mcp: FastMCP) -> None:
         if abbreviation:
             return _dump(_http_get(f"/api/mcp/v1/teams/{abbreviation}/ledger/", params=params))
         return _dump(_http_get("/api/mcp/v1/ledger/", params=params))
+
+    _register_filing_tools(mcp, remote=True)
+
+
+def _register_filing_tools(mcp: FastMCP, *, remote: bool) -> None:
+    if remote:
+
+        @mcp.tool()
+        def list_transaction_kinds() -> str:
+            """Codes a club can file. Draft selections and auction bids are not listed."""
+
+            def run():
+                payload = _http_get("/api/v1/transactions/kinds/?fileable=1")
+                return payload
+
+            return _remote_result(run)
+
+        @mcp.tool()
+        def list_transaction_proposals() -> str:
+            """Proposals your clubs have filed or been asked to agree to. Not the posted ledger."""
+            return _remote_result(lambda: _http_get("/api/v1/transactions/proposals/"))
+
+        @mcp.tool()
+        def get_transaction_proposal(proposal_id: int) -> str:
+            """One proposal your club is party to, including assets and who still has to agree."""
+            return _remote_result(
+                lambda: _http_get(f"/api/v1/transactions/proposals/{proposal_id}/")
+            )
+
+        @mcp.tool()
+        def create_transaction_proposal(
+            code: str,
+            team: str | int | None = None,
+            player: str | int | None = None,
+            counterparty: str | int | None = None,
+            counterparty_teams: list[str | int] | None = None,
+            assets: list[dict[str, Any]] | None = None,
+            notes: str | None = None,
+            effective_date: str | None = None,
+            contract_terms: dict[str, Any] | None = None,
+            veteran_disposition: str | None = None,
+            amount: int | None = None,
+        ) -> str:
+            """File a move for the key's owner. code is non_tender, trade, option_minors (send down), recall_option (call up), release, an injured-list code, a signing, or a waiver request. player is the mlb_id for a one-player move. Omit team when the account owns one club; otherwise pass an abbreviation. A trade needs counterparty, the other club's abbreviation. assets lists the pieces of a larger trade; from_team and to_team take an abbreviation or an id. Draft selections and auction bids are refused. This stores a proposal. The player does not move until the league office posts it. Needs a read-write key."""
+
+            def run():
+                body = filings.proposal_body(
+                    code=code,
+                    team=team,
+                    player=player,
+                    counterparty=counterparty,
+                    counterparty_teams=counterparty_teams,
+                    assets=assets,
+                    notes=notes,
+                    effective_date=effective_date,
+                    contract_terms=contract_terms,
+                    veteran_disposition=veteran_disposition,
+                    amount=amount,
+                )
+                return _http_send("POST", "/api/v1/transactions/proposals/", body)
+
+            return _remote_result(run)
+
+        @mcp.tool()
+        def agree_transaction(proposal_id: int) -> str:
+            """Agree to a proposal waiting on your club. Needs a read-write key. The player stays put until the league office posts the move."""
+            return _remote_result(
+                lambda: _http_send("POST", f"/api/v1/transactions/proposals/{proposal_id}/agree/", {})
+            )
+
+        @mcp.tool()
+        def decline_transaction(proposal_id: int) -> str:
+            """Decline a proposal waiting on your club. Needs a read-write key."""
+            return _remote_result(
+                lambda: _http_send(
+                    "POST", f"/api/v1/transactions/proposals/{proposal_id}/decline/", {}
+                )
+            )
+
+        @mcp.tool()
+        def withdraw_transaction(proposal_id: int) -> str:
+            """Withdraw a proposal your club filed. Needs a read-write key."""
+            return _remote_result(
+                lambda: _http_send(
+                    "POST", f"/api/v1/transactions/proposals/{proposal_id}/withdraw/", {}
+                )
+            )
+
+        @mcp.tool()
+        def list_open_waivers() -> str:
+            """Open waivers a club can claim. This is not an auction."""
+            return _remote_result(lambda: _http_get("/api/v1/waivers/"))
+
+        @mcp.tool()
+        def claim_waiver(
+            waiver_id: int,
+            notes: str | None = None,
+            team: str | int | None = None,
+        ) -> str:
+            """Claim a player on an open waiver. This is not an auction bid. Needs a read-write key."""
+
+            def run():
+                body = {"notes": notes or ""}
+                if team not in (None, ""):
+                    body["team"] = team
+                return _http_send("POST", f"/api/v1/waivers/{waiver_id}/claim/", body)
+
+            return _remote_result(run)
+
+        return
+
+    @mcp.tool()
+    async def list_transaction_kinds() -> str:
+        """Codes a club can file, including a nontender, a trade, option_minors (send down), and recall_option (call up). Draft selections and auction bids are not listed."""
+        return _dump(filings.list_transaction_kinds())
+
+    @mcp.tool()
+    async def list_transaction_proposals() -> str:
+        """Proposals your clubs have filed or been asked to agree to. This is not the posted ledger."""
+        data = await sync_to_async(filings.list_transaction_proposals)()
+        return _dump(data)
+
+    @mcp.tool()
+    async def get_transaction_proposal(proposal_id: int) -> str:
+        """One proposal your club is party to, including assets and who still has to agree."""
+        data = await sync_to_async(filings.get_transaction_proposal)(proposal_id)
+        return _dump(data)
+
+    @mcp.tool()
+    async def create_transaction_proposal(
+        code: str,
+        team: str | int | None = None,
+        player: str | int | None = None,
+        counterparty: str | int | None = None,
+        counterparty_teams: list[str | int] | None = None,
+        assets: list[dict[str, Any]] | None = None,
+        notes: str | None = None,
+        effective_date: str | None = None,
+        contract_terms: dict[str, Any] | None = None,
+        veteran_disposition: str | None = None,
+        amount: int | None = None,
+    ) -> str:
+        """File a move for the key's owner. code is non_tender, trade, option_minors (send down), recall_option (call up), release, an injured-list code, a signing, or a waiver request. player is the mlb_id for a one-player move. Omit team when the account owns one club; otherwise pass an abbreviation. A trade needs counterparty, the other club's abbreviation. assets lists the pieces of a larger trade; from_team and to_team take an abbreviation or an id. Draft selections and auction bids are refused. This stores a proposal. The player does not move until the league office posts it. Needs a read-write key."""
+        data = await sync_to_async(filings.create_transaction_proposal)(
+            code=code,
+            team=team,
+            player=player,
+            counterparty=counterparty,
+            counterparty_teams=counterparty_teams,
+            assets=assets,
+            notes=notes,
+            effective_date=effective_date,
+            contract_terms=contract_terms,
+            veteran_disposition=veteran_disposition,
+            amount=amount,
+        )
+        return _dump(data)
+
+    @mcp.tool()
+    async def agree_transaction(proposal_id: int) -> str:
+        """Agree to a proposal waiting on your club. Needs a read-write key. The player stays put until the league office posts the move."""
+        data = await sync_to_async(filings.agree_transaction)(proposal_id)
+        return _dump(data)
+
+    @mcp.tool()
+    async def decline_transaction(proposal_id: int) -> str:
+        """Decline a proposal waiting on your club. Needs a read-write key."""
+        data = await sync_to_async(filings.decline_transaction)(proposal_id)
+        return _dump(data)
+
+    @mcp.tool()
+    async def withdraw_transaction(proposal_id: int) -> str:
+        """Withdraw a proposal your club filed. Needs a read-write key."""
+        data = await sync_to_async(filings.withdraw_transaction)(proposal_id)
+        return _dump(data)
+
+    @mcp.tool()
+    async def list_open_waivers() -> str:
+        """Open waivers a club can claim. This is not an auction."""
+        data = await sync_to_async(filings.list_open_waivers)()
+        return _dump(data)
+
+    @mcp.tool()
+    async def claim_waiver(
+        waiver_id: int,
+        notes: str | None = None,
+        team: str | int | None = None,
+    ) -> str:
+        """Claim a player on an open waiver. This is not an auction bid. Needs a read-write key."""
+        data = await sync_to_async(filings.claim_waiver)(waiver_id, notes=notes or "", team=team)
+        return _dump(data)
