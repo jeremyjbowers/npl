@@ -42,7 +42,7 @@
             · Luxury ${{ team.luxury_cap_space|default:0|intcomma }}
         </p>
         {% if pending_player_count %}
-        <p class="mt-2 text-xs text-gray-600">Grey rows are in a proposal that has not been processed. They stay on the club until Monday.</p>
+        <p class="mt-2 text-xs text-gray-600">Grey rows are in a proposal that has not been processed. The letters in parentheses name the move. They stay on the club until Monday.</p>
         {% endif %}
         <p class="mt-2 text-xs">
             <a class="underline" href="{% url 'schedule' %}">League schedule</a>
