@@ -27,6 +27,7 @@ OPEN_STATUSES = (
 )
 
 # A player in one of these filings is leaving the club if the proposal clears.
+# The phrase is the hover title. The mark is the two or three letters on the row.
 DEPARTURE_KINDS = {
     "trade": "Pending trade",
     "release": "Pending release",
@@ -38,6 +39,19 @@ DEPARTURE_KINDS = {
     "foreign_place": "Pending foreign list",
     "retirement": "Pending retirement",
     "death": "Pending removal",
+}
+
+DEPARTURE_MARKS = {
+    "trade": "tr",
+    "release": "rel",
+    "contract_amnesty": "amn",
+    "non_tender": "nt",
+    "waiver_request_outright": "ow",
+    "waiver_request_trade": "tw",
+    "waiver_request_rule5": "r5",
+    "foreign_place": "fl",
+    "retirement": "ret",
+    "death": "dth",
 }
 
 FORTY_MAN_ADDS = {"purchase_contract", "mlb_signing", "in_season_fa"}
@@ -275,6 +289,7 @@ def hints_for_team(team, proposals):
             hints[player.pk] = {
                 "proposal_id": proposal.id,
                 "label": DEPARTURE_KINDS[proposal.kind],
+                "mark": DEPARTURE_MARKS[proposal.kind],
                 "url": f"/transactions/proposals/{proposal.id}/",
             }
     return hints

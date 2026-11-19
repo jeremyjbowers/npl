@@ -3,7 +3,7 @@ from django.test import TestCase
 from npl.models import Team, Transaction
 from npl.transactions.catalog import KINDS
 from npl.transactions.clubs import deal_label, franchise_number, tab_id_for
-from npl.transactions.pending import DEPARTURE_KINDS, FORTY_MAN_DROPS
+from npl.transactions.pending import DEPARTURE_KINDS, DEPARTURE_MARKS, FORTY_MAN_DROPS
 from npl.management.commands.initial_load_transactions import parse_transaction_row
 
 
@@ -82,3 +82,5 @@ class ContractAmnestyTests(TestCase):
         self.assertIn("without penalty", KINDS["contract_amnesty"]["effect"].lower())
         self.assertIn("contract_amnesty", FORTY_MAN_DROPS)
         self.assertIn("contract_amnesty", DEPARTURE_KINDS)
+        self.assertEqual(set(DEPARTURE_MARKS), set(DEPARTURE_KINDS))
+        self.assertEqual(DEPARTURE_MARKS["non_tender"], "nt")

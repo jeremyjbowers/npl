@@ -371,7 +371,8 @@ class ProposalServiceTests(TestCase):
         self.assertEqual(proposal.status, TransactionProposal.AGREED)
 
         page = self.client.get("/teams/gamma/")
-        self.assertContains(page, "Pending trade")
+        self.assertContains(page, "(tr)")
+        self.assertContains(page, 'title="Pending trade"')
         self.assertContains(page, third_player.name)
 
 
@@ -903,7 +904,9 @@ class ProposalRulesAndHintsTests(TestCase):
         self.client.force_login(self.other)
         page = self.client.get("/teams/rules/")
         self.assertEqual(page.status_code, 200)
-        self.assertContains(page, "Pending trade")
+        self.assertContains(page, "(tr)")
+        self.assertContains(page, 'title="Pending trade"')
+        self.assertNotContains(page, "Pending trade</a>")
         self.assertContains(page, "(if pending clear $750,000)")
         self.assertContains(page, "They stay on the club until Monday.")
         self.assertNotContains(page, "File a transaction")
