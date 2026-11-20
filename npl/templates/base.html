@@ -11,18 +11,18 @@
 <body class="bg-white text-black text-sm leading-tight">
     <a href="#content" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:bg-white focus:px-2 focus:py-1 focus:underline">Skip to content</a>
 
-    <div class="sticky top-0 z-30 bg-white">
-        <header class="border-b border-gray-300 px-2 py-2">
+    <div class="site-bar">
+        <header class="border-b border-gray-300 px-3 py-2">
             {% include "includes/nav.html" %}
         </header>
 
         <div class="border-b border-gray-200">
-            <div class="px-2 py-1">
+            <div class="px-3 py-1">
                 <button type="button" id="filter-toggle" class="underline text-sm" aria-controls="filter-section" aria-expanded="{% if request.path == '/players/search/' %}true{% else %}false{% endif %}">
                     Filter Players <span id="filter-arrow">{% if request.path == '/players/search/' %}▲{% else %}▼{% endif %}</span>
                 </button>
             </div>
-            <div id="filter-section" class="{% if request.path != '/players/search/' %}hidden{% endif %} border-t border-gray-200 bg-gray-50 px-2 py-3">
+            <div id="filter-section" class="{% if request.path != '/players/search/' %}hidden{% endif %} border-t border-gray-200 bg-gray-50 px-3 py-3">
                 <form method="get" action="/players/search/" class="grid grid-cols-2 gap-3 md:grid-cols-5 md:items-end">
                     <div class="col-span-2 md:col-span-1">
                         <label class="mb-1 block text-xs font-bold" for="filter-name">Name</label>
@@ -64,7 +64,7 @@
             </div>
         </div>
 
-        <p class="border-b border-gray-200 px-2 py-1 text-xs">
+        <p class="border-b border-gray-200 px-3 py-1 text-xs">
             This site is in beta. Keep using the Google forms and sheets until this note is gone.
         </p>
     </div>

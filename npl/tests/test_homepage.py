@@ -217,4 +217,5 @@ class DeadlineCollectorTests(TestCase):
         self.assertContains(response, "There is no open auction.")
         self.assertContains(response, "Players page")
         self.assertNotContains(response, "85-man")
-        self.assertNotContains(response, 'target="_blank"')
+        self.assertContains(response, 'href="https://npldash.onrender.com/" class="underline" target="_blank" rel="noopener"')
+        self.assertNotContains(response, 'href="/transactions/trades/" target="_blank"')

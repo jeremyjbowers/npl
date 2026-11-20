@@ -246,6 +246,17 @@
   }
 }
 
+.site-bar {
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 30;
+  width: 100%;
+  max-width: 100vw;
+  box-sizing: border-box;
+  background: #fff;
+}
+
 .nav-dropdown {
   position: relative;
 }
@@ -278,6 +289,7 @@
 .nav-dropdown-end .nav-dropdown-panel {
   left: auto;
   right: 0;
+  max-width: calc(100vw - 1.5rem);
 }
 
 .plan-tabs {
