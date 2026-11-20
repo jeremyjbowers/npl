@@ -49,6 +49,11 @@ class AccountNavTests(TestCase):
         self.assertNotIn("API keys", transactions)
         self.assertIn("nav-dropdown-end", html)
         self.assertEqual(html.count("API keys"), 2)
+        self.assertNotIn('href="/schedule/"', html)
+        self.assertNotIn('href="/leaders/"', html)
+        self.assertIn('href="https://tbb.quarto.pub/npl-rules/" class="underline" target="_blank" rel="noopener"', html)
+        self.assertIn('href="https://npldash.onrender.com/" class="underline" target="_blank" rel="noopener"', html)
+        self.assertNotIn('href="/teams/navigators/" class="block py-0.5 text-sm font-bold underline" target="_blank"', html)
 
     def test_signed_in_user_without_a_club_still_gets_the_menu(self):
         other = User.objects.create_user(email="solo@example.com", password="secret")
