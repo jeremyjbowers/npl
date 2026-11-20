@@ -12,3 +12,27 @@
 @media (min-width:60rem){.plan-columns.two{grid-template-columns:1fr 1fr}}
 .sheet.plan td,.sheet.plan th{white-space:normal}
 .sheet.plan select,.sheet.plan input{width:100%;max-width:18rem}
+
+@media (max-width: 767px) {
+  .api-ref table,
+  .api-ref thead,
+  .api-ref tbody,
+  .api-ref tr,
+  .api-ref th,
+  .api-ref td {
+    display: block;
+    width: auto;
+    white-space: normal;
+  }
+  .api-ref thead {
+    display: none;
+  }
+  .api-ref .sheet tbody tr {
+    padding: 0.4rem 0;
+    border-bottom: 1px solid #e5e7eb;
+    background: transparent;
+  }
+  .api-ref td code {
+    word-break: break-word;
+  }
+}
