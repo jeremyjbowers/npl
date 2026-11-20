@@ -244,6 +244,35 @@
     font-weight: 700;
     margin: 1rem 0 0.4rem;
   }
+
+  /* Tool lists on the API keys page. Narrow screens stack each row
+     so the description is not sitting off to the right of the path. */
+  @media (max-width: 767px) {
+    .api-ref table,
+    .api-ref thead,
+    .api-ref tbody,
+    .api-ref tr,
+    .api-ref th,
+    .api-ref td {
+      display: block;
+      width: auto;
+      white-space: normal;
+    }
+
+    .api-ref thead {
+      display: none;
+    }
+
+    .api-ref .sheet tbody tr {
+      padding: 0.4rem 0;
+      border-bottom: 1px solid #e5e7eb;
+      background: transparent;
+    }
+
+    .api-ref td code {
+      word-break: break-word;
+    }
+  }
 }
 
 .nav-dropdown {

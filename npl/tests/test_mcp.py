@@ -155,6 +155,20 @@ class ApiKeyPageTests(TestCase):
         self.assertTrue(models.ApiToken.objects.filter(user=self.user, name="csrf").exists())
         self.assertContains(page, "API keys")
 
+    def test_page_lists_the_mcp_tools(self):
+        self.client.force_login(self.user)
+        page = self.client.get("/my/api-keys/")
+        self.assertContains(page, "What the key reaches")
+        self.assertContains(page, "get_season_context")
+        self.assertContains(page, "GET /api/mcp/v1/season/")
+        self.assertContains(page, "list_free_agents")
+        self.assertContains(page, "create_transaction_proposal")
+        self.assertContains(page, "option_minors")
+        self.assertContains(page, "claim_waiver")
+        self.assertContains(page, "Draft selections and auction bids stay off this key.")
+        self.assertNotContains(page, "make draft picks")
+        self.assertContains(page, page.context["mcp_url"])
+
     def test_command_mints_a_key_for_an_owner(self):
         out = StringIO()
         call_command(

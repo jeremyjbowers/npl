@@ -3,7 +3,7 @@
 {% block title %}API keys — The NPL{% endblock %}
 
 {% block content %}
-<article class="max-w-3xl">
+<article class="max-w-4xl">
     <header class="mb-4">
         <h1 class="text-2xl font-bold">API keys</h1>
     </header>
@@ -12,9 +12,9 @@
     <p>This account is not linked to an owner, so it cannot hold an API key.</p>
     {% else %}
     <div class="note mb-4">
-        <p>Send the key as <code>Authorization: Bearer npl_…</code>.</p>
-        <p class="mt-2"><strong>Read</strong> can look up rosters, players, drafts, trades, auctions, and your wishlist, and can list transaction proposals.</p>
-        <p><strong>Read and write</strong> can do that and submit proposals, agree, decline, withdraw, claim waivers, and make draft picks.</p>
+        <p>Send the key as <code>Authorization: Bearer npl_…</code>. <code>X-NPL-Token</code> is accepted too.</p>
+        <p class="mt-2"><strong>Read</strong> looks up rosters, players, draft picks, trades, the ledger, auctions, club finances, and your wishlist. It can also list proposals and open waivers.</p>
+        <p><strong>Read and write</strong> can file a move for a club you own and can agree, decline, or withdraw a proposal. The filing is a proposal. The player stays put until the league office posts it. Draft selections and auction bids stay off this key.</p>
         <p class="mt-2">A key only acts for the clubs you own. You only see your own keys. The secret stays on this page so you can copy it again.</p>
     </div>
 
@@ -101,6 +101,160 @@
         {% else %}
         <p>You do not have any API keys yet.</p>
         {% endif %}
+    </section>
+
+    <section class="copy mt-8">
+        <h2>What the key reaches</h2>
+        <p>An agent connects to <code>{{ mcp_url }}</code>. There is no OAuth step. The same key works on the JSON paths below, which is the way to curl one lookup. A check that the key is live:</p>
+        <pre class="overflow-x-auto whitespace-pre-wrap text-xs">curl -s -H "Authorization: Bearer npl_…" {{ mcp_url }}/health</pre>
+        <p>WAR on a player is his full MLB season, whichever NPL club he played for. <code>forty_man</code> is the 40-man count. <code>reserve</code> is the 85-man count.</p>
+
+        <h3>Lookups</h3>
+        <p>A read key can call these. A read-write key can call them too.</p>
+        <div class="api-ref overflow-x-auto">
+            <table class="sheet plan">
+                <thead>
+                    <tr>
+                        <th scope="col">Tool</th>
+                        <th scope="col">JSON</th>
+                        <th scope="col">What you get</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>get_season_context</code></td>
+                        <td><code>GET /api/mcp/v1/season/</code></td>
+                        <td>Season, phase, cap, and your club</td>
+                    </tr>
+                    <tr>
+                        <td><code>list_teams</code></td>
+                        <td><code>GET /api/mcp/v1/teams/</code></td>
+                        <td>Clubs, division, payroll, cap space, cash, and IFA</td>
+                    </tr>
+                    <tr>
+                        <td><code>get_team_roster</code></td>
+                        <td><code>GET /api/mcp/v1/roster/</code></td>
+                        <td>Roster sections. <code>/api/mcp/v1/teams/MCP/roster/</code> is another club</td>
+                    </tr>
+                    <tr>
+                        <td><code>get_roster_compliance</code></td>
+                        <td><code>GET /api/mcp/v1/compliance/</code></td>
+                        <td>40-man and 85-man counts against the limits</td>
+                    </tr>
+                    <tr>
+                        <td><code>search_players</code></td>
+                        <td><code>GET /api/mcp/v1/players/search/</code></td>
+                        <td>Name, position, club, and level. <code>sort=war</code> ranks by full-season MLB WAR</td>
+                    </tr>
+                    <tr>
+                        <td><code>list_free_agents</code></td>
+                        <td><code>GET /api/mcp/v1/free-agents/</code></td>
+                        <td>Unowned players, best full-season MLB WAR first</td>
+                    </tr>
+                    <tr>
+                        <td><code>get_player</code></td>
+                        <td><code>GET /api/mcp/v1/players/&lt;mlb_id&gt;/</code></td>
+                        <td>Contract, WAR, club-split sim lines, and the NPL clubs he has been on</td>
+                    </tr>
+                    <tr>
+                        <td><code>list_draft_picks</code></td>
+                        <td><code>GET /api/mcp/v1/draft-picks/</code></td>
+                        <td>Picks by year, season, type, or club. <code>held=true</code> is unused picks</td>
+                    </tr>
+                    <tr>
+                        <td><code>list_pick_inventory</code></td>
+                        <td><code>GET /api/mcp/v1/pick-inventory/</code></td>
+                        <td>Unused draft picks grouped by the club that holds them</td>
+                    </tr>
+                    <tr>
+                        <td><code>list_trades</code></td>
+                        <td><code>GET /api/mcp/v1/trades/</code></td>
+                        <td>Players, draft picks, and cash each club received</td>
+                    </tr>
+                    <tr>
+                        <td><code>list_transactions</code></td>
+                        <td><code>GET /api/mcp/v1/transactions/</code></td>
+                        <td>The posted ledger, with club names, pick text, and cash</td>
+                    </tr>
+                    <tr>
+                        <td><code>get_my_wishlist</code></td>
+                        <td><code>GET /api/mcp/v1/wishlist/</code></td>
+                        <td>Your ranks, tiers, notes, and tags</td>
+                    </tr>
+                    <tr>
+                        <td><code>list_auctions</code></td>
+                        <td><code>GET /api/mcp/v1/auctions/</code></td>
+                        <td>Open auctions. Other clubs' bids stay hidden</td>
+                    </tr>
+                    <tr>
+                        <td><code>list_team_ledger</code></td>
+                        <td><code>GET /api/mcp/v1/ledger/</code></td>
+                        <td>Contract payroll, plus cash and IFA adjustments</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3>Filings</h3>
+        <p>These need a read-write key. <code>option_minors</code> sends a player down. <code>recall_option</code> calls him up. <code>non_tender</code> nontenders him. Pass <code>player</code> as the mlb_id. Omit <code>team</code> when you own one club, and pass an abbreviation when you own more than one. A trade passes <code>counterparty</code> as the other club's abbreviation. A claim on an open waiver is <code>claim_waiver</code>.</p>
+        <div class="api-ref overflow-x-auto">
+            <table class="sheet plan">
+                <thead>
+                    <tr>
+                        <th scope="col">Tool</th>
+                        <th scope="col">JSON</th>
+                        <th scope="col">What it does</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>list_transaction_kinds</code></td>
+                        <td><code>GET /api/v1/transactions/kinds/?fileable=1</code></td>
+                        <td>Codes a club can file</td>
+                    </tr>
+                    <tr>
+                        <td><code>list_transaction_proposals</code></td>
+                        <td><code>GET /api/v1/transactions/proposals/</code></td>
+                        <td>Proposals your club filed or still has to answer. This is separate from the posted ledger</td>
+                    </tr>
+                    <tr>
+                        <td><code>get_transaction_proposal</code></td>
+                        <td><code>GET /api/v1/transactions/proposals/&lt;id&gt;/</code></td>
+                        <td>One proposal, the pieces, and who has agreed</td>
+                    </tr>
+                    <tr>
+                        <td><code>create_transaction_proposal</code></td>
+                        <td><code>POST /api/v1/transactions/proposals/</code></td>
+                        <td>File a nontender, trade, send-down, call-up, release, injured-list move, signing, or waiver request</td>
+                    </tr>
+                    <tr>
+                        <td><code>agree_transaction</code></td>
+                        <td><code>POST /api/v1/transactions/proposals/&lt;id&gt;/agree/</code></td>
+                        <td>Agree to a proposal waiting on your club</td>
+                    </tr>
+                    <tr>
+                        <td><code>decline_transaction</code></td>
+                        <td><code>POST /api/v1/transactions/proposals/&lt;id&gt;/decline/</code></td>
+                        <td>Decline a proposal waiting on your club</td>
+                    </tr>
+                    <tr>
+                        <td><code>withdraw_transaction</code></td>
+                        <td><code>POST /api/v1/transactions/proposals/&lt;id&gt;/withdraw/</code></td>
+                        <td>Take back a proposal your club filed</td>
+                    </tr>
+                    <tr>
+                        <td><code>list_open_waivers</code></td>
+                        <td><code>GET /api/v1/waivers/</code></td>
+                        <td>Open waivers</td>
+                    </tr>
+                    <tr>
+                        <td><code>claim_waiver</code></td>
+                        <td><code>POST /api/v1/waivers/&lt;id&gt;/claim/</code></td>
+                        <td>Claim a player on an open waiver</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </section>
     {% endif %}
 </article>
