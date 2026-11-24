@@ -1,6 +1,7 @@
 import csv
 import datetime
 import itertools
+from django.core.exceptions import ValidationError
 from django.http import HttpResponse, HttpResponseForbidden
 from django.views.decorators.csrf import csrf_exempt
 
@@ -38,6 +39,7 @@ from npl.transactions.service import (
     TransactionError,
     agree,
     decline,
+    execute_proposal,
     submit_from_form,
     teams_for_user,
     visible_proposals,
@@ -472,13 +474,22 @@ def transaction_list(request):
 
 
 def proposal_detail_page(request, proposal_id):
-    """Public summary of a filing that has not been processed yet."""
+    """A filing, and the director actions that approve or send it back.
+
+    This is the page the admin list opens. It reads the players named on
+    this filing only. The admin change form built a select of every player.
+    """
     proposal = get_object_or_404(
         models.TransactionProposal.objects.select_related("originating_team").prefetch_related(
             "parties__team", "assets__player", "assets__from_team", "assets__to_team"
         ),
         pk=proposal_id,
     )
+    if request.method == "POST":
+        if not request.user.is_authenticated or not request.user.is_staff:
+            return HttpResponseForbidden("Directors only.")
+        _review_proposal(request, proposal)
+        return redirect("proposal_detail", proposal_id=proposal.pk)
     involved = teams_for_user(request.user) if request.user.is_authenticated else models.Team.objects.none()
     can_see_terms = request.user.is_authenticated and (
         request.user.is_staff or proposal.parties.filter(team__in=involved).exists()
@@ -502,6 +513,41 @@ def proposal_detail_page(request, proposal_id):
         "posted_trade": posted_trade,
     })
     return render(request, "transactions/proposal.html", context)
+
+
+def _review_proposal(request, proposal):
+    action = request.POST.get("action")
+    if action == "flag":
+        proposal.flagged = True
+        proposal.flag_note = (request.POST.get("flag_note") or "").strip()
+        try:
+            proposal.full_clean()
+        except ValidationError as exc:
+            if getattr(exc, "error_dict", None) and "flag_note" in exc.error_dict:
+                messages.error(request, "Say what the club needs to change.")
+            else:
+                messages.error(request, "; ".join(exc.messages))
+            return
+        proposal.flagged_by = request.user
+        proposal.flagged_at = timezone.now()
+        proposal.save()
+        messages.success(request, "The club will see that this needs a fix.")
+    elif action == "clear":
+        proposal.flagged = False
+        proposal.save(update_fields=["flagged", "last_modified"])
+        messages.success(request, "Flag cleared.")
+    elif action == "post":
+        try:
+            execute_proposal(request.user, proposal)
+        except TransactionError as exc:
+            messages.error(request, str(exc))
+        else:
+            messages.success(
+                request,
+                "Posted to the transaction log. The roster move is still yours to apply.",
+            )
+    else:
+        messages.error(request, "Choose a review action.")
 
 
 @login_required

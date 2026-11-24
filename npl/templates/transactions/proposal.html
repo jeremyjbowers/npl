@@ -10,6 +10,32 @@
         <p class="mt-1">{{ proposal.kind_label }} · {{ proposal.originating_team.short_name }} · {{ proposal.get_status_display }}</p>
     </header>
 
+    {% if user.is_staff %}
+    <section class="mb-6 border border-gray-300 p-3">
+        <h2 class="mb-2 text-lg font-bold">Director review</h2>
+        <form method="post" class="mb-4 space-y-2">
+            {% csrf_token %}
+            <label class="block text-sm font-bold" for="flag-note">What the club needs to change</label>
+            <textarea id="flag-note" name="flag_note" rows="3" class="w-full">{{ proposal.flag_note }}</textarea>
+            <div class="flex flex-wrap gap-2">
+                <button class="btn" name="action" value="flag" type="submit">Needs a fix</button>
+                {% if proposal.flagged %}
+                <button class="btn-line" name="action" value="clear" type="submit">Clear the flag</button>
+                {% endif %}
+            </div>
+        </form>
+        {% if proposal.status != 'executed' and proposal.status != 'rejected' and proposal.status != 'withdrawn' and proposal.status != 'voided' %}
+        <form method="post">
+            {% csrf_token %}
+            <button class="btn" name="action" value="post" type="submit">Post to the ledger</button>
+            <p class="mt-2 text-sm">This records the filing on the public log. It does not move the player, the contract, or the draft pick.</p>
+        </form>
+        {% elif proposal.status == 'executed' %}
+        <p class="text-sm">This filing is already on the transaction log.</p>
+        {% endif %}
+    </section>
+    {% endif %}
+
     {% if proposal.status != 'executed' and proposal.status != 'rejected' and proposal.status != 'withdrawn' and proposal.status != 'voided' %}
     <p class="note mb-4">This has not been processed. The club's roster and books stay as they are until Monday.</p>
     {% endif %}
