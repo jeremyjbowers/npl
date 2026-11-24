@@ -1,8 +1,13 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from django import forms
 from django.contrib.postgres.fields import JSONField
+from django.shortcuts import redirect
+from django.urls import reverse
+from django.utils.html import format_html
 from django.utils import timezone
 from reversion.admin import VersionAdmin
+
+from npl.transactions.service import TransactionError, execute_proposal
 
 from npl.models import (
     Team,
@@ -499,7 +504,11 @@ class WishlistPlayerAdmin(admin.ModelAdmin):
 class TransactionAssetInline(admin.TabularInline):
     model = TransactionAsset
     extra = 0
-    autocomplete_fields = ['player', 'from_team', 'to_team']
+    # A select on player, draft pick, or the posted ledger row loads the whole
+    # table. The ledger row's label also loads a player, so that one select
+    # walks every player who has ever been in a transaction.
+    raw_id_fields = ["player", "draft_pick", "executed_transaction"]
+    autocomplete_fields = ["from_team", "to_team"]
 
 
 class TransactionPartyInline(admin.TabularInline):
@@ -510,13 +519,15 @@ class TransactionPartyInline(admin.TabularInline):
 
 @admin.register(TransactionProposal)
 class TransactionProposalAdmin(admin.ModelAdmin):
-    list_display = ['id', 'kind', 'status', 'originating_team', 'submitted_by', 'is_flagged', 'fix_note', 'source', 'created']
+    list_display = ['review_link', 'kind', 'status', 'originating_team', 'submitted_by', 'is_flagged', 'fix_note', 'source', 'created']
+    list_display_links = None
     list_filter = ['flagged', 'status', 'kind', 'source']
     search_fields = ['kind', 'notes', 'flag_note', 'originating_team__short_name', 'submitted_by__email']
     autocomplete_fields = ['originating_team', 'transaction_type']
     readonly_fields = ['submitted_by', 'flagged_by', 'flagged_at', 'executed_at', 'created']
     inlines = [TransactionPartyInline, TransactionAssetInline]
     save_on_top = True
+    actions = ["post_to_ledger"]
     fieldsets = (
         (
             None,
@@ -544,6 +555,35 @@ class TransactionProposalAdmin(admin.ModelAdmin):
             },
         ),
     )
+
+    @admin.display(description="Proposal")
+    def review_link(self, obj):
+        url = reverse("proposal_detail", args=[obj.pk])
+        return format_html('<a href="{}">#{}</a>', url, obj.pk)
+
+    def change_view(self, request, object_id, form_url="", extra_context=None):
+        return redirect("proposal_detail", proposal_id=object_id)
+
+    @admin.action(description="Post selected proposals to the ledger")
+    def post_to_ledger(self, request, queryset):
+        posted = 0
+        skipped = []
+        for proposal in queryset:
+            try:
+                execute_proposal(request.user, proposal)
+            except TransactionError as exc:
+                skipped.append(f"#{proposal.pk}: {exc}")
+            else:
+                posted += 1
+        if posted:
+            self.message_user(
+                request,
+                f"Posted {posted} proposal{'s' if posted != 1 else ''} to the transaction log. Roster moves are still yours to apply.",
+            )
+        for line in skipped:
+            self.message_user(request, line, level=messages.WARNING)
+        if not posted and not skipped:
+            self.message_user(request, "No proposals were selected.")
 
     @admin.display(boolean=True, description="Flagged")
     def is_flagged(self, obj):
