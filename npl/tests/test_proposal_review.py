@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 from django.db import connection
 from django.test import Client, RequestFactory, TestCase
 from django.test.utils import CaptureQueriesContext
+from django.utils import timezone
 
 from npl.admin import TransactionAssetInline
 from npl.models import Owner, Player, Team, Transaction, TransactionAsset, TransactionProposal
@@ -59,17 +60,26 @@ class ProposalReviewTests(TestCase):
             page = self.client.get(f"/transactions/proposals/{self.proposal.id}/")
         self.assertEqual(page.status_code, 200)
         self.assertContains(page, "Named Player")
-        self.assertContains(page, f"proposal {self.proposal.id}: release")
-        self.assertContains(page, ">REV</a>")
+        self.assertContains(page, f"proposal {self.proposal.id}:")
+        self.assertContains(page, ">Rev</a> release")
         self.assertContains(page, "Approve")
-        self.assertContains(page, "Return to team")
-        self.assertNotContains(page, "Flagged as improper")
-        self.assertNotContains(page, "<details open")
+        self.assertContains(page, "Return to team with note")
+        self.assertContains(page, "No flags.")
+        self.assertContains(page, 'class="btn-lg is-primary" name="action" value="post"')
+        self.assertContains(page, 'href="/admin/npl/transactionproposal/"')
+        self.assertContains(page, "Review proposals")
+        self.assertContains(page, 'href="/transactions/"')
+        filed = timezone.localtime(self.proposal.created)
+        self.assertContains(page, f"Filed week {filed.isocalendar()[1]},")
+        self.assertContains(page, "ET")
+        self.assertNotContains(page, "This has not been processed")
+        self.assertNotContains(page, "Club note")
+        self.assertNotContains(page, ">Club<")
         html = page.content.decode()
         self.assertLess(html.index("Named Player"), html.index(">Impact<"))
-        self.assertLess(html.index(">Impact<"), html.index(">Club<"))
-        self.assertLess(html.index(">Club<"), html.index(">Director review<"))
+        self.assertLess(html.index(">Impact<"), html.index(">Director review<"))
         self.assertLess(html.index(">Approve<"), html.index('name="flag_note"'))
+        self.assertLess(html.index("Return to team with note"), html.index('name="flag_note"'))
         self.assertNotContains(page, "Crowd 1")
         self.assertNotContains(page, "Old 1")
         self.assertFalse(any(_loads_every_player(query["sql"]) for query in captured.captured_queries))
@@ -77,15 +87,18 @@ class ProposalReviewTests(TestCase):
         self.client.force_login(self.owner_user)
         owner_page = self.client.get(f"/transactions/proposals/{self.proposal.id}/")
         self.assertContains(owner_page, "Named Player")
+        self.assertContains(owner_page, 'href="/transactions/list/"')
+        self.assertContains(owner_page, "My submissions")
         self.assertNotContains(owner_page, "Approve")
         self.assertNotContains(owner_page, "Return to team")
         self.assertNotContains(owner_page, "Director review")
+        self.assertNotContains(owner_page, "Review proposals")
 
     def test_a_director_can_flag_and_post_from_the_page(self):
         self.client.force_login(self.director)
         url = f"/transactions/proposals/{self.proposal.id}/"
         missing = self.client.post(url, {"action": "flag", "flag_note": "   "})
-        self.assertRedirects(missing, f"{url}?return=1")
+        self.assertRedirects(missing, url)
         self.proposal.refresh_from_db()
         self.assertFalse(self.proposal.flagged)
 
@@ -148,13 +161,15 @@ class ProposalReviewTests(TestCase):
         self.player.save(update_fields=["position"])
         self.proposal.kind = "non_tender"
         self.proposal.save(update_fields=["kind"])
+        self.player.mlb_org = "COL"
+        self.player.save(update_fields=["mlb_org"])
         proposal = TransactionProposal.objects.prefetch_related(
             "assets__player__team", "assets__from_team", "assets__to_team"
         ).get(pk=self.proposal.pk)
         headline = filing_headline(proposal)
         self.assertEqual(
             headline["text"],
-            f"proposal {proposal.id}: nontender Named Player (RHP, REV)",
+            f"proposal {proposal.id}: Rev nontender Named Player (RHP, COL)",
         )
         self.assertFalse(headline["show_pieces"])
 
@@ -178,9 +193,30 @@ class ProposalReviewTests(TestCase):
         trade = filing_headline(proposal)
         self.assertEqual(
             trade["text"],
-            f"proposal {proposal.id}: trade Named Player (RHP, REV) to BET and $500,000 cash from BET to REV",
+            f"proposal {proposal.id}: Rev trade Named Player (RHP, COL) to Beta and $500,000 cash from Beta to Rev",
         )
         self.assertTrue(trade["show_pieces"])
 
     def test_every_transaction_kind_has_a_review_verb(self):
         self.assertEqual(set(VERBS), set(KINDS))
+
+    def test_a_failed_check_is_a_flag_and_highlights_return(self):
+        self.player.team = None
+        self.player.save(update_fields=["team"])
+        self.client.force_login(self.director)
+        page = self.client.get(f"/transactions/proposals/{self.proposal.id}/")
+        self.assertContains(page, "Named Player is not on Rev.")
+        self.assertNotContains(page, "No flags.")
+        self.assertContains(page, 'class="btn-lg is-primary" name="action" value="flag"')
+        self.assertNotContains(page, 'class="btn-lg is-primary" name="action" value="post"')
+
+    def test_a_note_that_only_restates_the_move_stays_off_the_page(self):
+        self.proposal.notes = "Non-tender Named Player (RHP, COL)"
+        self.proposal.save(update_fields=["notes"])
+        self.client.force_login(self.director)
+        page = self.client.get(f"/transactions/proposals/{self.proposal.id}/")
+        self.assertNotContains(page, "Non-tender Named Player")
+        self.proposal.notes = "https://example.com/injury"
+        self.proposal.save(update_fields=["notes"])
+        cited = self.client.get(f"/transactions/proposals/{self.proposal.id}/")
+        self.assertContains(cited, "https://example.com/injury")

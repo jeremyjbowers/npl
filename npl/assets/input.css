@@ -370,26 +370,60 @@
   border: 1px solid #d1d5db;
 }
 
-/* Approve sits beside Return. The note opens under them, full width. */
+.proposal-page {
+  max-width: 72rem;
+}
+
+.crumbs {
+  margin-bottom: 0.75rem;
+}
+
+.crumbs a {
+  text-decoration: underline;
+}
+
+.review-box {
+  border: 1px solid #d1d5db;
+  padding: 1.25rem 1.5rem 1.5rem;
+}
+
 .review-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 1.25rem;
   align-items: center;
 }
 
-.review-actions > details {
-  flex: 0 0 auto;
+.review-note {
+  margin-top: 1.25rem;
 }
 
-.review-actions > details[open] {
-  flex-basis: 100%;
+.review-note textarea {
+  margin-top: 0.35rem;
 }
 
-summary.btn-line {
-  list-style: none;
+.btn-lg {
+  display: inline-block;
+  padding: 0.7rem 1.35rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+  text-decoration: none;
+  background: #fff;
+  color: #111;
+  border: 2px solid #111;
 }
 
-summary.btn-line::-webkit-details-marker {
-  display: none;
+.btn-lg.is-primary {
+  background: #111;
+  color: #fff;
+}
+
+.btn-lg:hover {
+  background: #f3f4f6;
+}
+
+.btn-lg.is-primary:hover {
+  background: #333;
 }
