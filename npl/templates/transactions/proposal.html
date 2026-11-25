@@ -98,18 +98,18 @@
     </section>
 
     {% if user.is_staff %}
-    <section class="review-box mb-6">
+    <section class="mb-6 border border-gray-300 p-4">
         <h2 class="mb-4 text-lg font-bold">Director review</h2>
         {% if proposal.status != 'executed' and proposal.status != 'rejected' and proposal.status != 'withdrawn' and proposal.status != 'voided' %}
         <form method="post">
             {% csrf_token %}
-            <div class="review-actions">
-                <button class="btn-lg{% if checks_pass %} is-primary{% endif %}" name="action" value="post" type="submit">Approve</button>
-                <button class="btn-lg{% if not checks_pass %} is-primary{% endif %}" name="action" value="flag" type="submit">Return to team with note</button>
+            <div class="flex flex-wrap items-center gap-4">
+                <button class="{% if checks_pass %}btn no-underline{% else %}btn-line{% endif %} px-3 py-3 text-lg font-bold" name="action" value="post" type="submit">Approve</button>
+                <button class="{% if checks_pass %}btn-line{% else %}btn no-underline{% endif %} px-3 py-3 text-lg font-bold" name="action" value="flag" type="submit">Return to team with note</button>
             </div>
-            <div class="review-note">
+            <div class="mt-4">
                 <label class="block text-sm font-bold" for="flag-note">What the club needs to change</label>
-                <textarea id="flag-note" name="flag_note" rows="3" class="w-full">{{ proposal.flag_note }}</textarea>
+                <textarea id="flag-note" name="flag_note" rows="3" class="mt-2 w-full">{{ proposal.flag_note }}</textarea>
             </div>
         </form>
         <p class="mt-4 text-sm">Approve records the filing on the log. It does not move the player, the contract, or the draft pick.</p>
