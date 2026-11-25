@@ -3,38 +3,65 @@
 {% block title %}Proposals — The NPL{% endblock %}
 
 {% block content %}
-<div class="flex flex-col gap-6 lg:flex-row">
-    <aside class="lg:w-56 lg:shrink-0" aria-label="Filter proposals">
+<div class="proposal-board">
+    <aside class="proposal-filters" aria-label="Filter proposals">
         <h2 class="text-sm font-bold">Gameweek</h2>
         <ul class="mt-1 space-y-1 text-sm">
             {% for choice in weeks %}
             <li>
                 {% if choice.selected %}
-                <span class="font-bold" aria-current="true">{{ choice.label }} {{ choice.monday|date:"M j" }}{% if choice.current %} · this week{% endif %}</span>
+                <span class="{% if choice.current %}week-current{% else %}font-bold{% endif %}" aria-current="true">{{ choice.label }} {{ choice.monday|date:"M j" }}</span>
                 {% else %}
-                <a class="underline" href="{{ choice.url }}">{{ choice.label }} {{ choice.monday|date:"M j" }}{% if choice.current %} · this week{% endif %}</a>
+                <a class="{% if choice.current %}week-current{% else %}underline{% endif %}" href="{{ choice.url }}">{{ choice.label }} {{ choice.monday|date:"M j" }}</a>
                 {% endif %}
-                <span class="text-gray-600">{{ choice.count }}</span>
+                <span>{{ choice.count }}</span>
             </li>
             {% endfor %}
         </ul>
+        {% if other_weeks %}
+        <form method="get" action="{% url 'proposals' %}" class="mt-2">
+            {% if status %}<input type="hidden" name="status" value="{{ status }}">{% endif %}
+            {% if kind %}<input type="hidden" name="kind" value="{{ kind }}">{% endif %}
+            <label class="mb-1 block text-xs font-bold" for="other-week">Other weeks</label>
+            <select id="other-week" name="week">
+                {% for choice in other_weeks %}
+                <option value="{{ choice.monday|date:'Y-m-d' }}">{{ choice.label }} {{ choice.monday|date:"M j, Y" }} ({{ choice.count }})</option>
+                {% endfor %}
+            </select>
+            <button class="btn-line mt-1" type="submit">Show</button>
+        </form>
+        {% endif %}
 
-        <h2 class="mb-1 mt-4 text-sm font-bold">Status</h2>
+        <h2 class="mb-1 mt-4 text-sm font-bold">Kind</h2>
         <ul class="space-y-1 text-sm">
-            {% for choice in states %}
+            {% for choice in kinds %}
             <li>
                 {% if choice.selected %}
                 <span class="font-bold" aria-current="true">{{ choice.label }}</span>
                 {% else %}
                 <a class="underline" href="{{ choice.url }}">{{ choice.label }}</a>
                 {% endif %}
-                <span class="text-gray-600">{{ choice.count }}</span>
+                <span>{{ choice.count }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+
+        <h2 class="mb-1 mt-4 text-sm font-bold">Status</h2>
+        <ul class="space-y-1 text-sm">
+            {% for choice in statuses %}
+            <li>
+                {% if choice.selected %}
+                <span class="font-bold" aria-current="true">{{ choice.label }}</span>
+                {% else %}
+                <a class="underline" href="{{ choice.url }}">{{ choice.label }}</a>
+                {% endif %}
+                <span>{{ choice.count }}</span>
             </li>
             {% endfor %}
         </ul>
     </aside>
 
-    <div class="min-w-0 flex-1">
+    <div class="min-w-0">
         <header class="mb-4">
             <h1 class="text-2xl font-bold">Proposals</h1>
             <p class="mt-1 text-sm">
@@ -55,7 +82,7 @@
                         <th scope="col">Kind</th>
                         <th scope="col">Status</th>
                         <th scope="col">Filed</th>
-                        <th scope="col">What moves</th>
+                        <th scope="col">Transaction details</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -63,9 +90,9 @@
                     <tr>
                         <td><a class="underline" href="{{ row.url }}" target="_blank" rel="noopener">#{{ row.id }}</a></td>
                         <td>{% if row.club_url %}<a class="underline" href="{{ row.club_url }}">{{ row.club }}</a>{% else %}{{ row.club }}{% endif %}</td>
-                        <td>{{ row.kind }}</td>
+                        <td><a class="underline" href="{{ row.kind_url }}">{{ row.kind }}</a></td>
                         <td>
-                            {{ row.status }}
+                            <a class="underline" href="{{ row.status_url }}">{{ row.status }}</a>
                             {% if row.flagged %}<span class="ml-1 text-xs">Needs a fix</span>{% endif %}
                         </td>
                         <td>{{ row.filed|date:"M j, g:i A" }}</td>
@@ -84,16 +111,7 @@
             </table>
         </div>
         {% else %}
-        {% if state == "closed" %}
-        <p>No closed filings for this week.</p>
-        {% elif state == "all" %}
         <p>No filings for this week.</p>
-        {% else %}
-        <p>No open filings for this week.</p>
-        {% endif %}
-        {% if state == "open" and closed_on_this_week %}
-        <p class="mt-2 text-sm"><a class="underline" href="{{ closed_url }}">{{ closed_on_this_week }} closed</a> on this week.</p>
-        {% endif %}
         {% endif %}
     </div>
 </div>

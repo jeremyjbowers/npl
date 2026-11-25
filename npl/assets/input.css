@@ -427,3 +427,43 @@
 .btn-lg.is-primary:hover {
   background: #333;
 }
+
+/* The gameweek list keeps its own column. Labels stay inside it. */
+.proposal-board {
+  display: grid;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (min-width: 40rem) {
+  .proposal-board {
+    grid-template-columns: 16rem minmax(0, 1fr);
+  }
+}
+
+.proposal-filters {
+  min-width: 0;
+}
+
+.proposal-filters li {
+  display: flex;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+
+.proposal-filters li > :first-child {
+  min-width: 0;
+}
+
+.week-current {
+  background: #111;
+  color: #fff;
+  font-weight: 700;
+  padding: 0 0.25rem;
+}
+
+a.week-current {
+  color: #fff;
+  text-decoration: none;
+}

@@ -7,122 +7,123 @@ from django.db.models import Count
 from django.urls import reverse
 
 from npl import models
-from npl.transactions.weeks import deadline_for, processing_monday, review_monday
+from npl.transactions.catalog import KINDS
+from npl.transactions.weeks import deadline_for, review_monday
 
-OPEN = (
-    models.TransactionProposal.DRAFT,
-    models.TransactionProposal.PROPOSED,
-    models.TransactionProposal.AWAITING,
-    models.TransactionProposal.AGREED,
-)
-CLOSED = (
-    models.TransactionProposal.REJECTED,
-    models.TransactionProposal.WITHDRAWN,
-    models.TransactionProposal.EXECUTED,
-    models.TransactionProposal.VOIDED,
-)
-STATES = ("open", "closed", "all")
+STATUS_LABELS = dict(models.TransactionProposal.STATUS_CHOICES)
 
 
-def queue_page(moment, week_value, state_value):
-    """The proposals for one Monday, plus the week and status pickers."""
-    state = state_value if state_value in STATES else "open"
-    selected = _parse_week(week_value) or review_monday(moment)
-    weeks = _week_choices(selected, moment)
+def queue_page(moment, week_value, status_value, kind_value):
+    """The proposals for one Monday, plus week, kind, and status pickers."""
+    status = status_value if status_value in STATUS_LABELS else None
+    kind = kind_value if kind_value in KINDS else None
+    current = review_monday(moment)
+    selected = _parse_week(week_value) or current
+    visible = _window(selected)
+    others = _other_weeks(visible)
     schedule = {
         row.lineup_due: row
-        for row in models.ScheduleWeek.objects.filter(lineup_due__in=weeks).select_related("season")
+        for row in models.ScheduleWeek.objects.filter(lineup_due__in=[*visible, *others]).select_related("season")
     }
-    state_counts = _state_counts(selected)
-    week_counts = _week_counts(weeks, state)
+    week_counts = _counts(visible + others, "processing_week", status, kind)
+    status_counts = _counts([selected], "status", None, kind)
+    kind_counts = _counts([selected], "kind", status, None)
 
-    proposals = _proposals(selected, state)
-    rows = [_row(proposal) for proposal in proposals]
+    proposals = _proposals(selected, status, kind)
     return {
-        "rows": rows,
+        "rows": [_row(proposal, selected, status, kind) for proposal in proposals],
         "selected_week": selected,
-        "state": state,
+        "status": status or "",
+        "kind": kind or "",
         "opens": deadline_for(selected - datetime.timedelta(days=7)),
         "closes": deadline_for(selected),
-        "weeks": [
-            {
-                "monday": monday,
-                "label": _week_label(monday, schedule.get(monday)),
-                "current": monday == review_monday(moment),
-                "selected": monday == selected,
-                "count": week_counts.get(monday, 0),
-                "url": _url(monday, state),
-            }
-            for monday in weeks
-        ],
-        "states": [
-            {
-                "key": key,
-                "label": {"open": "Open", "closed": "Closed", "all": "All"}[key],
-                "selected": key == state,
-                "count": state_counts[key],
-                "url": _url(selected, key),
-            }
-            for key in STATES
-        ],
-        "closed_on_this_week": state_counts["closed"],
-        "closed_url": _url(selected, "closed"),
+        "weeks": [_week(monday, schedule, current, selected, week_counts, status, kind) for monday in visible],
+        "other_weeks": [_week(monday, schedule, current, selected, week_counts, status, kind) for monday in others],
+        "kinds": _choices("kind", kind_counts, kind, selected, status, kind),
+        "statuses": _choices("status", status_counts, status, selected, status, kind),
     }
 
 
-def _proposals(monday, state):
-    query = models.TransactionProposal.objects.filter(processing_week=monday)
-    query = _apply_state(query, state)
+def _proposals(monday, status, kind):
+    query = _apply(models.TransactionProposal.objects.filter(processing_week=monday), status, kind)
     return query.select_related("originating_team").prefetch_related(
         "parties__team", "assets__player"
     ).order_by("-flagged", "created", "id")
 
 
-def _apply_state(query, state):
-    if state == "open":
-        return query.filter(status__in=OPEN)
-    if state == "closed":
-        return query.filter(status__in=CLOSED)
+def _apply(query, status, kind):
+    if status:
+        query = query.filter(status=status)
+    if kind:
+        query = query.filter(kind=kind)
     return query
 
 
-def _state_counts(monday):
-    grouped = dict(
-        models.TransactionProposal.objects.filter(processing_week=monday)
-        .values("status")
-        .annotate(n=Count("id"))
-        .values_list("status", "n")
-    )
-    open_count = sum(grouped.get(status, 0) for status in OPEN)
-    closed_count = sum(grouped.get(status, 0) for status in CLOSED)
-    return {
-        "open": open_count,
-        "closed": closed_count,
-        "all": open_count + closed_count,
-    }
-
-
-def _week_counts(weeks, state):
+def _counts(weeks, field, status, kind):
+    """Counts for one column. The column's own filter is left off so every choice stays listed."""
     query = models.TransactionProposal.objects.filter(processing_week__in=weeks)
-    query = _apply_state(query, state)
-    return dict(
-        query.values("processing_week").annotate(n=Count("id")).values_list("processing_week", "n")
-    )
+    if field != "status" and status:
+        query = query.filter(status=status)
+    if field != "kind" and kind:
+        query = query.filter(kind=kind)
+    return dict(query.values(field).annotate(n=Count("id")).values_list(field, "n"))
 
 
-def _week_choices(selected, moment):
-    stored = set(
+def _window(selected):
+    """Two Mondays ahead, the selected Monday, and two behind."""
+    return [selected + datetime.timedelta(days=7 * offset) for offset in (2, 1, 0, -1, -2)]
+
+
+def _other_weeks(visible):
+    stored = (
         models.TransactionProposal.objects.exclude(processing_week=None)
         .values_list("processing_week", flat=True)
         .distinct()
     )
-    mondays = set(stored)
-    mondays.add(review_monday(moment))
-    mondays.add(processing_monday(moment))
-    mondays.add(selected)
-    mondays.add(selected - datetime.timedelta(days=7))
-    mondays.add(selected + datetime.timedelta(days=7))
-    return sorted(mondays, reverse=True)
+    return sorted((day for day in set(stored) if day not in visible), reverse=True)
+
+
+def _week(monday, schedule, current, selected, counts, status, kind):
+    return {
+        "monday": monday,
+        "label": _week_label(monday, schedule.get(monday)),
+        "current": monday == current,
+        "selected": monday == selected,
+        "count": counts.get(monday, 0),
+        "url": _url(monday, status, kind),
+    }
+
+
+def _choices(field, counts, selected_value, monday, status, kind):
+    if field == "status":
+        catalog = STATUS_LABELS
+    else:
+        catalog = {code: kind["label"] for code, kind in KINDS.items()}
+    choices = [
+        {
+            "label": "All",
+            "selected": not selected_value,
+            "count": sum(counts.values()),
+            "url": _url(monday, None if field == "status" else status, None if field == "kind" else kind),
+        }
+    ]
+    for code, label in catalog.items():
+        count = counts.get(code, 0)
+        if not count:
+            continue
+        choices.append(
+            {
+                "label": label,
+                "selected": code == selected_value,
+                "count": count,
+                "url": _url(
+                    monday,
+                    code if field == "status" else status,
+                    code if field == "kind" else kind,
+                ),
+            }
+        )
+    return choices
 
 
 def _parse_week(value):
@@ -143,14 +144,16 @@ def _week_label(monday, schedule):
     return "Week of"
 
 
-def _url(monday, state):
+def _url(monday, status, kind):
     params = {"week": monday.isoformat()}
-    if state != "open":
-        params["state"] = state
+    if status:
+        params["status"] = status
+    if kind:
+        params["kind"] = kind
     return f"{reverse('proposals')}?{urlencode(params)}"
 
 
-def _row(proposal):
+def _row(proposal, monday, status, kind):
     pieces = []
     for asset in proposal.assets.all():
         if asset.player_id and asset.player:
@@ -173,7 +176,9 @@ def _row(proposal):
         "club": club.short_name if club else "",
         "club_url": f"/teams/{club.short_name.lower()}/" if club and club.short_name else "",
         "kind": proposal.kind_label,
+        "kind_url": _url(monday, status, proposal.kind),
         "status": proposal.get_status_display(),
+        "status_url": _url(monday, proposal.status, kind),
         "filed": proposal.created,
         "pieces": ", ".join(pieces),
         "parties": ", ".join(parties),
