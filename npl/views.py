@@ -6,6 +6,7 @@ from django.http import HttpResponse, HttpResponseForbidden
 from django.views.decorators.csrf import csrf_exempt
 
 from django.shortcuts import render, get_object_or_404, redirect
+from django.urls import reverse
 from django.db.models import Count, Avg, Sum, Max, Min, Prefetch, Q
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.http import JsonResponse
@@ -26,6 +27,7 @@ from npl import auctions, models, rosters, utils
 from npl.auctions import NominationError
 from npl.homepage import board_context
 from npl.transactions.impact import lines_for_proposal, roster_roundup
+from npl.transactions.present import filing_headline
 from npl.transactions.players import ledger_for_player
 from npl.transactions.trades import (
     group_log,
@@ -481,15 +483,21 @@ def proposal_detail_page(request, proposal_id):
     """
     proposal = get_object_or_404(
         models.TransactionProposal.objects.select_related("originating_team").prefetch_related(
-            "parties__team", "assets__player", "assets__from_team", "assets__to_team"
+            "parties__team",
+            "assets__player__team",
+            "assets__from_team",
+            "assets__to_team",
         ),
         pk=proposal_id,
     )
     if request.method == "POST":
         if not request.user.is_authenticated or not request.user.is_staff:
             return HttpResponseForbidden("Directors only.")
-        _review_proposal(request, proposal)
-        return redirect("proposal_detail", proposal_id=proposal.pk)
+        reopen_return = _review_proposal(request, proposal)
+        url = reverse("proposal_detail", args=[proposal.pk])
+        if reopen_return:
+            url = f"{url}?return=1"
+        return redirect(url)
     involved = teams_for_user(request.user) if request.user.is_authenticated else models.Team.objects.none()
     can_see_terms = request.user.is_authenticated and (
         request.user.is_staff or proposal.parties.filter(team__in=involved).exists()
@@ -504,13 +512,20 @@ def proposal_detail_page(request, proposal_id):
     posted_trade = (
         models.Trade.objects.filter(receipts__proposal=proposal).distinct().prefetch_related("teams").first()
     )
+    awaiting_parties = [
+        party
+        for party in proposal.parties.all()
+        if party.agreement_status == models.TransactionParty.PENDING
+    ]
     context.update({
         "proposal": proposal,
         "can_see_terms": can_see_terms,
+        "headline": filing_headline(proposal),
         "impact_lines": lines_for_proposal(proposal),
         "receives": receives_for_proposal(proposal),
         "trade_parties": join_parties(party_names),
         "posted_trade": posted_trade,
+        "awaiting_parties": awaiting_parties,
     })
     return render(request, "transactions/proposal.html", context)
 
@@ -527,11 +542,11 @@ def _review_proposal(request, proposal):
                 messages.error(request, "Say what the club needs to change.")
             else:
                 messages.error(request, "; ".join(exc.messages))
-            return
+            return True
         proposal.flagged_by = request.user
         proposal.flagged_at = timezone.now()
         proposal.save()
-        messages.success(request, "The club will see that this needs a fix.")
+        messages.success(request, "Returned to the club.")
     elif action == "clear":
         proposal.flagged = False
         proposal.save(update_fields=["flagged", "last_modified"])
@@ -548,6 +563,7 @@ def _review_proposal(request, proposal):
             )
     else:
         messages.error(request, "Choose a review action.")
+    return False
 
 
 @login_required
