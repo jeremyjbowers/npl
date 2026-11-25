@@ -369,3 +369,27 @@
   background: #f3f4f6;
   border: 1px solid #d1d5db;
 }
+
+/* Approve sits beside Return. The note opens under them, full width. */
+.review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.review-actions > details {
+  flex: 0 0 auto;
+}
+
+.review-actions > details[open] {
+  flex-basis: 100%;
+}
+
+summary.btn-line {
+  list-style: none;
+}
+
+summary.btn-line::-webkit-details-marker {
+  display: none;
+}

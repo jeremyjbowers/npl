@@ -7,7 +7,9 @@ from django.test import Client, RequestFactory, TestCase
 from django.test.utils import CaptureQueriesContext
 
 from npl.admin import TransactionAssetInline
-from npl.models import Owner, Player, Team, Transaction, TransactionProposal
+from npl.models import Owner, Player, Team, Transaction, TransactionAsset, TransactionProposal
+from npl.transactions.catalog import KINDS
+from npl.transactions.present import VERBS, filing_headline
 from npl.transactions.service import create_proposal
 
 User = get_user_model()
@@ -57,8 +59,17 @@ class ProposalReviewTests(TestCase):
             page = self.client.get(f"/transactions/proposals/{self.proposal.id}/")
         self.assertEqual(page.status_code, 200)
         self.assertContains(page, "Named Player")
-        self.assertContains(page, "Post to the ledger")
-        self.assertContains(page, "Needs a fix")
+        self.assertContains(page, f"proposal {self.proposal.id}: release")
+        self.assertContains(page, ">REV</a>")
+        self.assertContains(page, "Approve")
+        self.assertContains(page, "Return to team")
+        self.assertNotContains(page, "Flagged as improper")
+        self.assertNotContains(page, "<details open")
+        html = page.content.decode()
+        self.assertLess(html.index("Named Player"), html.index(">Impact<"))
+        self.assertLess(html.index(">Impact<"), html.index(">Club<"))
+        self.assertLess(html.index(">Club<"), html.index(">Director review<"))
+        self.assertLess(html.index(">Approve<"), html.index('name="flag_note"'))
         self.assertNotContains(page, "Crowd 1")
         self.assertNotContains(page, "Old 1")
         self.assertFalse(any(_loads_every_player(query["sql"]) for query in captured.captured_queries))
@@ -66,18 +77,22 @@ class ProposalReviewTests(TestCase):
         self.client.force_login(self.owner_user)
         owner_page = self.client.get(f"/transactions/proposals/{self.proposal.id}/")
         self.assertContains(owner_page, "Named Player")
-        self.assertNotContains(owner_page, "Post to the ledger")
+        self.assertNotContains(owner_page, "Approve")
+        self.assertNotContains(owner_page, "Return to team")
+        self.assertNotContains(owner_page, "Director review")
 
     def test_a_director_can_flag_and_post_from_the_page(self):
         self.client.force_login(self.director)
         url = f"/transactions/proposals/{self.proposal.id}/"
         missing = self.client.post(url, {"action": "flag", "flag_note": "   "})
-        self.assertRedirects(missing, url)
+        self.assertRedirects(missing, f"{url}?return=1")
         self.proposal.refresh_from_db()
         self.assertFalse(self.proposal.flagged)
 
         flagged = self.client.post(url, {"action": "flag", "flag_note": "Name the player."}, follow=True)
-        self.assertContains(flagged, "needs a fix")
+        self.assertContains(flagged, "Returned to the club.")
+        flagged_html = flagged.content.decode()
+        self.assertLess(flagged_html.index("Flagged as improper."), flagged_html.index(">Director review<"))
         self.proposal.refresh_from_db()
         self.assertTrue(self.proposal.flagged)
         self.assertEqual(self.proposal.flag_note, "Name the player.")
@@ -94,7 +109,8 @@ class ProposalReviewTests(TestCase):
         self.assertEqual(self.proposal.status, TransactionProposal.EXECUTED)
         self.assertEqual(Transaction.objects.filter(proposal=self.proposal).count(), 1)
         self.assertContains(posted, "already on the transaction log")
-        self.assertNotContains(posted, "Post to the ledger")
+        self.assertNotContains(posted, "Approve")
+        self.assertNotContains(posted, "Return to team")
 
     def test_the_admin_list_opens_the_review_page(self):
         superuser = User.objects.create_superuser(email="super@example.com", password="secret")
@@ -123,3 +139,45 @@ class ProposalReviewTests(TestCase):
         self.assertNotIn("<select", ledger_field)
         self.assertNotIn("Crowd 1", html)
         self.assertNotIn("Old 1", html)
+
+    def test_the_headline_names_the_player_the_position_and_the_club(self):
+        self.player.position = "RHP"
+        self.player.save(update_fields=["position"])
+        self.proposal.kind = "non_tender"
+        self.proposal.save(update_fields=["kind"])
+        proposal = TransactionProposal.objects.prefetch_related(
+            "assets__player__team", "assets__from_team", "assets__to_team"
+        ).get(pk=self.proposal.pk)
+        headline = filing_headline(proposal)
+        self.assertEqual(
+            headline["text"],
+            f"proposal {proposal.id}: nontender Named Player (RHP, REV)",
+        )
+        self.assertFalse(headline["show_pieces"])
+
+        other = Team.objects.create(full_name="Beta Club", short_name="Beta", abbreviation="BET")
+        player_asset = proposal.assets.get()
+        player_asset.to_team = other
+        player_asset.save(update_fields=["to_team", "last_modified"])
+        TransactionAsset.objects.create(
+            proposal=proposal,
+            asset_type="cash",
+            amount=500000,
+            from_team=other,
+            to_team=self.team,
+            raw_label="Cash",
+        )
+        proposal.kind = "trade"
+        proposal.save(update_fields=["kind"])
+        proposal = TransactionProposal.objects.prefetch_related(
+            "assets__player__team", "assets__from_team", "assets__to_team"
+        ).get(pk=proposal.pk)
+        trade = filing_headline(proposal)
+        self.assertEqual(
+            trade["text"],
+            f"proposal {proposal.id}: trade Named Player (RHP, REV) to BET and $500,000 cash from BET to REV",
+        )
+        self.assertTrue(trade["show_pieces"])
+
+    def test_every_transaction_kind_has_a_review_verb(self):
+        self.assertEqual(set(VERBS), set(KINDS))
