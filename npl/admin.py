@@ -559,7 +559,7 @@ class TransactionProposalAdmin(admin.ModelAdmin):
     @admin.display(description="Proposal")
     def review_link(self, obj):
         url = reverse("proposal_detail", args=[obj.pk])
-        return format_html('<a href="{}">#{}</a>', url, obj.pk)
+        return format_html('<a href="{}" target="_blank" rel="noopener">#{}</a>', url, obj.pk)
 
     def change_view(self, request, object_id, form_url="", extra_context=None):
         return redirect("proposal_detail", proposal_id=object_id)
