@@ -1,8 +1,8 @@
 """How a filing reads on the review page.
 
-A director approves dozens of these a week. The headline is the move:
-who, which club, and the action. Impact, the club, and any impropriety
-flag follow. The notes field stays closed until the filing is returned.
+A director approves dozens of these a week. The headline is the club,
+the move, and the player's major-league team. Impact follows, including
+whether the roster checks passed.
 """
 
 from npl.transactions.catalog import (
@@ -71,16 +71,57 @@ def filing_headline(proposal):
     """The sentence at the top of the review page, plus whether the body adds more."""
     pieces = [_piece(asset, proposal) for asset in proposal.assets.all()]
     verb = VERBS.get(proposal.kind) or (proposal.kind_label or proposal.kind or "filing").lower()
-    body = verb
+    club = proposal.originating_team
+    club_name = _club_name(club)
     named = _english_join([_plain(piece) for piece in pieces])
-    if named:
-        body = f"{verb} {named}"
+    action = f"{verb} {named}".strip()
+    body = f"{club_name} {action}".strip() if club_name else action
     return {
         "verb": verb,
+        "club": club,
+        "club_name": club_name,
         "pieces": pieces,
         "text": f"proposal {proposal.id}: {body}",
         "show_pieces": _show_pieces(proposal, pieces),
     }
+
+
+def review_flags(proposal):
+    """Checks that still fail. Empty means the filing passed and can be approved."""
+    from npl.transactions.rules import evaluate
+
+    assets = [
+        {
+            "asset_type": asset.asset_type,
+            "player": asset.player,
+            "from_team": asset.from_team,
+            "to_team": asset.to_team,
+            "amount": asset.amount,
+            "contract_terms": asset.contract_terms,
+            "raw_label": asset.raw_label,
+            "notes": asset.notes,
+        }
+        for asset in proposal.assets.all()
+    ]
+    flags = evaluate(
+        proposal.originating_team,
+        proposal.kind,
+        assets,
+        contract_terms=proposal.contract_terms,
+        proposal_id=proposal.pk,
+        effective_date=proposal.effective_date,
+        notes=proposal.notes or "",
+    )
+    flags = list(flags)
+    if proposal.flagged:
+        note = (proposal.flag_note or "").strip()
+        flags.append(f"Flagged as improper. {note}".strip())
+    for party in proposal.parties.all():
+        if party.agreement_status != "pending" or not party.team_id:
+            continue
+        name = party.team.short_name or party.team.abbreviation or "A club"
+        flags.append(f"{name} has not agreed.")
+    return flags
 
 
 def _show_pieces(proposal, pieces):
@@ -105,31 +146,26 @@ def _piece(asset, proposal):
         "player": None,
         "label": _other_label(asset),
         "position": "",
-        "club": None,
-        "club_label": "",
+        "mlb": "",
         "suffix": _route(asset),
     }
 
 
 def _player_piece(asset, proposal):
     player = asset.player
-    club = player.team if player.team_id else None
-    if club is None:
-        club = asset.from_team or proposal.originating_team
-    club_label = _abbr(club)
-    dest = _abbr(asset.to_team)
-    origin = _abbr(asset.from_team)
+    filing = _club_name(proposal.originating_team)
+    origin = _club_name(asset.from_team)
+    dest = _club_name(asset.to_team)
     route = []
-    if origin and club_label and origin != club_label:
+    if origin and origin != filing:
         route.append(f"from {origin}")
-    if dest and dest != club_label:
+    if dest and dest != filing:
         route.append(f"to {dest}")
     return {
         "player": player,
         "label": player.name,
         "position": (player.position or "").strip(),
-        "club": club if club_label else None,
-        "club_label": club_label,
+        "mlb": (player.mlb_org or "").strip(),
         "suffix": " ".join(route),
     }
 
@@ -150,8 +186,8 @@ def _other_label(asset):
 
 
 def _route(asset):
-    origin = _abbr(asset.from_team)
-    dest = _abbr(asset.to_team)
+    origin = _club_name(asset.from_team)
+    dest = _club_name(asset.to_team)
     if origin and dest:
         return f"from {origin} to {dest}"
     if dest:
@@ -161,15 +197,15 @@ def _route(asset):
     return ""
 
 
-def _abbr(team):
+def _club_name(team):
     if team is None:
         return ""
-    return (team.abbreviation or team.short_name or "").strip()
+    return (team.short_name or team.abbreviation or "").strip()
 
 
 def _plain(piece):
     text = piece["label"]
-    paren = [bit for bit in (piece["position"], piece["club_label"]) if bit]
+    paren = [bit for bit in (piece.get("position") or "", piece.get("mlb") or "") if bit]
     if paren:
         text += " (" + ", ".join(paren) + ")"
     if piece["suffix"]:
