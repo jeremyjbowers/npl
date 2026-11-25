@@ -116,7 +116,10 @@ class ProposalReviewTests(TestCase):
         superuser = User.objects.create_superuser(email="super@example.com", password="secret")
         self.client.force_login(superuser)
         listing = self.client.get("/admin/npl/transactionproposal/")
-        self.assertContains(listing, f'href="/transactions/proposals/{self.proposal.id}/"')
+        self.assertContains(
+            listing,
+            f'href="/transactions/proposals/{self.proposal.id}/" target="_blank" rel="noopener"',
+        )
         self.assertNotContains(
             listing, f"/admin/npl/transactionproposal/{self.proposal.id}/change/"
         )

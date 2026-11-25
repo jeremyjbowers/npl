@@ -61,7 +61,7 @@
                 <tbody>
                     {% for row in rows %}
                     <tr>
-                        <td><a class="underline" href="{{ row.url }}">#{{ row.id }}</a></td>
+                        <td><a class="underline" href="{{ row.url }}" target="_blank" rel="noopener">#{{ row.id }}</a></td>
                         <td>{% if row.club_url %}<a class="underline" href="{{ row.club_url }}">{{ row.club }}</a>{% else %}{{ row.club }}{% endif %}</td>
                         <td>{{ row.kind }}</td>
                         <td>

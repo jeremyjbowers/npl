@@ -107,6 +107,10 @@ class ProposalQueueTests(TestCase):
     def test_the_default_page_is_this_weeks_open_filings(self):
         page = self._page()
         self.assertEqual(page.status_code, 200)
+        self.assertContains(
+            page,
+            f'href="/transactions/proposals/{self.this_week.id}/" target="_blank" rel="noopener"',
+        )
         self.assertContains(page, "Ada This")
         self.assertNotContains(page, "Bea Next")
         self.assertNotContains(page, "Cal Closed")
