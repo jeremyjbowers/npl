@@ -100,11 +100,14 @@ def _resolve_player(value):
 
 
 def next_processing_week(on_date=None):
-    on_date = on_date or timezone.localdate()
-    days_ahead = (7 - on_date.weekday()) % 7
-    if days_ahead == 0:
-        days_ahead = 7
-    return on_date + datetime.timedelta(days=days_ahead)
+    """Monday a filing made now, or at ``on_date``, is processed.
+
+    The cutoff is Monday at 1:00 PM Eastern. Before it, the filing is on
+    that Monday. At or after it, the filing is on the next Monday.
+    """
+    from npl.transactions.weeks import processing_monday
+
+    return processing_monday(on_date)
 
 
 def transaction_type_for(code):

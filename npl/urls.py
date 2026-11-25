@@ -70,6 +70,7 @@ urlpatterns = [
     path("transactions/form/step2/", views.transaction_form_step2, name='transaction_form_step2'),
     path("transactions/success/", views.transaction_success, name='transaction_success'),
     path("transactions/list/", views.transaction_list, name='transaction_list'),
+    path("transactions/proposals/", views.proposals_page, name="proposals"),
     path("transactions/proposals/<int:proposal_id>/respond/", views.proposal_respond, name='proposal_respond'),
     path("transactions/proposals/<int:proposal_id>/", views.proposal_detail_page, name='proposal_detail'),
     path("transactions/roundup/", views.roster_roundup_page, name="roster_roundup"),

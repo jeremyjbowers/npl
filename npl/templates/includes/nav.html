@@ -40,6 +40,9 @@
                     <a href="/transactions/trades/" class="block py-0.5 text-sm underline">Trades</a>
                     <a href="/transactions/other/" class="block py-0.5 text-sm underline">Other transactions</a>
                     <a href="/transactions/roundup/" class="block py-0.5 text-sm underline">Roster check</a>
+                    {% if user.is_staff %}
+                    <a href="/transactions/proposals/" class="block py-0.5 text-sm underline">Review proposals</a>
+                    {% endif %}
                     <a href="https://docs.google.com/spreadsheets/d/1UQv_vnBBWUT8BiFRd7tAbvW4COWJ61BNkme7iyzf5po/" class="block py-0.5 text-sm underline" target="_blank" rel="noopener">Google sheet</a>
                 </div>
             </div>
@@ -61,7 +64,7 @@
             <button type="button" class="underline" aria-haspopup="true">Utilities ▼</button>
             <div class="nav-dropdown-panel">
                 <a href="/admin/" class="block py-0.5 text-sm underline">Django admin</a>
-                <a href="/admin/npl/transactionproposal/" class="block py-0.5 text-sm underline">Review proposals</a>
+                <a href="/transactions/proposals/" class="block py-0.5 text-sm underline">Review proposals</a>
                 <a href="/transactions/audit/" class="block py-0.5 text-sm underline">Transaction audit</a>
                 <a href="/auctions/test/" class="block py-0.5 text-sm underline">Auction test</a>
             </div>
@@ -117,7 +120,7 @@
         </div>
         {% endif %}
         {% if user.is_staff %}
-        <a href="/admin/npl/transactionproposal/" class="block underline">Review proposals</a>
+        <a href="/transactions/proposals/" class="block underline">Review proposals</a>
         <a href="/transactions/audit/" class="block underline">Transaction audit</a>
         {% endif %}
         <div>
