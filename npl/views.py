@@ -237,29 +237,13 @@ def team_detail(request, short_name):
     return render(request, "team.html", context)
 
 def get_next_processing_deadline():
-    """Calculate the next Monday 1 PM EST processing deadline (full datetime)"""
-    import pytz
-    from datetime import datetime, timedelta
-    
-    # Get current time in EST
-    est = pytz.timezone('US/Eastern')
-    now = timezone.now().astimezone(est)
-    
-    # Find next Monday
-    days_ahead = 7 - now.weekday()  # Monday is 0
-    if days_ahead <= 0:  # Target day already happened this week
-        days_ahead += 7
-    elif days_ahead == 7 and now.hour >= 13:  # It's Monday after 1 PM
-        days_ahead = 7  # Next Monday
-    
-    next_monday = now + timedelta(days=days_ahead)
-    # Set to 1 PM EST on that Monday
-    deadline = next_monday.replace(hour=13, minute=0, second=0, microsecond=0)
-    
-    return deadline
+    """Monday at 1:00 PM Eastern when a filing made now is processed."""
+    from npl.transactions.weeks import deadline_for, processing_monday
+
+    return deadline_for(processing_monday())
 
 def get_next_processing_week():
-    """Calculate the next Monday 1 PM EST processing deadline (date only for database)"""
+    """The Monday a filing made now is processed."""
     return get_next_processing_deadline().date()
 
 @login_required
@@ -471,6 +455,17 @@ def transaction_list(request):
     })
     
     return render(request, 'transactions/list.html', context)
+
+
+def proposals_page(request):
+    """One gameweek of filings. Other weeks and closed filings stay a click away."""
+    if not request.user.is_staff:
+        return HttpResponseForbidden("Directors only.")
+    from npl.transactions.queue import queue_page
+
+    context = utils.build_context(request)
+    context.update(queue_page(timezone.now(), request.GET.get("week"), request.GET.get("state")))
+    return render(request, "transactions/proposals.html", context)
 
 
 def proposal_detail_page(request, proposal_id):
