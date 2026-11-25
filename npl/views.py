@@ -459,13 +459,20 @@ def transaction_list(request):
 
 
 def proposals_page(request):
-    """One gameweek of filings. Other weeks and closed filings stay a click away."""
+    """One gameweek of filings, with the neighboring weeks and the real statuses beside it."""
     if not request.user.is_staff:
         return HttpResponseForbidden("Directors only.")
     from npl.transactions.queue import queue_page
 
     context = utils.build_context(request)
-    context.update(queue_page(timezone.now(), request.GET.get("week"), request.GET.get("state")))
+    context.update(
+        queue_page(
+            timezone.now(),
+            request.GET.get("week"),
+            request.GET.get("status"),
+            request.GET.get("kind"),
+        )
+    )
     return render(request, "transactions/proposals.html", context)
 
 

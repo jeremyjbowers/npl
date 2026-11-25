@@ -75,6 +75,10 @@ class ProposalQueueTests(TestCase):
         self.next_week = self._filing("500012", "Bea", "Next", datetime.date(2026, 11, 30))
         self.closed = self._filing("500013", "Cal", "Closed", datetime.date(2026, 11, 23), executed=True)
         self.previous = self._filing("500014", "Dee", "Past", datetime.date(2026, 11, 16))
+        self.older = self._filing("500015", "Eve", "Older", datetime.date(2026, 10, 5))
+        self.trade = self._filing("500016", "Fay", "Dealt", datetime.date(2026, 11, 23))
+        self.trade.kind = "trade"
+        self.trade.save(update_fields=["kind", "last_modified"])
         self.moment = at(2026, 11, 23, 14)
 
     def _filing(self, mlb_id, first, last, week, executed=False):
@@ -104,7 +108,7 @@ class ProposalQueueTests(TestCase):
         with patch("npl.transactions.weeks.timezone.now", return_value=self.moment):
             return self.client.get(f"/transactions/proposals/{query}")
 
-    def test_the_default_page_is_this_weeks_open_filings(self):
+    def test_the_default_page_is_five_weeks_around_the_current_one(self):
         page = self._page()
         self.assertEqual(page.status_code, 200)
         self.assertContains(
@@ -112,31 +116,50 @@ class ProposalQueueTests(TestCase):
             f'href="/transactions/proposals/{self.this_week.id}/" target="_blank" rel="noopener"',
         )
         self.assertContains(page, "Ada This")
+        self.assertContains(page, "Cal Closed")
+        self.assertContains(page, "Fay Dealt")
         self.assertNotContains(page, "Bea Next")
-        self.assertNotContains(page, "Cal Closed")
         self.assertNotContains(page, "Dee Past")
+        self.assertNotContains(page, "Eve Older")
+        self.assertContains(page, "Dec 7")
         self.assertContains(page, "Nov 30")
+        self.assertContains(page, "Nov 9")
+        self.assertNotContains(page, "Dec 14")
+        self.assertNotContains(page, "this week")
+        self.assertContains(page, "week-current")
+        self.assertContains(page, "Transaction details")
+        self.assertContains(page, ">Proposed<")
+        self.assertContains(page, ">Executed<")
+        self.assertContains(page, ">Release<")
+        self.assertContains(page, ">Trade<")
+        self.assertNotContains(page, ">Open<")
+        self.assertContains(page, 'value="2026-10-05"')
         self.assertContains(page, "1:00 PM ET")
-        self.assertContains(page, "this week")
+        self.assertContains(page, 'href="/transactions/proposals/?week=2026-11-23&amp;status=proposed"')
+        self.assertContains(page, 'href="/transactions/proposals/?week=2026-11-23&amp;kind=trade"')
 
-    def test_a_director_can_look_ahead_and_back_and_at_closed_filings(self):
+    def test_a_director_can_look_ahead_and_back_and_filter_kind_and_status(self):
         ahead = self._page("?week=2026-11-30")
         self.assertEqual(ahead.context["selected_week"], datetime.date(2026, 11, 30))
         self.assertContains(ahead, "Bea Next")
         self.assertNotContains(ahead, "Ada This")
+        self.assertContains(ahead, "Dec 14")
 
         back = self._page("?week=2026-11-16")
         self.assertContains(back, "Dee Past")
         self.assertNotContains(back, "Ada This")
 
-        closed = self._page("?week=2026-11-23&state=closed")
-        self.assertContains(closed, "Cal Closed")
-        self.assertNotContains(closed, "Ada This")
+        executed = self._page("?week=2026-11-23&status=executed")
+        self.assertContains(executed, "Cal Closed")
+        self.assertNotContains(executed, "Ada This")
 
-        everything = self._page("?week=2026-11-23&state=all")
-        self.assertContains(everything, "Ada This")
-        self.assertContains(everything, "Cal Closed")
-        self.assertNotContains(everything, "Bea Next")
+        proposed = self._page("?week=2026-11-23&status=proposed")
+        self.assertContains(proposed, "Ada This")
+        self.assertNotContains(proposed, "Cal Closed")
+
+        trades = self._page("?week=2026-11-23&kind=trade")
+        self.assertContains(trades, "Fay Dealt")
+        self.assertNotContains(trades, "Ada This")
 
     def test_an_owner_cannot_open_the_list(self):
         self.client.force_login(self.owner_user)
