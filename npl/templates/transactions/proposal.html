@@ -112,7 +112,6 @@
                 <textarea id="flag-note" name="flag_note" rows="3" class="mt-2 w-full">{{ proposal.flag_note }}</textarea>
             </div>
         </form>
-        <p class="mt-4 text-sm">Approve records the filing on the log. It does not move the player, the contract, or the draft pick.</p>
         {% if proposal.flagged %}
         <form method="post" class="mt-3">
             {% csrf_token %}
