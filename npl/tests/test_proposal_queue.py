@@ -126,6 +126,8 @@ class ProposalQueueTests(TestCase):
         self.assertContains(page, "Nov 9")
         self.assertNotContains(page, "Dec 14")
         self.assertNotContains(page, "this week")
+        self.assertContains(page, 'class="sm:flex gap-4"')
+        self.assertContains(page, 'class="min-w-0 grow"')
         self.assertContains(page, "week-current")
         self.assertContains(page, "Transaction details")
         self.assertContains(page, ">Proposed<")

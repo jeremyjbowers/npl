@@ -3,16 +3,16 @@
 {% block title %}Proposals — The NPL{% endblock %}
 
 {% block content %}
-<div class="proposal-board">
-    <aside class="proposal-filters" aria-label="Filter proposals">
+<div class="sm:flex gap-4">
+    <aside aria-label="Filter proposals">
         <h2 class="text-sm font-bold">Gameweek</h2>
         <ul class="mt-1 space-y-1 text-sm">
             {% for choice in weeks %}
             <li>
                 {% if choice.selected %}
-                <span class="{% if choice.current %}week-current{% else %}font-bold{% endif %}" aria-current="true">{{ choice.label }} {{ choice.monday|date:"M j" }}</span>
+                <span class="font-bold{% if choice.current %} week-current{% endif %}" aria-current="true">{{ choice.label }} {{ choice.monday|date:"M j" }}</span>
                 {% else %}
-                <a class="{% if choice.current %}week-current{% else %}underline{% endif %}" href="{{ choice.url }}">{{ choice.label }} {{ choice.monday|date:"M j" }}</a>
+                <a class="{% if choice.current %}font-bold no-underline week-current{% else %}underline{% endif %}" href="{{ choice.url }}">{{ choice.label }} {{ choice.monday|date:"M j" }}</a>
                 {% endif %}
                 <span>{{ choice.count }}</span>
             </li>
@@ -61,7 +61,7 @@
         </ul>
     </aside>
 
-    <div class="min-w-0">
+    <div class="min-w-0 grow">
         <header class="mb-4">
             <h1 class="text-2xl font-bold">Proposals</h1>
             <p class="mt-1 text-sm">
