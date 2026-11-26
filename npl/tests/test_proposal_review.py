@@ -73,6 +73,7 @@ class ProposalReviewTests(TestCase):
         self.assertContains(page, f"Filed week {filed.isocalendar()[1]},")
         self.assertContains(page, "ET")
         self.assertNotContains(page, "This has not been processed")
+        self.assertNotContains(page, "does not move the player")
         self.assertNotContains(page, "Club note")
         self.assertNotContains(page, ">Club<")
         html = page.content.decode()
