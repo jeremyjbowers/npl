@@ -65,7 +65,7 @@ class ProposalReviewTests(TestCase):
         self.assertContains(page, "Approve")
         self.assertContains(page, "Return to team with note")
         self.assertContains(page, "No flags.")
-        self.assertContains(page, 'class="btn-lg is-primary" name="action" value="post"')
+        self.assertContains(page, 'class="btn no-underline px-3 py-3 text-lg font-bold" name="action" value="post"')
         self.assertContains(page, 'href="/admin/npl/transactionproposal/"')
         self.assertContains(page, "Review proposals")
         self.assertContains(page, 'href="/transactions/"')
@@ -207,8 +207,8 @@ class ProposalReviewTests(TestCase):
         page = self.client.get(f"/transactions/proposals/{self.proposal.id}/")
         self.assertContains(page, "Named Player is not on Rev.")
         self.assertNotContains(page, "No flags.")
-        self.assertContains(page, 'class="btn-lg is-primary" name="action" value="flag"')
-        self.assertNotContains(page, 'class="btn-lg is-primary" name="action" value="post"')
+        self.assertContains(page, 'class="btn no-underline px-3 py-3 text-lg font-bold" name="action" value="flag"')
+        self.assertContains(page, 'class="btn-line px-3 py-3 text-lg font-bold" name="action" value="post"')
 
     def test_a_note_that_only_restates_the_move_stays_off_the_page(self):
         self.proposal.notes = "Non-tender Named Player (RHP, COL)"
