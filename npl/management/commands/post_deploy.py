@@ -16,5 +16,7 @@ class Command(BaseCommand):
             self.stdout.write("Director staff: " + ", ".join(updated))
         if missing:
             self.stdout.write(self.style.WARNING("No login account yet for: " + ", ".join(missing)))
-        call_command("collectstatic", "--noinput")
+        # The bucket copy can be older in content and newer by timestamp.
+        # collectstatic then skips it. Clear first so the new CSS is uploaded.
+        call_command("collectstatic", "--noinput", "--clear")
         call_command('util_save_all_players')
